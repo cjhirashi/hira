@@ -1,0 +1,24 @@
+openapi: 3.1.0
+info:
+  title: "CT-marketplace — Catálogo de bloques y plantillas (Studio/Server ↔ Hub) — PLACEHOLDER v0.3"
+  version: 0.0.0
+  description: >
+    Anclas: CT-marketplace, VUL-SRV-015, spec/hira-hub/conceptual-design.md (v0.3).
+    PLACEHOLDER — el contrato real se define cuando Hub v0.3 (Diseñador de Bloques +
+    Marketplace de Plantillas) entra al roadmap. Cubrirá:
+      · GET catálogo de bloques SVG HVAC descargables por Servers/Studio
+      · GET/POST plantillas de proyecto .hirat (publicar / descargar / comprar)
+      · esquema .hirat: campos obligatorios (template_version, category, protocols,
+        device_count_range, point_count) y excluidos (network_config, historical_data,
+        license_key) — ver VUL-SRV-015
+    No implementar nada contra este archivo hasta que deje de ser placeholder.
+servers:
+  - url: https://hub.hira.cjhirashi.com
+paths:
+  /api/marketplace/_placeholder:
+    get:
+      summary: Placeholder — sin contrato real todavía.
+      operationId: marketplacePlaceholder
+      responses:
+        "501":
+          description: Not Implemented — contrato pendiente de diseño (Hub v0.3).

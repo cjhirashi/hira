@@ -1,0 +1,19 @@
+# sha256  ruta   —  generado por spec_checksum.py --update
+1e1cb3c5442f1055d085dcd32dca43e4aebdf57b42de4c8bbd17373c52bfba3b  .harness/spec/ecosystem/business-model.md
+8b7bd5690ed3501461b46456c8d7b51ab8dbd4598626f63f15c27dcb7887e219  .harness/spec/ecosystem/ecosystem-architecture.md
+706a5c62a4d998c0948065787ecc020147b065c903c8dee507752c682ec2a9fc  .harness/spec/ecosystem/stakeholders.md
+b444ba5ca585fc3d42d9173dce80709215ff17fa239df0d9258aeb3ec2af57c8  .harness/spec/ecosystem/vision.md
+f151afa97ce59e8cc86ad714c6d69d6a449c5f8a90d01a4024e21cc8904b2217  .harness/spec/hira-hub/conceptual-design.md
+b959d304a497882136c7116318cf583d3a97a3b3dcf5f567f591ccc130540bab  .harness/spec/hira-hub/detailed-design.md
+a782c0cd348a1f26e447a0f380c233128e3b039d825b6e880c29697ba33226d4  .harness/spec/hira-server/architecture/general.md
+1fc459178eb5f3ce9a903076b07f047309eeec3bf5ddf4c3e55a523fd4dca171  .harness/spec/hira-server/implementation-guide/estructura-de-repositorio.md
+3ca5a77f9a79ce70d1484ee8d4a410569332f02467106c259002ffa0a9683843  .harness/spec/hira-server/modules/agente-ia.md
+bcbb0647a29d66d04352cb838fdd3f71ac6dea054674e94c3ef6749e7717c320  .harness/spec/hira-server/modules/alarmas-historicos.md
+1846b2e22d81b6e11dd249384988f512ca0c3d66298983024ee7be2eb1abba86  .harness/spec/hira-server/modules/apis.md
+d031af216df1d4fc3a327e280d551e324706ba40e38719323cdad4e1ccb22153  .harness/spec/hira-server/modules/auth-rbac-seguridad.md
+f34a0638abb298b94e6ca0f13a8de00981c9c08823adc81fc802be5e258f9c7a  .harness/spec/hira-server/modules/backup-y-portabilidad.md
+73b917e042571073cb27c15c7a01b0fa1295d8869bcde0540b225892a8defea6  .harness/spec/hira-server/modules/dispositivos-protocolos-puntos.md
+4e69e071520edf290f7554a83a3bad771d24b9e5611a217f3f68a6d96d41d47e  .harness/spec/hira-server/modules/modelo-de-datos.md
+7b8ba4dd100965276e7e868b8b48bcc6ec54f6fa2485b553b65d366d1b19635d  .harness/spec/hira-server/modules/motor-logica-y-pruebas.md
+cda8a2cceaedc99d1b8098dc3b8a19648288a5ccd6aad6c8b96ab71fa3484c96  .harness/spec/hira-studio/OPEN-QUESTIONS.md
+642159658491a6fc755c14c99559605d23c9f90e7f2ae92dc52a70f6c538a521  .harness/spec/hira-studio/context.md

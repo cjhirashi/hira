@@ -1,0 +1,121 @@
+openapi: 3.1.0
+info:
+  title: "CT-engineering-session — Sesión de ingeniería remota (Studio ↔ Server)"
+  version: 0.1.0
+  description: >
+    Anclas: CT-engineering-session, SRV-ADR-016, E-ADR-001.
+    Hira Studio (cloud) abre una sesión de ingeniería con lock exclusivo por proyecto
+    contra un Hira Server remoto. Espejo en Redis con TTL de 300s; Studio envía heartbeat
+    cada 60s. Solo una sesión activa por proyecto — un segundo intento recibe 409.
+    Si Studio se desconecta sin cerrar, el TTL expira y el lock se libera solo.
+    Este es el ÚNICO camino por el que Studio modifica un proyecto de un Server.
+    El endpoint lo expone Hira Server; Hira Studio es el cliente.
+servers:
+  - url: https://{server_host}
+    variables:
+      server_host:
+        default: hira-server.local
+paths:
+  /api/v1/engineering/session:
+    get:
+      summary: Estado de la sesión de ingeniería del proyecto activo.
+      operationId: getEngineeringSession
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SessionState" }
+    post:
+      summary: Abre una sesión de ingeniería (lock exclusivo del proyecto).
+      operationId: openEngineeringSession
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [project_id, integrator_user]
+              properties:
+                project_id: { type: string }
+                integrator_user: { type: string }
+                origin_ip: { type: string }
+      responses:
+        "201":
+          description: Sesión abierta.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SessionState" }
+        "403":
+          description: El usuario no tiene rol de integrador en este Server.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "409":
+          description: Ya hay una sesión de ingeniería activa para este proyecto.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SessionConflict" }
+    delete:
+      summary: Cierra la sesión de ingeniería y libera el lock.
+      operationId: closeEngineeringSession
+      parameters:
+        - name: session_id
+          in: query
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "204": { description: Cerrada. }
+        "404":
+          description: No hay sesión con ese id.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+  /api/v1/engineering/session/heartbeat:
+    put:
+      summary: Refresca el TTL del lock (cada 60s).
+      operationId: heartbeatEngineeringSession
+      parameters:
+        - name: session_id
+          in: query
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: TTL refrescado.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SessionState" }
+        "404":
+          description: Sesión expirada o inexistente — Studio debe reabrir.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+components:
+  schemas:
+    SessionState:
+      type: object
+      required: [active, trace_id]
+      properties:
+        active: { type: boolean }
+        session_id: { type: [string, "null"], format: uuid }
+        project_id: { type: [string, "null"] }
+        integrator_user: { type: [string, "null"] }
+        origin_ip: { type: [string, "null"] }
+        opened_at: { type: [string, "null"], format: date-time }
+        expires_at: { type: [string, "null"], format: date-time }
+        trace_id: { type: string }
+    SessionConflict:
+      type: object
+      required: [error, held_by, opened_at, trace_id]
+      properties:
+        error: { type: string, const: engineering_session_active }
+        held_by: { type: string }
+        opened_at: { type: string, format: date-time }
+        trace_id: { type: string }
+    Error:
+      type: object
+      required: [error, trace_id]
+      properties:
+        error: { type: string }
+        trace_id: { type: string }

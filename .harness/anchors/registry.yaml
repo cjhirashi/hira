@@ -1,0 +1,139 @@
+# Registro de anclas — Ecosistema Hira
+# Columna vertebral del harness SDD-Anchored. Convenciones: anchors/SCHEMA.md
+# Sembrado 2026-09-02 desde el corpus de diseño migrado del vault.
+#
+# kind:      adr | requirement | acceptance-criterion | vulnerability | contract | spec-section
+# component: hira-server | hira-hub | hira-studio | ecosystem
+# status:    accepted | superseded | design-only | not-started | in-progress | implemented | verified
+#            (vulnerability: open | mitigated | resolved | accepted-risk)
+
+meta:
+  version: 1
+  seeded: 2026-09-02
+  notes: >
+    Server se reimplementa desde cero: sus AC/VUL entran como design-only hasta que un
+    sprint los toma. Hub y Studio no tienen implementación aún. Los ADRs migrados están
+    accepted salvo los superseded parcialmente por E-ADR-001 (marcados aquí y con banner
+    en el propio ADR).
+
+entries:
+
+  # ─────────────────────────────  ADRs — ECOSISTEMA  ─────────────────────────────
+  - id: E-ADR-001
+    kind: adr
+    component: ecosystem
+    title: "Hira Studio como producto cloud independiente"
+    spec: .harness/adr/ecosystem/E-ADR-001-studio-producto-cloud-independiente.md
+    status: accepted
+    notes: "Supersede parcialmente SRV-ADR-015, SRV-ADR-016, SRV-ADR-017."
+
+  # ─────────────────────────────  ADRs — HIRA SERVER  ─────────────────────────────
+  - { id: SRV-ADR-001, kind: adr, component: hira-server, title: "Despliegue on-premise con conectividad a internet recomendada", spec: .harness/adr/hira-server/SRV-ADR-001-despliegue-on-premise.md, status: accepted }
+  - { id: SRV-ADR-002, kind: adr, component: hira-server, title: "Python como lenguaje único del backend", spec: .harness/adr/hira-server/SRV-ADR-002-python-backend-unico.md, status: accepted }
+  - { id: SRV-ADR-003, kind: adr, component: hira-server, title: "Redis como bus central de datos en tiempo real", spec: .harness/adr/hira-server/SRV-ADR-003-redis-bus-tiempo-real.md, status: accepted }
+  - { id: SRV-ADR-004, kind: adr, component: hira-server, title: "TimescaleDB para series de tiempo", spec: .harness/adr/hira-server/SRV-ADR-004-timescaledb-series-de-tiempo.md, status: accepted }
+  - { id: SRV-ADR-005, kind: adr, component: hira-server, title: "RBAC dinámico, roles no hardcodeados", spec: .harness/adr/hira-server/SRV-ADR-005-rbac-dinamico.md, status: accepted }
+  - { id: SRV-ADR-006, kind: adr, component: hira-server, title: "Módulo IA completamente desacoplado y opcional", spec: .harness/adr/hira-server/SRV-ADR-006-modulo-ia-desacoplado-opcional.md, status: accepted }
+  - { id: SRV-ADR-007, kind: adr, component: hira-server, title: "Motor de Lógica Python con Monaco Editor", spec: .harness/adr/hira-server/SRV-ADR-007-motor-logica-python-monaco.md, status: accepted }
+  - { id: SRV-ADR-008, kind: adr, component: hira-server, title: "React Flow para mimics y editor visual", spec: .harness/adr/hira-server/SRV-ADR-008-react-flow-mimics.md, status: accepted }
+  - { id: SRV-ADR-009, kind: adr, component: hira-server, title: "Dos capas de ejecución Python con prioridad y bloqueo de puntos", spec: .harness/adr/hira-server/SRV-ADR-009-dos-capas-ejecucion-python.md, status: accepted }
+  - { id: SRV-ADR-010, kind: adr, component: hira-server, title: "Auto-documentación desde código y configuración", spec: .harness/adr/hira-server/SRV-ADR-010-auto-documentacion.md, status: accepted }
+  - { id: SRV-ADR-011, kind: adr, component: hira-server, title: "Módulo de Documentación como base de conocimiento RAG", spec: .harness/adr/hira-server/SRV-ADR-011-documentacion-base-rag.md, status: accepted }
+  - { id: SRV-ADR-012, kind: adr, component: hira-server, title: "Escaneo automático de dispositivos y asociación explícita de puntos", spec: .harness/adr/hira-server/SRV-ADR-012-escaneo-asociacion-explicita-puntos.md, status: accepted }
+  - { id: SRV-ADR-013, kind: adr, component: hira-server, title: "Dos instancias de Agente IA independientes por stakeholder", spec: .harness/adr/hira-server/SRV-ADR-013-dos-agentes-ia-por-stakeholder.md, status: accepted }
+  - { id: SRV-ADR-014, kind: adr, component: hira-server, title: "Simuladores como ciudadanos de primera clase", spec: .harness/adr/hira-server/SRV-ADR-014-simuladores-primera-clase.md, status: accepted }
+  - { id: SRV-ADR-015, kind: adr, component: hira-server, title: "Un solo producto Hira Server/Studio", spec: .harness/adr/hira-server/SRV-ADR-015-un-solo-producto-server-studio.md, status: accepted, superseded_by: E-ADR-001, notes: "Parcial: vigente que los proyectos viven en Server; no vigente el instalable único." }
+  - { id: SRV-ADR-016, kind: adr, component: hira-server, title: "Sesión de ingeniería remota de Studio a Server", spec: .harness/adr/hira-server/SRV-ADR-016-sesion-ingenieria-remota.md, status: accepted, superseded_by: E-ADR-001, notes: "Parcial: mecanismo íntegro, promovido a CT-engineering-session; pasa a ser el único modo de Studio." }
+  - { id: SRV-ADR-017, kind: adr, component: hira-server, title: "Arquitectura Hexagonal para el backend", spec: .harness/adr/hira-server/SRV-ADR-017-arquitectura-hexagonal.md, status: accepted, superseded_by: E-ADR-001, notes: "Parcial: hexagonal se mantiene; se retira el perfil studio/SQLite." }
+  - { id: SRV-ADR-018, kind: adr, component: hira-server, title: "Licenciamiento por puntos en línea", spec: .harness/adr/hira-server/SRV-ADR-018-licenciamiento-puntos-en-linea.md, status: accepted }
+  - { id: SRV-ADR-019, kind: adr, component: hira-server, title: "Puntos como variables unificadas multi-protocolo", spec: .harness/adr/hira-server/SRV-ADR-019-puntos-variables-unificadas.md, status: accepted }
+  - { id: SRV-ADR-020, kind: adr, component: hira-server, title: "Multi-proyecto exclusivo de licencia de integrador", spec: .harness/adr/hira-server/SRV-ADR-020-multiproyecto-licencia-integrador.md, status: accepted, notes: "A revisar bajo E-ADR-001 / OPEN-QUESTIONS SQ-6." }
+  - { id: SRV-ADR-021, kind: adr, component: hira-server, title: "Modelo IA interno embebido con Ollama como fallback", spec: .harness/adr/hira-server/SRV-ADR-021-modelo-ia-interno-ollama.md, status: accepted }
+  - { id: SRV-ADR-UI-01, kind: adr, component: hira-server, title: "Material Design 3 con soporte Light/Dark/Sistema", spec: .harness/adr/hira-server/SRV-ADR-UI-01-material-design-3.md, status: accepted }
+  - { id: SRV-ADR-UI-02, kind: adr, component: hira-server, title: "Sidebar oculta módulos sin acceso", spec: .harness/adr/hira-server/SRV-ADR-UI-02-sidebar-oculta-modulos.md, status: accepted }
+  - { id: SRV-ADR-UI-03, kind: adr, component: hira-server, title: "Datos en tiempo real sin polling", spec: .harness/adr/hira-server/SRV-ADR-UI-03-tiempo-real-sin-polling.md, status: accepted }
+  - { id: SRV-ADR-UI-04, kind: adr, component: hira-server, title: "Monaco Editor para scripts Python", spec: .harness/adr/hira-server/SRV-ADR-UI-04-monaco-editor.md, status: accepted }
+
+  # ─────────────────────────────  ADRs — HIRA HUB  ─────────────────────────────
+  - { id: HUB-ADR-01, kind: adr, component: hira-hub, title: "Mismo stack que Hira Server", spec: .harness/adr/hira-hub/HUB-ADR-01-mismo-stack-que-server.md, status: accepted }
+  - { id: HUB-ADR-02, kind: adr, component: hira-hub, title: "License keys opacas validadas contra hash", spec: .harness/adr/hira-hub/HUB-ADR-02-license-keys-opacas-hash.md, status: accepted }
+  - { id: HUB-ADR-03, kind: adr, component: hira-hub, title: "Grace period de 72h para Servers sin conexión a Hub", spec: .harness/adr/hira-hub/HUB-ADR-03-grace-period-72h.md, status: accepted }
+  - { id: HUB-ADR-04, kind: adr, component: hira-hub, title: "Crash reports opt-in con datos sanitizados", spec: .harness/adr/hira-hub/HUB-ADR-04-crash-reports-opt-in-sanitizados.md, status: accepted }
+  - { id: HUB-ADR-05, kind: adr, component: hira-hub, title: "Arquitectura directa (no Hexagonal)", spec: .harness/adr/hira-hub/HUB-ADR-05-arquitectura-directa.md, status: accepted }
+
+  # ─────────────────────────────  CONTRATOS  ─────────────────────────────
+  - { id: CT-license, kind: contract, component: ecosystem, title: "Validación y activación de licencias (Server/Studio → Hub)", spec: .harness/contracts/license.openapi.yaml, status: design-only, requires: [HUB-ADR-02, HUB-ADR-03, SRV-ADR-018] }
+  - { id: CT-crash-report, kind: contract, component: ecosystem, title: "Envío de crash reports (Server/Studio → Hub)", spec: .harness/contracts/crash-report.openapi.yaml, status: design-only, requires: [HUB-ADR-04, VUL-SRV-012] }
+  - { id: CT-updates, kind: contract, component: ecosystem, title: "Consulta de versión más reciente (Server/Studio → Hub)", spec: .harness/contracts/updates.openapi.yaml, status: design-only }
+  - { id: CT-engineering-session, kind: contract, component: ecosystem, title: "Sesión de ingeniería remota (Studio ↔ Server)", spec: .harness/contracts/engineering-session.openapi.yaml, status: design-only, requires: [SRV-ADR-016, E-ADR-001] }
+  - { id: CT-marketplace, kind: contract, component: ecosystem, title: "Catálogo de bloques y plantillas (placeholder v0.3)", spec: .harness/contracts/marketplace.openapi.yaml, status: design-only, requires: [VUL-SRV-015] }
+
+  # ─────────────────────────  CRITERIOS DE ACEPTACIÓN — SERVER  ─────────────────────────
+  # Grupos. Los subítems (AC-SRV-03.2, etc.) se registran cuando un sprint los toma.
+  - { id: AC-SRV-01, kind: acceptance-criterion, component: hira-server, title: "Infraestructura y arranque", spec: .harness/spec/hira-server/validation/acceptance-criteria.md, status: design-only }
+  - { id: AC-SRV-02, kind: acceptance-criterion, component: hira-server, title: "Autenticación y RBAC", spec: .harness/spec/hira-server/validation/acceptance-criteria.md, status: design-only, requires: [SRV-ADR-005, SRV-ADR-020] }
+  - { id: AC-SRV-03, kind: acceptance-criterion, component: hira-server, title: "BACnet", spec: .harness/spec/hira-server/validation/acceptance-criteria.md, status: design-only, requires: [SRV-ADR-012, SRV-ADR-019] }
+  - { id: AC-SRV-04, kind: acceptance-criterion, component: hira-server, title: "MQTT", spec: .harness/spec/hira-server/validation/acceptance-criteria.md, status: design-only, requires: [VUL-SRV-001] }
+  - { id: AC-SRV-05, kind: acceptance-criterion, component: hira-server, title: "Simuladores", spec: .harness/spec/hira-server/validation/acceptance-criteria.md, status: design-only, requires: [SRV-ADR-014] }
+  - { id: AC-SRV-06, kind: acceptance-criterion, component: hira-server, title: "Dashboard y tiempo real", spec: .harness/spec/hira-server/validation/acceptance-criteria.md, status: design-only, requires: [SRV-ADR-UI-03] }
+  - { id: AC-SRV-07, kind: acceptance-criterion, component: hira-server, title: "Motor de Alarmas", spec: .harness/spec/hira-server/validation/acceptance-criteria.md, status: design-only }
+  - { id: AC-SRV-08, kind: acceptance-criterion, component: hira-server, title: "Históricos", spec: .harness/spec/hira-server/validation/acceptance-criteria.md, status: design-only, requires: [SRV-ADR-004] }
+  - { id: AC-SRV-09, kind: acceptance-criterion, component: hira-server, title: "Motor de Lógica", spec: .harness/spec/hira-server/validation/acceptance-criteria.md, status: design-only, requires: [SRV-ADR-007, SRV-ADR-009] }
+  - { id: AC-SRV-10, kind: acceptance-criterion, component: hira-server, title: "Agentes IA", spec: .harness/spec/hira-server/validation/acceptance-criteria.md, status: design-only, requires: [SRV-ADR-013, SRV-ADR-021] }
+  - { id: AC-SRV-11, kind: acceptance-criterion, component: hira-server, title: "Backup y portabilidad (.hira)", spec: .harness/spec/hira-server/validation/acceptance-criteria.md, status: design-only }
+  - { id: AC-SRV-12, kind: acceptance-criterion, component: hira-server, title: "Seguridad y licenciamiento", spec: .harness/spec/hira-server/validation/acceptance-criteria.md, status: design-only, requires: [SRV-ADR-018, SRV-ADR-020] }
+
+  # ─────────────────────────  CRITERIOS DE ACEPTACIÓN — HUB  ─────────────────────────
+  - { id: AC-HUB-H0, kind: acceptance-criterion, component: hira-hub, title: "Walking Skeleton — /health con postgres y redis", spec: .harness/spec/hira-hub/validation.md, status: design-only }
+  - { id: AC-HUB-H1, kind: acceptance-criterion, component: hira-hub, title: "Gestión de Licencias — emitir/activar/validar/revocar", spec: .harness/spec/hira-hub/validation.md, status: design-only, requires: [HUB-ADR-02, CT-license] }
+  - { id: AC-HUB-H2, kind: acceptance-criterion, component: hira-hub, title: "Crash Reports y Versiones", spec: .harness/spec/hira-hub/validation.md, status: design-only, requires: [HUB-ADR-04, CT-crash-report, CT-updates] }
+  - { id: AC-HUB-H3, kind: acceptance-criterion, component: hira-hub, title: "Operación y Resiliencia — backup, restart, uptime", spec: .harness/spec/hira-hub/validation.md, status: design-only, requires: [VUL-HUB-05] }
+
+  # ─────────────────────────────  VULNERABILIDADES — SERVER  ─────────────────────────────
+  - { id: VUL-SRV-001, kind: vulnerability, component: hira-server, title: "Mosquitto sin autenticación", spec: .harness/spec/hira-server/validation/vulnerabilities.md, status: mitigated, notes: "Crítico. mosquitto.conf allow_anonymous false + password_file." }
+  - { id: VUL-SRV-002, kind: vulnerability, component: hira-server, title: "Import de .hira ejecuta SQL crudo", spec: .harness/spec/hira-server/validation/vulnerabilities.md, status: mitigated, notes: "Crítico. Formato JSON por ORM, nunca SQL dump." }
+  - { id: VUL-SRV-003, kind: vulnerability, component: hira-server, title: "Sin rate limiting en API ni WebSocket", spec: .harness/spec/hira-server/validation/vulnerabilities.md, status: mitigated, notes: "Crítico. Nginx limit_req_zone / limit_conn_zone." }
+  - { id: VUL-SRV-004, kind: vulnerability, component: hira-server, title: "RBAC con query a BD en cada request", spec: .harness/spec/hira-server/validation/vulnerabilities.md, status: mitigated, notes: "Crítico. Permisos en Redis, invalidación al cambiar rol." }
+  - { id: VUL-SRV-005, kind: vulnerability, component: hira-server, title: "BAC0 sin lock en escrituras concurrentes", spec: .harness/spec/hira-server/validation/vulnerabilities.md, status: open, notes: "Alto. asyncio.Lock por dispositivo en el adaptador BACnet." }
+  - { id: VUL-SRV-006, kind: vulnerability, component: hira-server, title: "Sin invalidación inmediata de sesión JWT comprometida", spec: .harness/spec/hira-server/validation/vulnerabilities.md, status: accepted-risk, notes: "Medio. Ventana de 15 min aceptada; blacklist de JTIs a futuro." }
+  - { id: VUL-SRV-007, kind: vulnerability, component: hira-server, title: "Celery Beat como SPOF del scheduler", spec: .harness/spec/hira-server/validation/vulnerabilities.md, status: accepted-risk, notes: "Medio. Mitigado por restart policy + evaluación dual de alarmas; RedBeat a futuro." }
+  - { id: VUL-SRV-008, kind: vulnerability, component: hira-server, title: "Contexto del Agente IA se satura en proyectos grandes", spec: .harness/spec/hira-server/validation/vulnerabilities.md, status: open, notes: "Medio. Extender RAG al Agente del Integrador." }
+  - { id: VUL-SRV-009, kind: vulnerability, component: hira-server, title: "Sin estrategia de compatibilidad de versiones del .hira", spec: .harness/spec/hira-server/validation/vulnerabilities.md, status: open, notes: "Medio. Política de versión mayor/menor + migración por versión." }
+  - { id: VUL-SRV-010, kind: vulnerability, component: hira-server, title: "BACnet MSTP requiere puerto serial del host", spec: .harness/spec/hira-server/validation/vulnerabilities.md, status: open, notes: "Alto. Config opcional de puerto serial en Docker Compose." }
+  - { id: VUL-SRV-011, kind: vulnerability, component: hira-server, title: "Simuladores con flag booleano: riesgo de confusión", spec: .harness/spec/hira-server/validation/vulnerabilities.md, status: open, notes: "Bajo. Columna device_class (real|simulator) + confirmación explícita." }
+  - { id: VUL-SRV-012, kind: vulnerability, component: hira-server, title: "Crash Reporter puede filtrar datos del proyecto en stack traces", spec: .harness/spec/hira-server/validation/vulnerabilities.md, status: open, requires: [HUB-ADR-04], notes: "Alto. Sanitizador antes de enviar + test unitario." }
+  - { id: VUL-SRV-013, kind: vulnerability, component: hira-server, title: "Webhook del integrador sin validación de SSL del destino", spec: .harness/spec/hira-server/validation/vulnerabilities.md, status: open, notes: "Medio. Exigir HTTPS, verificar cert, firmar payload con HMAC." }
+  - { id: VUL-SRV-014, kind: vulnerability, component: hira-server, title: "Límite de puntos en línea integrador vs comercial", spec: .harness/spec/hira-server/validation/vulnerabilities.md, status: resolved, requires: [SRV-ADR-018], notes: "Alto. Resuelto por rediseño (SRV-ADR-018)." }
+  - { id: VUL-SRV-015, kind: vulnerability, component: hira-server, title: "Formato de plantilla .hirat no definido antes del marketplace", spec: .harness/spec/hira-server/validation/vulnerabilities.md, status: open, requires: [CT-marketplace], notes: "Medio. Definir esquema .hirat como extensión de .hira." }
+
+  # ─────────────────────────────  VULNERABILIDADES — HUB  ─────────────────────────────
+  - { id: VUL-HUB-01, kind: vulnerability, component: hira-hub, title: "License keys nunca deben almacenarse ni loguearse en claro", spec: .harness/spec/hira-hub/validation/vulnerabilities.md, status: mitigated, requires: [HUB-ADR-02], notes: "Crítico." }
+  - { id: VUL-HUB-02, kind: vulnerability, component: hira-hub, title: "Endpoint de validación vulnerable a enumeración de keys", spec: .harness/spec/hira-hub/validation/vulnerabilities.md, status: mitigated, notes: "Alto. Rate limiting + respuesta constante." }
+  - { id: VUL-HUB-03, kind: vulnerability, component: hira-hub, title: "Panel Admin accesible sin autenticación en arranque inicial", spec: .harness/spec/hira-hub/validation/vulnerabilities.md, status: open, notes: "Crítico. Hub no arranca sin ADMIN_PASSWORD_HASH." }
+  - { id: VUL-HUB-04, kind: vulnerability, component: hira-hub, title: "Crash reports pueden contener datos sensibles del cliente", spec: .harness/spec/hira-hub/validation/vulnerabilities.md, status: mitigated, requires: [HUB-ADR-04], notes: "Alto." }
+  - { id: VUL-HUB-05, kind: vulnerability, component: hira-hub, title: "BD de Hub sin backup probado equivale a sin backup", spec: .harness/spec/hira-hub/validation/vulnerabilities.md, status: open, notes: "Crítico. Backup diario + restore probado." }
+  - { id: VUL-HUB-06, kind: vulnerability, component: hira-hub, title: "JWT del Panel Admin sin expiración corta", spec: .harness/spec/hira-hub/validation/vulnerabilities.md, status: open, notes: "Medio." }
+
+  # ─────────────────────────────  SECCIONES DE SPEC (checksum gate)  ─────────────────────────────
+  - { id: SPEC-ECO-vision, kind: spec-section, component: ecosystem, title: "Visión del ecosistema", spec: .harness/spec/ecosystem/vision.md, status: accepted }
+  - { id: SPEC-ECO-architecture, kind: spec-section, component: ecosystem, title: "Arquitectura del ecosistema (C4 L1)", spec: .harness/spec/ecosystem/ecosystem-architecture.md, status: accepted }
+  - { id: SPEC-ECO-business, kind: spec-section, component: ecosystem, title: "Modelo de negocio", spec: .harness/spec/ecosystem/business-model.md, status: accepted }
+  - { id: SPEC-ECO-stakeholders, kind: spec-section, component: ecosystem, title: "Stakeholders", spec: .harness/spec/ecosystem/stakeholders.md, status: accepted }
+  - { id: SPEC-SRV-architecture, kind: spec-section, component: hira-server, title: "Arquitectura general de Hira Server", spec: .harness/spec/hira-server/architecture/general.md, status: accepted }
+  - { id: SPEC-SRV-data-model, kind: spec-section, component: hira-server, title: "Modelo de datos", spec: .harness/spec/hira-server/modules/modelo-de-datos.md, status: accepted }
+  - { id: SPEC-SRV-api, kind: spec-section, component: hira-server, title: "Especificación de APIs internas", spec: .harness/spec/hira-server/modules/apis.md, status: accepted }
+  - { id: SPEC-SRV-auth, kind: spec-section, component: hira-server, title: "Autenticación, RBAC y Seguridad", spec: .harness/spec/hira-server/modules/auth-rbac-seguridad.md, status: accepted }
+  - { id: SPEC-SRV-devices-points, kind: spec-section, component: hira-server, title: "Dispositivos, Protocolos y Asociación de Puntos", spec: .harness/spec/hira-server/modules/dispositivos-protocolos-puntos.md, status: accepted }
+  - { id: SPEC-SRV-alarms-history, kind: spec-section, component: hira-server, title: "Alarmas e Históricos", spec: .harness/spec/hira-server/modules/alarmas-historicos.md, status: accepted }
+  - { id: SPEC-SRV-logic-tests, kind: spec-section, component: hira-server, title: "Motor de Lógica y Motor de Pruebas", spec: .harness/spec/hira-server/modules/motor-logica-y-pruebas.md, status: accepted }
+  - { id: SPEC-SRV-ai, kind: spec-section, component: hira-server, title: "Agente IA", spec: .harness/spec/hira-server/modules/agente-ia.md, status: accepted }
+  - { id: SPEC-SRV-backup, kind: spec-section, component: hira-server, title: "Backup y Portabilidad (.hira)", spec: .harness/spec/hira-server/modules/backup-y-portabilidad.md, status: accepted }
+  - { id: SPEC-SRV-repo-structure, kind: spec-section, component: hira-server, title: "Estructura de repositorio", spec: .harness/spec/hira-server/implementation-guide/estructura-de-repositorio.md, status: accepted }
+  - { id: SPEC-HUB-conceptual, kind: spec-section, component: hira-hub, title: "Diseño conceptual de Hub", spec: .harness/spec/hira-hub/conceptual-design.md, status: accepted }
+  - { id: SPEC-HUB-detailed, kind: spec-section, component: hira-hub, title: "Diseño detallado de Hub", spec: .harness/spec/hira-hub/detailed-design.md, status: accepted }
+  - { id: SPEC-STU-context, kind: spec-section, component: hira-studio, title: "Contexto de Hira Studio", spec: .harness/spec/hira-studio/context.md, status: design-only }
+  - { id: SPEC-STU-open-questions, kind: spec-section, component: hira-studio, title: "Preguntas abiertas de diseño de Studio", spec: .harness/spec/hira-studio/OPEN-QUESTIONS.md, status: design-only }
+
+  # ─────────────────────────────  DEUDAS QUE SIGUEN VIGENTES (de la implementación previa)  ─────────────
+  - { id: REQ-SRV-candidatos, kind: requirement, component: hira-server, title: "Modelo de puntos candidatos + asociación explícita (ex DA-003)", spec: .harness/spec/hira-server/modules/modelo-de-datos.md, status: not-started, requires: [SRV-ADR-012, SRV-ADR-019] }
+  - { id: REQ-SRV-licencia-online, kind: requirement, component: hira-server, title: "Tope de puntos en línea + multi-proyecto en código (ex DA-004)", spec: .harness/spec/hira-server/modules/modelo-de-datos.md, status: not-started, requires: [SRV-ADR-018, SRV-ADR-020] }

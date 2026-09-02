@@ -1,0 +1,69 @@
+openapi: 3.1.0
+info:
+  title: "CT-crash-report — Envío de crash reports (Server/Studio → Hub)"
+  version: 0.1.0
+  description: >
+    Anclas: CT-crash-report, HUB-ADR-04, VUL-SRV-012.
+    Opt-in (CRASH_REPORTER_ENABLED=false por defecto). El cliente sanitiza el stack trace
+    ANTES de enviarlo: nunca IPs, nombres de dispositivo, valores de punto ni datos de
+    usuario. Hub agrupa por stack_trace_hash y puede rechazar/sanitizar reports con
+    patrones sensibles.
+servers:
+  - url: https://hub.hira.cjhirashi.com
+paths:
+  /api/crash-reports:
+    post:
+      summary: Recibe un crash report sanitizado.
+      operationId: submitCrashReport
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CrashReport" }
+      responses:
+        "201":
+          description: Recibido (agrupado por hash si es duplicado).
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [received, trace_id]
+                properties:
+                  received: { type: boolean, const: true }
+                  stack_trace_hash: { type: string }
+                  occurrence_count: { type: integer }
+                  trace_id: { type: string }
+        "422":
+          description: Report rechazado por contener patrones potencialmente sensibles.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [error, trace_id]
+                properties:
+                  error: { type: string, const: sensitive_data_detected }
+                  trace_id: { type: string }
+components:
+  schemas:
+    CrashReport:
+      type: object
+      required: [product, version, module, stack_trace]
+      properties:
+        product:
+          type: string
+          enum: [server, studio]
+        version:
+          type: string
+          example: "0.1.0"
+        module:
+          type: string
+          example: workers.polling_worker
+        stack_trace:
+          type: string
+          description: Stack trace ya sanitizado por el cliente (VUL-SRV-012).
+        license_key_prefix:
+          type: string
+          pattern: '^HIRA-[A-Z0-9]{4}$'
+        occurred_at:
+          type: string
+          format: date-time

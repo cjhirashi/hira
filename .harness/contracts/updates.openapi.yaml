@@ -1,0 +1,47 @@
+openapi: 3.1.0
+info:
+  title: "CT-updates — Consulta de versión más reciente (Server/Studio → Hub)"
+  version: 0.1.0
+  description: >
+    Anclas: CT-updates, spec/hira-hub/conceptual-design.md.
+    El cliente consulta periódicamente si hay una versión más nueva. La decisión de
+    actualizar es del integrador — Hub solo informa.
+servers:
+  - url: https://hub.hira.cjhirashi.com
+paths:
+  /api/updates/latest:
+    get:
+      summary: Última versión publicada para un producto.
+      operationId: getLatestVersion
+      parameters:
+        - name: product
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [server, studio]
+        - name: current_version
+          in: query
+          required: false
+          schema: { type: string, example: "0.1.0" }
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [product, latest_version, current_is_latest, trace_id]
+                properties:
+                  product:
+                    type: string
+                    enum: [server, studio]
+                  latest_version: { type: string, example: "0.1.2" }
+                  current_is_latest:
+                    type: boolean
+                    description: Presente solo si se envió current_version.
+                  release_notes: { type: string }
+                  docker_image_tag:
+                    type: string
+                    example: "ghcr.io/cjhirashi/hira-server:0.1.2"
+                  trace_id: { type: string }

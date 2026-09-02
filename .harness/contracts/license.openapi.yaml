@@ -1,0 +1,114 @@
+openapi: 3.1.0
+info:
+  title: "CT-license — Validación y activación de licencias (Server/Studio → Hub)"
+  version: 0.1.0
+  description: >
+    Contrato entre Hira Server / Hira Studio (clientes) y Hira Hub (servidor).
+    Anclas: CT-license, HUB-ADR-02, HUB-ADR-03, SRV-ADR-018, E-ADR-001.
+    La license key nunca viaja ni se almacena en claro fuera de este request (HUB-ADR-02).
+servers:
+  - url: https://hub.hira.cjhirashi.com
+tags:
+  - name: licenses
+paths:
+  /api/licenses/activate:
+    post:
+      tags: [licenses]
+      summary: Primera activación de una license key en una instalación.
+      operationId: activateLicense
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LicenseRequest" }
+      responses:
+        "201":
+          description: Activada.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LicenseValidResponse" }
+        "403":
+          description: Key inválida o revocada.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LicenseInvalidResponse" }
+        "409":
+          description: Se alcanzó max_activations para esta key.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+  /api/licenses/validate:
+    post:
+      tags: [licenses]
+      summary: Validación periódica de una licencia ya activada.
+      operationId: validateLicense
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LicenseRequest" }
+      responses:
+        "200":
+          description: Válida. El cliente almacena el timestamp para el grace period de 72h (HUB-ADR-03).
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LicenseValidResponse" }
+        "403":
+          description: Inválida, revocada o expirada.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LicenseInvalidResponse" }
+components:
+  schemas:
+    Product:
+      type: string
+      enum: [server, studio]
+    LicenseRequest:
+      type: object
+      required: [key, hardware_fingerprint, product, version]
+      properties:
+        key:
+          type: string
+          pattern: '^HIRA-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$'
+        hardware_fingerprint:
+          type: string
+          description: Hash del hardware de la instalación.
+        product: { $ref: "#/components/schemas/Product" }
+        version:
+          type: string
+          example: "0.1.0"
+    LicenseValidResponse:
+      type: object
+      required: [valid, tier, features, trace_id]
+      properties:
+        valid: { type: boolean, const: true }
+        expires_at:
+          type: [string, "null"]
+          format: date-time
+          description: null = licencia perpetua.
+        tier:
+          type: string
+          enum: [starter, professional, enterprise, integrator]
+        max_points:
+          type: integer
+          description: Tope de puntos en línea simultáneos (SRV-ADR-018).
+        features:
+          type: array
+          items: { type: string }
+          example: [scada, logic, ai]
+        trace_id: { type: string }
+    LicenseInvalidResponse:
+      type: object
+      required: [valid, reason, trace_id]
+      properties:
+        valid: { type: boolean, const: false }
+        reason:
+          type: string
+          enum: [key_not_found, key_revoked, key_expired, hardware_mismatch]
+        trace_id: { type: string }
+    ErrorResponse:
+      type: object
+      required: [error, trace_id]
+      properties:
+        error: { type: string }
+        trace_id: { type: string }
