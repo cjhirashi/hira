@@ -47,7 +47,7 @@ entries:
   - { id: SRV-ADR-017, kind: adr, component: hira-server, title: "Arquitectura Hexagonal para el backend", spec: .harness/adr/hira-server/SRV-ADR-017-arquitectura-hexagonal.md, status: accepted, superseded_by: E-ADR-001, notes: "Parcial: hexagonal se mantiene; se retira el perfil studio/SQLite." }
   - { id: SRV-ADR-018, kind: adr, component: hira-server, title: "Licenciamiento por puntos en línea", spec: .harness/adr/hira-server/SRV-ADR-018-licenciamiento-puntos-en-linea.md, status: accepted }
   - { id: SRV-ADR-019, kind: adr, component: hira-server, title: "Puntos como variables unificadas multi-protocolo", spec: .harness/adr/hira-server/SRV-ADR-019-puntos-variables-unificadas.md, status: accepted }
-  - { id: SRV-ADR-020, kind: adr, component: hira-server, title: "Multi-proyecto exclusivo de licencia de integrador", spec: .harness/adr/hira-server/SRV-ADR-020-multiproyecto-licencia-integrador.md, status: accepted, notes: "A revisar bajo E-ADR-001 / OPEN-QUESTIONS SQ-6." }
+  - { id: SRV-ADR-020, kind: adr, component: hira-server, title: "Multi-proyecto exclusivo de licencia de integrador", spec: .harness/adr/hira-server/SRV-ADR-020-multiproyecto-licencia-integrador.md, status: accepted, superseded_by: STU-ADR-004, notes: "Parcial: multi-proyecto sigue siendo capacidad del Server exclusiva de licencia de integrador; cambia el encuadre — ya no hay instalación local del integrador con SQLite, sino borradores en Studio + Servers emparejados. Ver STU-ADR-004." }
   - { id: SRV-ADR-021, kind: adr, component: hira-server, title: "Modelo IA interno embebido con Ollama como fallback", spec: .harness/adr/hira-server/SRV-ADR-021-modelo-ia-interno-ollama.md, status: accepted }
   - { id: SRV-ADR-UI-01, kind: adr, component: hira-server, title: "Material Design 3 con soporte Light/Dark/Sistema", spec: .harness/adr/hira-server/SRV-ADR-UI-01-material-design-3.md, status: accepted }
   - { id: SRV-ADR-UI-02, kind: adr, component: hira-server, title: "Sidebar oculta módulos sin acceso", spec: .harness/adr/hira-server/SRV-ADR-UI-02-sidebar-oculta-modulos.md, status: accepted }
@@ -60,6 +60,13 @@ entries:
   - { id: HUB-ADR-03, kind: adr, component: hira-hub, title: "Grace period de 72h para Servers sin conexión a Hub", spec: .harness/adr/hira-hub/HUB-ADR-03-grace-period-72h.md, status: accepted }
   - { id: HUB-ADR-04, kind: adr, component: hira-hub, title: "Crash reports opt-in con datos sanitizados", spec: .harness/adr/hira-hub/HUB-ADR-04-crash-reports-opt-in-sanitizados.md, status: accepted }
   - { id: HUB-ADR-05, kind: adr, component: hira-hub, title: "Arquitectura directa (no Hexagonal)", spec: .harness/adr/hira-hub/HUB-ADR-05-arquitectura-directa.md, status: accepted }
+
+  # ─────────────────────────────  ADRs — HIRA STUDIO  ─────────────────────────────
+  - { id: STU-ADR-001, kind: adr, component: hira-studio, title: "Studio cloud multi-tenant: SPA + BFF con BD, arquitectura directa", spec: .harness/adr/hira-studio/STU-ADR-001-cloud-multitenant-spa-bff.md, status: accepted, requires: [E-ADR-001] }
+  - { id: STU-ADR-002, kind: adr, component: hira-studio, title: "Identidad del integrador y licenciamiento gestionado en Hub", spec: .harness/adr/hira-studio/STU-ADR-002-identidad-y-licencia.md, status: accepted, requires: [E-ADR-001, CT-license] }
+  - { id: STU-ADR-003, kind: adr, component: hira-studio, title: "Emparejamiento Studio ↔ Server por token", spec: .harness/adr/hira-studio/STU-ADR-003-emparejamiento-studio-server.md, status: accepted, requires: [CT-engineering-session] }
+  - { id: STU-ADR-004, kind: adr, component: hira-studio, title: "Diseño y pruebas offline con simuladores; publicación del proyecto al Server", spec: .harness/adr/hira-studio/STU-ADR-004-diseno-offline-publicacion-al-server.md, status: accepted, requires: [SRV-ADR-012, SRV-ADR-014, SRV-ADR-019, CT-engineering-session] }
+  - { id: STU-ADR-005, kind: adr, component: hira-studio, title: "Agente del Integrador en el BFF de Studio", spec: .harness/adr/hira-studio/STU-ADR-005-agente-integrador-en-studio.md, status: accepted, requires: [SRV-ADR-013, SRV-ADR-021] }
 
   # ─────────────────────────────  CONTRATOS  ─────────────────────────────
   - { id: CT-license, kind: contract, component: ecosystem, title: "Validación y activación de licencias (Server/Studio → Hub)", spec: .harness/contracts/license.openapi.yaml, status: design-only, requires: [HUB-ADR-02, HUB-ADR-03, SRV-ADR-018] }
@@ -131,9 +138,24 @@ entries:
   - { id: SPEC-SRV-repo-structure, kind: spec-section, component: hira-server, title: "Estructura de repositorio", spec: .harness/spec/hira-server/implementation-guide/estructura-de-repositorio.md, status: accepted }
   - { id: SPEC-HUB-conceptual, kind: spec-section, component: hira-hub, title: "Diseño conceptual de Hub", spec: .harness/spec/hira-hub/conceptual-design.md, status: accepted }
   - { id: SPEC-HUB-detailed, kind: spec-section, component: hira-hub, title: "Diseño detallado de Hub", spec: .harness/spec/hira-hub/detailed-design.md, status: accepted }
-  - { id: SPEC-STU-context, kind: spec-section, component: hira-studio, title: "Contexto de Hira Studio", spec: .harness/spec/hira-studio/context.md, status: design-only }
-  - { id: SPEC-STU-open-questions, kind: spec-section, component: hira-studio, title: "Preguntas abiertas de diseño de Studio", spec: .harness/spec/hira-studio/OPEN-QUESTIONS.md, status: design-only }
+  - { id: SPEC-STU-context, kind: spec-section, component: hira-studio, title: "Contexto de Hira Studio", spec: .harness/spec/hira-studio/context.md, status: accepted }
+  - { id: SPEC-STU-architecture, kind: spec-section, component: hira-studio, title: "Arquitectura de Hira Studio", spec: .harness/spec/hira-studio/architecture.md, status: accepted }
+  - { id: SPEC-STU-open-questions, kind: spec-section, component: hira-studio, title: "Preguntas de diseño de Studio (resueltas)", spec: .harness/spec/hira-studio/OPEN-QUESTIONS.md, status: accepted }
+  - { id: SPEC-STU-inherited, kind: spec-section, component: hira-studio, title: "Diseño heredado de Hira Server", spec: .harness/spec/hira-studio/inherited-from-server.md, status: accepted }
 
   # ─────────────────────────────  DEUDAS QUE SIGUEN VIGENTES (de la implementación previa)  ─────────────
   - { id: REQ-SRV-candidatos, kind: requirement, component: hira-server, title: "Modelo de puntos candidatos + asociación explícita (ex DA-003)", spec: .harness/spec/hira-server/modules/modelo-de-datos.md, status: not-started, requires: [SRV-ADR-012, SRV-ADR-019] }
   - { id: REQ-SRV-licencia-online, kind: requirement, component: hira-server, title: "Tope de puntos en línea + multi-proyecto en código (ex DA-004)", spec: .harness/spec/hira-server/modules/modelo-de-datos.md, status: not-started, requires: [SRV-ADR-018, SRV-ADR-020] }
+
+  # ─────────────────────────────  REQUISITOS DE STUDIO / CONTRATO  ─────────────────────────────
+  - { id: REQ-SRV-studio-pairing, kind: requirement, component: hira-server, title: "Server: emparejamiento de Studios (tabla studio_pairings + endpoint /engineering/pair + UI panel)", spec: .harness/adr/hira-studio/STU-ADR-003-emparejamiento-studio-server.md, status: not-started, requires: [STU-ADR-003, CT-engineering-session] }
+  - { id: REQ-SRV-project-publish, kind: requirement, component: hira-server, title: "Server: recepción de publicación de proyecto desde Studio por la sesión de ingeniería (reutiliza import .hira)", spec: .harness/adr/hira-studio/STU-ADR-004-diseno-offline-publicacion-al-server.md, status: not-started, requires: [STU-ADR-004, CT-engineering-session] }
+  - { id: REQ-CT-engsession-v2, kind: requirement, component: ecosystem, title: "Ampliar CT-engineering-session: /engineering/pair, credencial de emparejamiento, publish de proyecto, endpoints de consulta para tools del Agente del Integrador", spec: .harness/contracts/engineering-session.openapi.yaml, status: not-started, requires: [STU-ADR-003, STU-ADR-004, STU-ADR-005] }
+
+  # ─────────────────────────────  CRITERIOS DE ACEPTACIÓN — STUDIO (grupos, por detallar)  ─────────────
+  - { id: AC-STU-01, kind: acceptance-criterion, component: hira-studio, title: "Cuenta de integrador + vínculo de licencia de Hub + degradación a solo lectura", spec: .harness/adr/hira-studio/STU-ADR-002-identidad-y-licencia.md, status: design-only, requires: [STU-ADR-002, CT-license] }
+  - { id: AC-STU-02, kind: acceptance-criterion, component: hira-studio, title: "Aislamiento multi-tenant: ningún dato cruza entre integrator_id", spec: .harness/spec/hira-studio/architecture.md, status: design-only, requires: [STU-ADR-001] }
+  - { id: AC-STU-03, kind: acceptance-criterion, component: hira-studio, title: "Emparejamiento con un Server: token → credencial cifrada → sesión de ingeniería válida; revocación efectiva", spec: .harness/adr/hira-studio/STU-ADR-003-emparejamiento-studio-server.md, status: design-only, requires: [STU-ADR-003] }
+  - { id: AC-STU-04, kind: acceptance-criterion, component: hira-studio, title: "Diseño offline: crear dispositivos-simulador, puntos y scripts; ejecutar una prueba en el motor offline con resultado", spec: .harness/adr/hira-studio/STU-ADR-004-diseno-offline-publicacion-al-server.md, status: design-only, requires: [STU-ADR-004] }
+  - { id: AC-STU-05, kind: acceptance-criterion, component: hira-studio, title: "Publicar un borrador a un Server: proyecto importado, simuladores marcados, flujo de mapeo simulador→real disponible", spec: .harness/adr/hira-studio/STU-ADR-004-diseno-offline-publicacion-al-server.md, status: design-only, requires: [STU-ADR-004, SRV-ADR-012, SRV-ADR-019] }
+  - { id: AC-STU-06, kind: acceptance-criterion, component: hira-studio, title: "Agente del Integrador responde con la API key del integrador; offline opera sobre el borrador, en línea sobre el Server; ai_usage_log propio", spec: .harness/adr/hira-studio/STU-ADR-005-agente-integrador-en-studio.md, status: design-only, requires: [STU-ADR-005] }

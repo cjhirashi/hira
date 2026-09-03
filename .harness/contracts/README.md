@@ -15,7 +15,7 @@ Los contratos internos de cada app viven en `<app>/docs/openapi.yaml`.
 | `license.openapi.yaml` | `CT-license` | Hira Server → Hub · Hira Studio → Hub | `HUB-ADR-02`, `spec/hira-hub/detailed-design.md` |
 | `crash-report.openapi.yaml` | `CT-crash-report` | Server → Hub · Studio → Hub | `HUB-ADR-04`, `VUL-SRV-012` |
 | `updates.openapi.yaml` | `CT-updates` | Server → Hub · Studio → Hub | `spec/hira-hub/conceptual-design.md` |
-| `engineering-session.openapi.yaml` | `CT-engineering-session` | Studio ↔ Server | `SRV-ADR-016` (promovido por `E-ADR-001`) |
+| `engineering-session.openapi.yaml` | `CT-engineering-session` | Studio ↔ Server | `SRV-ADR-016` (promovido por `E-ADR-001`). **Ampliación pendiente** `REQ-CT-engsession-v2`: emparejamiento (`STU-ADR-003`), publicación de proyecto (`STU-ADR-004`), consultas para el Agente del Integrador (`STU-ADR-005`). |
 | `marketplace.openapi.yaml` | `CT-marketplace` | Studio ↔ Hub · Server ← Hub | Hub v0.3 — **placeholder**, `VUL-SRV-015` |
 
 ## Reglas (ver `PROCESS.md` §6)

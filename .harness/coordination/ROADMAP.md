@@ -2,7 +2,7 @@
 título: Roadmap del ecosistema Hira
 tipo: Coordinación
 status: activo
-última_actualización: 2026-09-02
+última_actualización: 2026-09-03
 ---
 
 # Roadmap del ecosistema
@@ -20,8 +20,9 @@ HUB (Hira Hub)  H0 → H1 → H2 → H3   (puede arrancar en paralelo a SRV;
                                      CT-license se valida de verdad cuando ambos existen)
                                           │
 STU (Hira Studio, cloud)                  │
-  └─ requiere: OPEN-QUESTIONS cerradas ───┤
-     + SRV con CT-engineering-session ────┘
+  ├─ diseño de plataforma: CERRADO (STU-ADR-001..005, 2026-09-03)
+  └─ requiere para implementar: STU-Spec (módulos + AC-STU detallados)
+     + SRV-Sprint-12 (CT-engineering-session ampliado: pair + publish + consultas) ──┘
 ```
 
 ## Track SRV — Hira Server
@@ -43,7 +44,7 @@ Reimplementación desde cero bajo el harness. El diseño está completo
 | SRV-Sprint-9 | Licenciamiento por puntos en línea + multi-proyecto (`REQ-SRV-licencia-online`) + cliente de `CT-license` | `AC-SRV-12`, `SRV-ADR-018`, `SRV-ADR-020` |
 | SRV-Sprint-10 | Agentes IA (Integrador + Cliente) + RAG + Ollama embebido | `AC-SRV-10`, `SRV-ADR-013`, `SRV-ADR-021` |
 | SRV-Sprint-11 | Backup / portabilidad `.hira` + cliente de `CT-crash-report` / `CT-updates` | `AC-SRV-11`, `VUL-SRV-012` |
-| SRV-Sprint-12 | Servidor de `CT-engineering-session` (para Studio) | `CT-engineering-session`, `SRV-ADR-016` |
+| SRV-Sprint-12 | Servidor de `CT-engineering-session` **ampliado** para Studio: sesión de ingeniería + emparejamiento (`studio_pairings`, `/engineering/pair`, UI de panel) + recepción de publicación de proyecto (reutiliza import `.hira`) + endpoints de consulta para las tools del Agente del Integrador | `CT-engineering-session`, `SRV-ADR-016`, `REQ-SRV-studio-pairing`, `REQ-SRV-project-publish`, `REQ-CT-engsession-v2` |
 
 > El orden exacto y el contenido fino de SRV-Sprint-2+ se detalla al planificar cada uno
 > con la plantilla `templates/sprint.md`. SRV-Sprint-1 ya está detallado en `SPRINT.md`.
@@ -64,19 +65,29 @@ a SRV. Detalle de tareas por sprint: `coordination/hira-hub-sprint-plan.md`.
 
 ## Track STU — Hira Studio
 
-**Bloqueado** hasta cerrar `spec/hira-studio/OPEN-QUESTIONS.md` (SQ-1..SQ-8) → primeros
-`STU-ADR-###`, y hasta que SRV exponga `CT-engineering-session` (SRV-Sprint-12).
+**Diseño de plataforma cerrado** (SQ-1..SQ-8 → `STU-ADR-001..005`, 2026-09-03; ver
+`spec/hira-studio/context.md` y `architecture.md`). Sigue **bloqueado para implementar**
+hasta que: (a) exista la spec por módulo de Studio y sus `AC-STU-*` detallados, y (b) SRV
+exponga `CT-engineering-session` **ampliado** (emparejamiento + publish + consultas para el
+agente).
 
-| Fase | Objetivo |
-|---|---|
-| STU-Diseño | Resolver SQ-1..SQ-8, redactar `STU-ADR-*`, abrir `spec/hira-studio/` por módulo, sembrar `AC-STU-*` en el registry |
-| STU-Sprint-1 | Walking Skeleton de Studio (según SQ-4: frontend + BFF) + cliente de `CT-engineering-session` contra un Server de pruebas |
-| STU-Sprint-2+ | Configurador, edición de lógica/pruebas, mimics, Agente del Integrador (heredan de `spec/hira-server/` — ver `spec/hira-studio/inherited-from-server.md`) |
+| Fase | Objetivo | Anclas |
+|---|---|---|
+| STU-Spec | Spec por módulo en `spec/hira-studio/` (auth, servers/pairing, projects, configurator, offline-runner, publish, ai) y `AC-STU-*` detallados a partir de los grupos `AC-STU-01..06` | `STU-ADR-001..005`, `SPEC-STU-architecture` |
+| STU-Sprint-1 | Walking Skeleton: SPA + BFF (FastAPI + PostgreSQL + Redis), `auth` (cuenta + vínculo de licencia vía `CT-license`), aislamiento por `integrator_id` | `AC-STU-01`, `AC-STU-02`, `STU-ADR-001`, `STU-ADR-002` |
+| STU-Sprint-2 | `servers` — emparejamiento por token, credencial cifrada, sesión de ingeniería contra un Server real | `AC-STU-03`, `STU-ADR-003` |
+| STU-Sprint-3 | `projects` + `configurator` — borradores de diseño (dispositivos-simulador, puntos, asociaciones, mimics) heredando de `spec/hira-server/` | `AC-STU-04` (parcial), `STU-ADR-004` |
+| STU-Sprint-4 | `offline-runner` — motor de simulación + sandbox RestrictedPython; ejecutar lógica y pruebas del borrador | `AC-STU-04`, `STU-ADR-004` |
+| STU-Sprint-5 | `publish` — serializar borrador (`.hira` extendido) y cargarlo al Server; flujo simulador→real | `AC-STU-05`, `STU-ADR-004` |
+| STU-Sprint-6 | `ai` — Agente del Integrador en el BFF (API key del integrador), tools offline/online/Hub, `ai_usage_log` | `AC-STU-06`, `STU-ADR-005` |
+| STU-Sprint-7+ | Editor de mimics (React Flow), biblioteca de proyectos, catálogo `.hirat` (v0.3) | heredan de `spec/hira-server/` |
 
 ## Orden recomendado global
 
 1. **SRV-Sprint-1** y **HUB-H0** en paralelo (ambos son Walking Skeleton, sin dependencia).
 2. SRV-Sprint-2..8 (núcleo SCADA) ‖ HUB-H1..H3.
 3. SRV-Sprint-9 (licenciamiento) valida `CT-license` de verdad contra HUB-H1.
-4. SRV-Sprint-12 expone `CT-engineering-session`.
-5. STU-Diseño (en cuanto haya ancho de banda) → STU-Sprint-1.
+4. **STU-Spec** puede redactarse en cualquier momento (el diseño de plataforma ya está
+   cerrado) — no consume ancho de banda de código.
+5. SRV-Sprint-12 expone `CT-engineering-session` ampliado (pair + publish + consultas).
+6. STU-Sprint-1..6 — arranca cuando STU-Spec esté lista y SRV-Sprint-12 haya aterrizado.

@@ -1,51 +1,67 @@
-<!-- FUENTE del overlay de Hira Studio. Nuevo (E-ADR-001). -->
+<!-- FUENTE del overlay de Hira Studio. -->
 
 # Overlay — `hira-studio/`
 
 Producto **cloud** de ingeniería y diseño de proyectos (`E-ADR-001`). Se accede por
-navegador. **No se instala, no aloja proyectos, no es runtime SCADA.** Es un cliente de
-ingeniería sobre uno o varios Hira Server remotos.
+navegador. **No se instala.** Guarda **borradores de diseño offline**; el proyecto que
+opera vive en un Hira Server, al que Studio lo **publica**.
 
-## Estado: diseño no cerrado
+## Diseño de plataforma — CERRADO (`STU-ADR-001..005`, 2026-09-03)
 
-`hira-studio/` **no tiene sprint activo todavía.** Antes de implementar hay que resolver
-`.harness/spec/hira-studio/OPEN-QUESTIONS.md` (SQ-1..SQ-8: auth cloud, conexión a
-múltiples Servers, tenancy/hosting, backend propio, ejecución de lógica/Agente, multi-
-proyecto en cloud, licenciamiento de Studio, modo offline/demos). Cada una se cierra con
-un `STU-ADR-###` en `.harness/adr/hira-studio/`.
+| Tema | Decisión | ADR |
+|---|---|---|
+| Hosting | Instancia multi-tenant única junto a Hub; aislamiento por `integrator_id` | `STU-ADR-001` |
+| Arquitectura | SPA (React/TS, MD3+Cyan) + BFF FastAPI con PostgreSQL + Redis; **estructura directa** (como `HUB-ADR-05`) | `STU-ADR-001` |
+| Identidad | Un `integrator_user` por integrador (store en el BFF); JWT de sesión con `integrator_id` | `STU-ADR-002` |
+| Licencia | Gestionada en Hub. Licencia de integrador (`product: studio`) enlazada al usuario, validada por `CT-license`. Sin licencia válida → **solo lectura** | `STU-ADR-002` |
+| Conexión a Servers | **Emparejamiento por token** generado en el Server → credencial rotable, **cifrada** en Studio (`STUDIO_PAIRING_ENCRYPTION_KEY`) | `STU-ADR-003` |
+| Ejecución | **Offline en Studio** (motor de simulación + sandbox RestrictedPython) para validar el diseño; **en línea siempre en el Server** | `STU-ADR-004` |
+| Publicación | Serializar el borrador (`.hira` extendido) y cargarlo al Server por la sesión de ingeniería; simuladores → mapeo a dispositivos reales por escaneo | `STU-ADR-004` |
+| Agente del Integrador | En el BFF de Studio, con la API key del integrador; tools offline/online/Hub; `ai_usage_log` propio. El Agente del Cliente se queda en Server | `STU-ADR-005` |
 
-Si te piden implementar Studio y las OPEN-QUESTIONS relevantes siguen abiertas → dilo y
-para. No improvises la arquitectura de Studio.
+## Estado de implementación
+
+**Falta la spec por módulo** (`spec/hira-studio/` — auth, servers/pairing, projects,
+configurator, offline-runner, publish, ai) y los `AC-STU-*` detallados (grupos
+`AC-STU-01..06` ya en el registry). Y falta que SRV exponga `CT-engineering-session`
+**ampliado** (`REQ-CT-engsession-v2`: pair + publish + consultas). Ver
+`.harness/coordination/ROADMAP.md`, track STU.
+
+No arranques `STU-Sprint-1` hasta que exista la spec por módulo. Si un cambio necesita
+tocar el contrato de la sesión de ingeniería y la ampliación aún no está, regístralo como
+`DEV-###`.
 
 ## Orden de lectura
 
 1. `.harness/adr/ecosystem/E-ADR-001-studio-producto-cloud-independiente.md`
-2. `.harness/spec/hira-studio/context.md`
-3. `.harness/spec/hira-studio/OPEN-QUESTIONS.md`
+2. `.harness/spec/hira-studio/context.md` y `architecture.md`
+3. `.harness/adr/hira-studio/STU-ADR-001..005`
 4. `.harness/spec/hira-studio/inherited-from-server.md` — qué diseño se hereda de Server.
-5. `.harness/contracts/engineering-session.openapi.yaml` — `CT-engineering-session`.
+5. `.harness/contracts/engineering-session.openapi.yaml` — `CT-engineering-session` (+ ampliación pendiente).
 
 ## Contratos que consume
 
-- `CT-engineering-session` (Studio → Server) — **único** camino para modificar un proyecto.
-  Lock exclusivo por proyecto, heartbeat 60s, `409` si ocupado.
+- `CT-engineering-session` (Studio → Server) — **único** canal hacia un Server: sesión con
+  lock por proyecto, emparejamiento, publicación de proyecto, consultas del agente.
 - `CT-license`, `CT-crash-report` (Studio → Hub) con `product: studio`.
 - `CT-marketplace` (v0.3).
 
 ## Herencia de diseño
 
-Configurador, edición de lógica/pruebas, mimics y Agente del Integrador se especifican
-sobre la base de `.harness/spec/hira-server/` — ver el índice en
-`inherited-from-server.md`. La **ejecución** de lógica/pruebas se queda en Server; Studio
-edita y empuja vía la sesión de ingeniería (pendiente de cerrar SQ-5).
+Configurador, modelo de puntos/asociaciones, API `hira` de scripts y formato de mimic se
+**especifican en `spec/hira-server/`**; Studio los **implementa**, no los redefine. El
+`offline-runner` implementa el mismo contrato de la API `hira` y las mismas restricciones
+de RestrictedPython que el Server. Índice: `inherited-from-server.md`.
 
-## Módulos para el commit (provisional — se afina con el diseño)
+## Módulos para el commit
 
-`INFRA` `BFF` `AUTH` `SERVERS` (gestión de conexiones a Servers) `CONFIGURATOR` `LOGIC`
-`TESTS` `MIMICS` `AI` `PROJECTS` `CONTRACT` `FRONTEND`
+`INFRA` `CORE` `AUTH` `SERVERS` `PROJECTS` `CONFIGURATOR` `OFFLINE-RUNNER` `PUBLISH`
+`AI` `MIMICS` `CONTRACT` `FRONTEND`
 
 ## Reglas
 
-Mismas transversales del ecosistema (`.harness/claude/ecosystem.md`): spec-first, anclas,
-Contract-First, logger JSON, sin secrets en código, READMEs por carpeta, no editar ADRs
-aceptados, no resolver contradicciones por tu cuenta.
+Transversales del ecosistema (`.harness/claude/ecosystem.md`). Además:
+- Todo acceso a datos del BFF filtra por `integrator_id` del JWT — es la frontera de
+  aislamiento (`AC-STU-02`). No hay endpoint que devuelva datos de otro integrador.
+- Credenciales de emparejamiento: cifradas en reposo, nunca en logs, nunca al SPA.
+- El `offline-runner` nunca toca un Server ni un dispositivo real.

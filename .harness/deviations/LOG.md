@@ -42,6 +42,28 @@ Ver `PROCESS.md` §7. Plantillas: `templates/deviation.md`, `templates/session-r
 
 ## Reportes de sesión
 
+### Reporte de Sesión — 2026-09-03
+
+- **Sprint:** F0 — cierre del diseño de plataforma de Hira Studio.
+- **Tareas trabajadas:** resolver `spec/hira-studio/OPEN-QUESTIONS.md` SQ-1..SQ-8.
+- **Qué se implementó (diseño, no código):**
+  - `STU-ADR-001..005` en `.harness/adr/hira-studio/` (hosting multi-tenant + SPA/BFF;
+    identidad + licencia vía Hub; emparejamiento por token; diseño/pruebas offline +
+    publicación al Server; Agente del Integrador en el BFF de Studio).
+  - `spec/hira-studio/architecture.md` (contenedores + módulos del BFF + fronteras).
+  - `context.md` y `OPEN-QUESTIONS.md` actualizados (diseño cerrado, SQ marcadas resueltas).
+  - `SRV-ADR-020` con banner de supersesión parcial (→ `STU-ADR-004`).
+  - `registry.yaml`: +5 `STU-ADR`, +`SPEC-STU-architecture`/`-inherited`, +6 `AC-STU-*`
+    (grupos), +3 requisitos (`REQ-SRV-studio-pairing`, `REQ-SRV-project-publish`,
+    `REQ-CT-engsession-v2`). 93 → 109 anclas.
+  - `ROADMAP.md` track STU reescrito (STU-Spec + STU-Sprint-1..7); SRV-Sprint-12 ampliado.
+  - Nota de ampliación pendiente de `CT-engineering-session` en el contrato y su README.
+  - Overlay `.harness/claude/hira-studio.md` actualizado → `hira-studio/AGENTS.md`/`CLAUDE.md` regenerados.
+- **Pruebas ejecutadas y resultado:** `.harness/ci/run_all.sh` → verde (0 errores, 109 anclas, 20 secciones de spec con checksum).
+- **Desviaciones abiertas:** ninguna.
+- **Pendiente:** STU-Spec (spec por módulo de Studio + `AC-STU-*` detallados) y la
+  ampliación de `CT-engineering-session` en SRV-Sprint-12 — ambos en el roadmap, no bloquean.
+
 ### Reporte de Sesión — 2026-09-02
 
 - **Sprint:** F0 (siembra del harness, no es un sprint de código).

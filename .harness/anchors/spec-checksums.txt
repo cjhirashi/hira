@@ -15,5 +15,7 @@ f34a0638abb298b94e6ca0f13a8de00981c9c08823adc81fc802be5e258f9c7a  .harness/spec/
 73b917e042571073cb27c15c7a01b0fa1295d8869bcde0540b225892a8defea6  .harness/spec/hira-server/modules/dispositivos-protocolos-puntos.md
 4e69e071520edf290f7554a83a3bad771d24b9e5611a217f3f68a6d96d41d47e  .harness/spec/hira-server/modules/modelo-de-datos.md
 7b8ba4dd100965276e7e868b8b48bcc6ec54f6fa2485b553b65d366d1b19635d  .harness/spec/hira-server/modules/motor-logica-y-pruebas.md
-cda8a2cceaedc99d1b8098dc3b8a19648288a5ccd6aad6c8b96ab71fa3484c96  .harness/spec/hira-studio/OPEN-QUESTIONS.md
-642159658491a6fc755c14c99559605d23c9f90e7f2ae92dc52a70f6c538a521  .harness/spec/hira-studio/context.md
+59cb0a700cbe339e9bd9987e5d3d64f9d084001aeccb3acfed9aa9ada99d7a66  .harness/spec/hira-studio/OPEN-QUESTIONS.md
+a61cbb6373f048bc3f06a65531055775dec586cda2d3796f145f1037ceeb3cf0  .harness/spec/hira-studio/architecture.md
+16ef61f67cdacf66e446ec5a132d90a137fd3ee3f7ed090d82af741aa64b890d  .harness/spec/hira-studio/context.md
+78f70ac2997eb7ff8180f8398cf2c88d67b2b2f7d3a5bf6b9074c788248155a0  .harness/spec/hira-studio/inherited-from-server.md

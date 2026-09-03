@@ -4,6 +4,15 @@ info:
   version: 0.1.0
   description: >
     Anclas: CT-engineering-session, SRV-ADR-016, E-ADR-001.
+    ── AMPLIACIÓN PENDIENTE (REQ-CT-engsession-v2, tras STU-ADR-003/004/005) ──
+    Falta añadir a este contrato, antes de STU-Sprint-2:
+      · POST /engineering/pair  + cabecera de credencial de emparejamiento (STU-ADR-003)
+      · GET/DELETE de emparejamientos (listar Studios, revocar)
+      · publicar/actualizar proyecto desde Studio (STU-ADR-004) — reutiliza import .hira
+      · endpoints de consulta (puntos, dispositivos escaneados, estado) para las tools
+        *en línea* del Agente del Integrador (STU-ADR-005)
+    El contenido de abajo es la v0.1 (solo sesión + heartbeat) y se implementa tal cual
+    en SRV-Sprint-12; la ampliación se hace en el mismo sprint como cambio [CONTRACT].
     Hira Studio (cloud) abre una sesión de ingeniería con lock exclusivo por proyecto
     contra un Hira Server remoto. Espejo en Redis con TTL de 300s; Studio envía heartbeat
     cada 60s. Solo una sesión activa por proyecto — un segundo intento recibe 409.

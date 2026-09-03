@@ -9,6 +9,13 @@ fecha_creación: 2026-07-31
 tags: [adr, arquitectura, hira-server, licenciamiento, rbac]
 ---
 
+> **Parcialmente superseded por [STU-ADR-004](../hira-studio/STU-ADR-004-diseno-offline-publicacion-al-server.md).**
+> Sigue vigente: el multi-proyecto en un mismo Server es capacidad exclusiva de la
+> licencia de integrador; roles de operación con `scope=project`, roles de integrador
+> `scope=global`. Cambia el encuadre: ya no existe "la instalación local del integrador
+> con SQLite multi-proyecto" — hay borradores de diseño en Hira Studio (cloud) y uno o
+> varios Hira Server reales emparejados con ese Studio.
+
 ## Contexto
 
 Bajo SRV-ADR-015, un Server puede alojar más de un proyecto. Hace falta definir el alcance de esa capacidad y cómo se relaciona con el RBAC — quién ve qué proyecto.

@@ -1,31 +1,34 @@
 ---
-título: Preguntas abiertas de diseño — Hira Studio
+título: Preguntas de diseño de Hira Studio — resueltas
 componente: hira-studio
-tipo: Registro de decisiones pendientes
-status: abierto
-última_actualización: 2026-09-02
+tipo: Registro de decisiones
+status: cerrado
+última_actualización: 2026-09-03
 ---
 
-`E-ADR-001` establece que Studio es un producto cloud independiente pero deja abiertas las
-decisiones de abajo. Cada una se cierra con un `STU-ADR-###` (o una edición de spec) antes
-de `STU-Sprint-1`. Mientras estén abiertas, Studio no tiene sprint activo.
+Las 8 preguntas que abría `E-ADR-001` se resolvieron el **2026-09-03** con decisión del
+propietario. Cada una quedó en un `STU-ADR-###` en `.harness/adr/hira-studio/`.
 
-| # | Pregunta | Por qué importa | Candidatas |
+| # | Pregunta | Decisión | ADR |
 |---|---|---|---|
-| SQ-1 | **Auth de Studio cloud.** ¿Cómo inicia sesión el integrador en Studio? ¿Cuenta propia de Studio, cuenta federada con Hub, o la license key? | Studio es multi-integrador y multi-Server. Necesita identidad propia. | Cuenta Studio con SSO a Hub · OIDC · magic link |
-| SQ-2 | **Gestión de conexiones a Servers.** ¿Cómo registra un integrador sus Servers en Studio? ¿Cómo se autentica Studio ante cada Server para abrir la sesión de ingeniería? | Un integrador tiene N Servers (local + varios clientes). La sesión de ingeniería (`CT-engineering-session`) necesita un canal autenticado Studio→Server. | Token de emparejamiento generado en el Server · certificado mutuo · credencial de integrador delegada por Hub |
-| SQ-3 | **Tenancy / hosting.** ¿Una instancia de Studio multi-tenant para todos los integradores, o una por integrador? ¿Dónde se hospeda (VPS de cjhirashi junto a Hub, u otro)? | Define el modelo de datos, el aislamiento y el costo operativo. | Multi-tenant única · namespace por integrador · self-host opcional |
-| SQ-4 | **Backend propio de Studio.** ¿Qué backend necesita Studio más allá de proxyar al Server? (preferencias de usuario, catálogo local de bloques, borradores no publicados, historial de sesiones). | Determina si `hira-studio/` tiene su propia BD o es solo frontend + BFF fino. | Frontend + BFF sin estado · BFF con BD ligera (Postgres) |
-| SQ-5 | **Ejecución de lógica/pruebas y Agente del Integrador.** Los scripts se editan en Studio pero corren en Server. ¿Studio empuja el script y el Server lo ejecuta/valida, o Studio tiene un sandbox de validación propio? ¿El Agente del Integrador corre en Studio (con su API key) o Studio proxya al `/ai/integrator` del Server? | Afecta qué endpoints expone Server a la sesión de ingeniería y dónde vive el costo de IA. | Ejecución siempre en Server vía `CT-engineering-session` · Studio valida sintaxis/RestrictedPython localmente, ejecuta en Server · Agente Integrador en Studio |
-| SQ-6 | **Multi-proyecto en el modelo cloud.** `SRV-ADR-020` daba multi-proyecto a la instalación local del integrador. En cloud, ¿"biblioteca de proyectos" = lista de (Server, proyecto) a los que el integrador tiene acceso? ¿Sigue existiendo el concepto de instalación local del integrador con licencia de integrador? | `SRV-ADR-018/020` asumían una instancia local multi-proyecto del integrador. Con Studio cloud eso cambia. | Studio lista (Server,proyecto) · se conserva un "Server local del integrador" como banco de pruebas · licencia de integrador pasa a habilitar Studio |
-| SQ-7 | **Licenciamiento de Studio.** ¿Studio se licencia aparte (suscripción cloud), o el acceso a Studio va incluido con la licencia de integrador emitida por Hub? | Hub emite `product: studio` en `license_keys` (`HUB` detailed-design). Falta el modelo comercial. | Suscripción cloud mensual · incluido con licencia de integrador · freemium |
-| SQ-8 | **Offline / demos sin Server.** Antes el integrador podía diseñar en su PC sin depender del cliente. Si Studio es cloud y no aloja proyectos, ¿cómo hace demos o diseño especulativo sin un Server? | Caso de uso `CU-11` del diseño de Server. | Server local del integrador como banco de pruebas · Studio con un "Server efímero" en cloud · plantillas `.hirat` como punto de partida |
+| SQ-1 | Auth de Studio cloud | Un `integrator_user` por integrador, store en el BFF de Studio; JWT de sesión con `integrator_id`. Hub-como-IdP queda como evolución posible, no v1. | `STU-ADR-002` |
+| SQ-2 | Conexión y auth a Servers | Emparejamiento por token generado en el Server → credencial de larga duración rotable, cifrada en Studio. Revocable desde cualquiera de los dos lados. | `STU-ADR-003` |
+| SQ-3 | Tenancy / hosting | Instancia **multi-tenant única junto a Hub**; aislamiento lógico por `integrator_id`. Self-host y per-integrador: fuera de v1. | `STU-ADR-001` |
+| SQ-4 | Backend propio de Studio | **SPA + BFF (FastAPI) con BD PostgreSQL + Redis**, arquitectura directa (como `HUB-ADR-05`). Persiste borradores, emparejamientos, preferencias, historial, caché de catálogo. | `STU-ADR-001` |
+| SQ-5 | Ejecución de lógica/pruebas y Agente del Integrador | **Offline en Studio** (motor de simulación + sandbox RestrictedPython) para validar el diseño; **en línea siempre en el Server**. Agente del Integrador en el BFF de Studio con la API key del integrador; Agente del Cliente sigue en Server. | `STU-ADR-004`, `STU-ADR-005` |
+| SQ-6 | Multi-proyecto en cloud | Biblioteca de Studio = borradores offline + pares `(Server emparejado, proyecto)`. Multi-proyecto sigue siendo capacidad del Server, exclusiva de licencia de integrador (`SRV-ADR-020` se conserva, con banner). | `STU-ADR-004` |
+| SQ-7 | Licenciamiento de Studio | **Gestionado en Hub.** La licencia de integrador (Hub, `product: studio`) se enlaza al `integrator_user` y se valida por `CT-license`. Sin licencia válida → Studio en solo lectura. Server: la licencia se asocia a la instalación (hardware). | `STU-ADR-002` |
+| SQ-8 | Offline / demos sin Server | El **diseño offline con simuladores** ES el flujo sin Server. Para arrancar rápido: plantillas `.hirat` de Hub (v0.3). Para correr en línea hace falta un Server real (del cliente o un banco de pruebas del integrador). Sin "Server efímero en cloud". | `STU-ADR-004` |
 
-## Proceso
+## Consecuencias transversales pendientes (no bloquean, se recogen en el roadmap)
 
-Cada `SQ-N` que se resuelve:
-1. Se decide (con el usuario) y se redacta un `STU-ADR-###` en `.harness/adr/hira-studio/`.
-2. Se actualiza `spec/hira-studio/context.md` y, si toca, los ADRs de Server con banner de
-   supersesión.
-3. Se marca aquí `Resuelta → STU-ADR-###`.
-4. Se abre la spec de módulo correspondiente en `spec/hira-studio/`.
+- **Ampliar `CT-engineering-session`** con: `POST /engineering/pair` + cabecera de
+  credencial de emparejamiento (`STU-ADR-003`); operación de **publicar/actualizar
+  proyecto** (`STU-ADR-004`); endpoints de consulta que necesitan las tools *en línea* del
+  Agente del Integrador (`STU-ADR-005`).
+- **Formato de paquete de proyecto** de Studio → Server: `.hira` extendido; converge con
+  `VUL-SRV-009` (compatibilidad de versiones) y `VUL-SRV-015` (esquema `.hirat`).
+- **Server:** tabla `studio_pairings` + UI de emparejamiento en el panel; import de
+  proyecto por la sesión de ingeniería reutilizando la lógica de import de `.hira`.
+- **Modelo de equipo** (varios técnicos de una empresa integradora bajo una licencia):
+  fuera de v1, ADR posterior.

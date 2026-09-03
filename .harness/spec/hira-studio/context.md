@@ -2,9 +2,10 @@
 título: Contexto — Hira Studio (producto cloud)
 componente: hira-studio
 tipo: Especificación
-status: borrador
-última_actualización: 2026-09-02
+status: activo
+última_actualización: 2026-09-03
 ancla_origen: E-ADR-001
+decisiones: [STU-ADR-001, STU-ADR-002, STU-ADR-003, STU-ADR-004, STU-ADR-005]
 ---
 
 ## Qué es Hira Studio
@@ -17,12 +18,16 @@ Formalizado en `E-ADR-001` — supersede parcialmente `SRV-ADR-015/016/017`.
 
 ## Qué NO es
 
-- **No aloja proyectos.** Los proyectos viven en un Hira Server (local del integrador o de
-  producción del cliente). Studio es un cliente de ingeniería sobre esos Servers.
-- **No es un runtime SCADA.** No hace polling de dispositivos, no evalúa alarmas, no
-  ejecuta lógica continua en producción. Eso es Hira Server.
+- **No aloja el proyecto que opera.** El proyecto **autoritativo y en operación** vive en
+  un Hira Server, al que Studio lo publica (`STU-ADR-004`). Studio sí guarda **borradores
+  de diseño** offline (con dispositivos como simuladores) hasta que se publican.
+- **No es un runtime SCADA de producción.** No hace polling de dispositivos reales, no
+  evalúa alarmas operativas, no ejecuta lógica continua 24/7. Sí ejecuta lógica y pruebas
+  **contra simuladores, en modo diseño offline**, para validar el proyecto antes de
+  publicarlo (`STU-ADR-004`).
 - **No se instala.** No hay `docker compose` para el integrador, no hay perfil
-  `HIRA_DEPLOY_MODE=studio`.
+  `HIRA_DEPLOY_MODE=studio`. (El integrador sí puede instalar un **Hira Server** propio
+  como banco de pruebas y emparejarlo con Studio.)
 
 ## Quién lo usa
 
@@ -65,9 +70,27 @@ Hira Studio (cloud)
   especificados para Server. Índice en
   [`inherited-from-server.md`](inherited-from-server.md).
 
+## Diseño resuelto (SQ-1..SQ-8)
+
+Las 8 preguntas abiertas se cerraron el 2026-09-03 (ver
+[`OPEN-QUESTIONS.md`](OPEN-QUESTIONS.md) para el detalle y `.harness/adr/hira-studio/`):
+
+| Tema | Decisión | ADR |
+|---|---|---|
+| Hosting / tenancy | Instancia multi-tenant única junto a Hub, aislamiento por `integrator_id` | `STU-ADR-001` |
+| Arquitectura | SPA + BFF (FastAPI) con BD PostgreSQL propia + Redis; estructura directa | `STU-ADR-001` |
+| Identidad | Un `integrator_user` por integrador (store en el BFF de Studio); JWT de sesión con `integrator_id` | `STU-ADR-002` |
+| Licenciamiento | Gestionado en Hub. La licencia de integrador (de Hub) se enlaza al usuario de Studio y se valida por `CT-license`. Sin licencia válida → solo lectura | `STU-ADR-002` |
+| Conexión a Servers | Emparejamiento por token generado en el Server; credencial rotable, cifrada en Studio | `STU-ADR-003` |
+| Ejecución de lógica/pruebas | Offline en Studio contra simuladores (validación de diseño); en línea siempre en el Server | `STU-ADR-004` |
+| Publicación | Studio serializa el proyecto (formato `.hira` extendido) y lo carga al Server por la sesión de ingeniería; los simuladores se mapean a dispositivos reales por escaneo | `STU-ADR-004` |
+| Multi-proyecto | Biblioteca de Studio = borradores offline + pares `(Server, proyecto)` emparejados. Multi-proyecto sigue siendo capacidad del Server (`SRV-ADR-020`) | `STU-ADR-004` |
+| Agente del Integrador | Corre en el BFF de Studio con la API key del integrador; tools offline/online/Hub. El Agente del Cliente se queda en Server | `STU-ADR-005` |
+
 ## Estado
 
-Borrador. El diseño detallado de Studio arranca cerrando
-[`OPEN-QUESTIONS.md`](OPEN-QUESTIONS.md) → primeros `STU-ADR-###`. Hasta entonces, Studio
-no tiene sprint activo (el roadmap del ecosistema lo pone después de Server `v0.1` y
-Hub `H0`).
+Diseño de plataforma cerrado. Falta la **spec por módulo** de Studio
+(`spec/hira-studio/` — configurador, motor offline, publicación, agente, emparejamiento,
+biblioteca) y sembrar los `AC-STU-*` correspondientes. En el roadmap, la vertiente Studio
+va después de que Server exponga `CT-engineering-session` ampliado
+(`.harness/coordination/ROADMAP.md`, track STU).
