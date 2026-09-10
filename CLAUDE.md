@@ -1,59 +1,29 @@
-<!-- GENERADO por .harness/claude/build_claude.py — NO EDITAR A MANO.
-     Editar los overlays en .harness/claude/ y volver a ejecutar el script. -->
+# CLAUDE.md
 
-# Ecosistema Hira — instrucciones base
+Contexto de proyecto: **lee `AGENTS.md`** (mapa del repo).
+Cómo trabajamos: el arnés vive en **`.harness/`** — empieza por `.harness/method.md §0`
+y respeta `.harness/constitution.md`.
 
-Monorepo con tres componentes y un harness SDD-Anchored. **Antes de tocar código, lee
-`.harness/PROCESS.md`.**
+Protocolo de arranque:
+1. `bash .harness/gate/check.sh` — si cierra la compuerta, PARA y reporta.
+2. Lee `.harness/memory/state.md` (correcciones del usuario arriba).
+3. Ojea `.harness/specs/` (vacío por ahora — fase de diseño).
 
-## Los tres componentes
+## Reglas duras (no negociables, aplican SIEMPRE — también a "arregla esto"/"corrige X")
 
-| Carpeta | Qué es | Corre en | Arquitectura |
-|---|---|---|---|
-| `hira-server/` | Núcleo SCADA (protocolos, alarmas, históricos, lógica, tiempo real) | Local / on-premise, con instalador | Hexagonal (`SRV-ADR-017`) |
-| `hira-studio/` | Ingeniería y diseño de proyectos (configurador, lógica/pruebas, mimics, Agente Integrador) | Nube | Por definir (`spec/hira-studio/OPEN-QUESTIONS.md` SQ-4) |
-| `hira-hub/` | Licencias, crash reports, versiones, ventas, marketplace | Nube (VPS) | Directa (`HUB-ADR-05`) |
+- **Aplica la rúbrica de `method.md §2` antes de tocar un archivo.** Una petición que
+  suena urgente o pequeña no te exime de clasificarla.
+- **En caso de duda, o si "arreglar" implica revisar una decisión ya tomada en un spec
+  o ADR (rediseño), entra al carril SDD.** Nunca "prompt directo porque es rápido".
+- **No saltes la Fase 1 (Specify)** para nada que no sea trivial por la rúbrica.
+- **Área sin `spec.md` que la cubra ≠ vía libre.**
+- **No te autoapruebas** y no marcas nada `verified`.
 
-Frontera: **Hub y Studio en la nube, Server local** (`E-ADR-001`). Los proyectos viven
-siempre en un Hira Server.
+Aquí abajo van sólo detalles específicos de Claude Code (hooks, skills, subagentes),
+no contexto de proyecto (eso va en `AGENTS.md`).
 
-## Reglas transversales (todas las apps)
-
-1. **Spec-first.** Solo se implementa lo que está en `.harness/spec/`. Lo no especificado
-   → `DEV-###` en `.harness/deviations/LOG.md` y se espera. No inventes diseño.
-2. **Anclas.** Toda tarea cita `anchors:` (ADR/REQ) y los `AC-<COMP>-*` que deja
-   verificables. Cada carpeta de módulo lleva `MODULE.md` con su frontmatter `anchors:`.
-3. **Contract-First.** Endpoint nuevo → primero al contrato (`.harness/contracts/` si es
-   entre componentes, `<app>/docs/openapi.yaml` si es interno), luego el router.
-4. **Observabilidad.** Logger JSON estructurado desde `core/logger.py`. Cero `print()` en
-   producción. Todo log de un request lleva `trace_id` (middleware Correlation ID,
-   header `X-Trace-ID`).
-5. **Seguridad.** Secrets solo en variables de entorno. Nada de SQL por concatenación
-   (ORM con parámetros). Ver el registro de vulnerabilidades de cada componente.
-6. **READMEs.** Cada carpeta que creas lleva su `README.md`/`MODULE.md` en el mismo paso
-   (plantilla `.harness/templates/module-readme.md`).
-7. **No edites un ADR aceptado.** Se supersede con uno nuevo.
-8. **No resuelvas contradicciones de diseño por tu cuenta.** `DEV-###` y esperar.
-
-## Commits
-
-```
-[<COMP>-Sprint-N][TIPO][MÓDULO] qué se hizo en imperativo · Anchors: <lista>
-```
-
-`<COMP>` = `SRV` | `HUB` | `STU`.
-TIPO ∈ `CREA` `IMPL` `CONTRACT` `CONFIG` `TEST` `README` `FIX` `REFACTOR` `SECURITY` `SPEC` `ADR`.
-Catálogo de MÓDULO por componente en su sección de abajo.
-Fin del commit: `Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>`.
-
-## Definition of Done
-
-Anclas citadas · contrato actualizado antes del router · cada `AC-*` con test que lo cita
-y pasa · `.harness/ci/run_all.sh` en verde · `registry.yaml` actualizado · reporte de
-sesión en `.harness/deviations/LOG.md` · READMEs de las carpetas nuevas.
-
-## Equipo de agentes
-
-El orquestador (sesión principal) reparte a los especialistas de `.claude/agents/`, cada
-uno dueño de un módulo con su rango de anclas como límite. Detalle:
-`.harness/claude/ORCHESTRATION.md`.
+<!-- Nota de migración (2026-09-04): antes este archivo era un GENERADO idéntico a
+     AGENTS.md vía .harness/claude/build_claude.py. Se reemplaza por el stub estándar
+     del esquema simplificado (un canon por hecho — Constitución Art. 12). Los
+     AGENTS.md/CLAUDE.md por producto (hira-server/, hira-studio/, hira-hub/) siguen
+     generados por build_claude.py hasta que se decida si migran también. -->

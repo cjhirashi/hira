@@ -8,6 +8,11 @@ resuelve: [SQ-3, SQ-4]
 tags: [adr, hira-studio, arquitectura, hosting]
 ---
 
+> **Parcialmente superseded por [E-ADR-002](../../decisions/ecosystem/E-ADR-002-arquitectura-hexagonal-para-los-3-productos.md).**
+> El hosting/tenancy y el stack (SPA + BFF, FastAPI + PostgreSQL + Redis) de esta
+> decisión **se mantienen**. Cambia únicamente "arquitectura directa" → **Hexagonal**
+> (decisión del propietario del ecosistema, consistencia entre los 3 productos).
+
 ## Contexto
 
 `E-ADR-001` define Hira Studio como producto cloud. `spec/hira-studio/OPEN-QUESTIONS.md`

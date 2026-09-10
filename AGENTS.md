@@ -1,59 +1,78 @@
-<!-- GENERADO por .harness/claude/build_claude.py — NO EDITAR A MANO.
-     Editar los overlays en .harness/claude/ y volver a ejecutar el script. -->
+# AGENTS.md — mapa del ecosistema Hira
 
-# Ecosistema Hira — instrucciones base
+> **Punto de entrada** para cualquier agente que trabaje en este repo. Es un **mapa**,
+> no una biblia: lee sólo lo que necesites.
+>
+> **Cómo trabajamos:** arnés **SDD Anchored** (spec viva anclada al código). El método
+> completo está en **`.harness/method.md`** (léelo por secciones). Los principios
+> innegociables (incluidos los perfiles de arquitectura de los 3 productos) en
+> **`.harness/constitution.md`**.
+>
+> **Separación estricta:** `.harness/` = cómo operamos · **`docs/` = el producto**
+> (especificación, ADRs, contratos, roadmap — ver `docs/README.md`).
 
-Monorepo con tres componentes y un harness SDD-Anchored. **Antes de tocar código, lee
-`.harness/PROCESS.md`.**
+## Antes de empezar (en orden)
 
-## Los tres componentes
+1. **`bash .harness/gate/check.sh`**. Si cierra la compuerta, **DETENTE** y reporta.
+2. Lee **`.harness/memory/state.md`** completo (correcciones del usuario arriba).
+3. Ojea **`.harness/specs/`** — vacío por ahora (fase de diseño, sin código todavía).
 
-| Carpeta | Qué es | Corre en | Arquitectura |
+## Qué es el ecosistema
+
+Monorepo de **3 productos**, sin código todavía (fase de diseño, F0 cerrada
+2026-09-03 — ver `docs/planning/`):
+
+| Carpeta | Qué es | Corre en | Patrón interno |
 |---|---|---|---|
-| `hira-server/` | Núcleo SCADA (protocolos, alarmas, históricos, lógica, tiempo real) | Local / on-premise, con instalador | Hexagonal (`SRV-ADR-017`) |
-| `hira-studio/` | Ingeniería y diseño de proyectos (configurador, lógica/pruebas, mimics, Agente Integrador) | Nube | Por definir (`spec/hira-studio/OPEN-QUESTIONS.md` SQ-4) |
-| `hira-hub/` | Licencias, crash reports, versiones, ventas, marketplace | Nube (VPS) | Directa (`HUB-ADR-05`) |
+| `hira-server/` | Núcleo SCADA: protocolos (BACnet/Modbus/MQTT), alarmas, históricos, motor de lógica, tiempo real, Agente del Cliente/Integrador | Local / on-premise, con instalador | **Hexagonal** (`docs/hira-server/decisions/SRV-ADR-017`) |
+| `hira-studio/` | Ingeniería y diseño de proyectos: configurador, motor de lógica/pruebas (edición offline), mimics, Agente del Integrador, biblioteca de proyectos | Nube, multi-tenant | **Hexagonal** (`docs/decisions/ecosystem/E-ADR-002`) |
+| `hira-hub/` | Licencias, crash reports, versiones, ventas, marketplace | Nube (VPS) | **Hexagonal** (`docs/decisions/ecosystem/E-ADR-002`) |
 
-Frontera: **Hub y Studio en la nube, Server local** (`E-ADR-001`). Los proyectos viven
-siempre en un Hira Server.
+**Los 3 productos son Hexagonal** desde el 2026-09-04 (`E-ADR-002` homogeneizó el
+patrón; antes Studio/Hub eran "directa"). Detalle de puertos/adaptadores por producto:
+`.harness/constitution.md` Art. 1–2.
 
-## Reglas transversales (todas las apps)
+**Frontera:** Hub y Studio en la nube, Server local/on-premise (`docs/decisions/ecosystem/E-ADR-001`).
+Los proyectos de ingeniería siempre viven en un Hira Server; Studio es un cliente de
+ingeniería sobre uno o varios Servers remotos (`CT-engineering-session`).
 
-1. **Spec-first.** Solo se implementa lo que está en `.harness/spec/`. Lo no especificado
-   → `DEV-###` en `.harness/deviations/LOG.md` y se espera. No inventes diseño.
-2. **Anclas.** Toda tarea cita `anchors:` (ADR/REQ) y los `AC-<COMP>-*` que deja
-   verificables. Cada carpeta de módulo lleva `MODULE.md` con su frontmatter `anchors:`.
-3. **Contract-First.** Endpoint nuevo → primero al contrato (`.harness/contracts/` si es
-   entre componentes, `<app>/docs/openapi.yaml` si es interno), luego el router.
-4. **Observabilidad.** Logger JSON estructurado desde `core/logger.py`. Cero `print()` en
-   producción. Todo log de un request lleva `trace_id` (middleware Correlation ID,
-   header `X-Trace-ID`).
-5. **Seguridad.** Secrets solo en variables de entorno. Nada de SQL por concatenación
-   (ORM con parámetros). Ver el registro de vulnerabilidades de cada componente.
-6. **READMEs.** Cada carpeta que creas lleva su `README.md`/`MODULE.md` en el mismo paso
-   (plantilla `.harness/templates/module-readme.md`).
-7. **No edites un ADR aceptado.** Se supersede con uno nuevo.
-8. **No resuelvas contradicciones de diseño por tu cuenta.** `DEV-###` y esperar.
+Detalle de cada perfil de arquitectura (puertos, adaptadores, stack):
+`.harness/constitution.md` Art. 1–2.
 
-## Commits
+## Contratos compartidos
 
-```
-[<COMP>-Sprint-N][TIPO][MÓDULO] qué se hizo en imperativo · Anchors: <lista>
-```
+`docs/contracts/*.openapi.yaml`: `CT-license`, `CT-crash-report`, `CT-updates`,
+`CT-marketplace`, `CT-engineering-session`. Cambiarlos exige acuerdo entre los
+productos que los consumen.
 
-`<COMP>` = `SRV` | `HUB` | `STU`.
-TIPO ∈ `CREA` `IMPL` `CONTRACT` `CONFIG` `TEST` `README` `FIX` `REFACTOR` `SECURITY` `SPEC` `ADR`.
-Catálogo de MÓDULO por componente en su sección de abajo.
-Fin del commit: `Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>`.
+## Convenciones
 
-## Definition of Done
+- IDs de feature nueva: `RF-`/`RNF-`/`T-` por feature, `ADR-` del arnés. Los IDs de
+  producto **históricos** no se renumeran: `E-ADR-`, `SRV-ADR-`, `STU-ADR-`, `HUB-ADR-`.
+- Carpetas de feature: `.harness/specs/<PRODUCTO>-NNN-slug/` (`SRV-`/`STU-`/`HUB-` prefijo).
+- Commits de features nuevas: **Conventional Commits** + sufijo `(RF-NNN)`. *(Los commits
+  previos a esta reestructuración usan `[<COMP>-Sprint-N][TIPO][MÓDULO] …` — convención
+  histórica, no se retroactiva.)*
+- Criterios de aceptación en **EARS** (`method.md §4`) para features nuevas.
 
-Anclas citadas · contrato actualizado antes del router · cada `AC-*` con test que lo cita
-y pasa · `.harness/ci/run_all.sh` en verde · `registry.yaml` actualizado · reporte de
-sesión en `.harness/deviations/LOG.md` · READMEs de las carpetas nuevas.
+## Mapa de documentación (producto)
 
-## Equipo de agentes
+Ver `docs/README.md` para el índice completo (spec por producto, ADRs, contratos,
+roadmap, glosario, legacy). Tabla con "se actualiza cuando cambia…":
+`.harness/constitution.md` Art. 11.
 
-El orquestador (sesión principal) reparte a los especialistas de `.claude/agents/`, cada
-uno dueño de un módulo con su rango de anclas como límite. Detalle:
-`.harness/claude/ORCHESTRATION.md`.
+## Bindings de herramienta — `.claude/agents/`
+
+Binding de Claude Code, **opcional**. Manual de cada rol: `.harness/method.md §8`.
+
+- **Base:** `orquestador` · `autor-de-spec` · `arquitecto` · `implementador` ·
+  `revisor` · `explorador`.
+- **`experto-ux-ui`** (`ADR-003`, activo) — diseña y revisa la UX/UI de los frontends
+  de los 3 productos; complementa a `hira-frontend`. Toda feature de interfaz pasa por
+  él antes de `verified` (Constitución Art. 8).
+- **16 especialistas de módulo pre-diseñados** (`hira-*`, `hub-*`) — ver
+  `.claude/agents/README.md`. **Referencian rutas retiradas; refrescar antes de usarlos**
+  (ver `memory/state.md`).
+
+`.harness/claude/` genera `AGENTS.md`/`CLAUDE.md` por producto (`build_claude.py`);
+sus fuentes también necesitan actualizarse a los `docs/` nuevos antes de regenerar.

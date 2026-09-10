@@ -1,0 +1,6 @@
+# Servicios con suite de tests (python|node|mcp) para el bloque 5 del gate.
+# Sin código todavía (fase de diseño, 2026-09-04). Cuando arranque la implementación:
+#
+# hira-server:python
+# hira-studio:python       # BFF (la SPA se declara aparte si tiene su propia suite, :node)
+# hira-hub:python

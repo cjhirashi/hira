@@ -8,6 +8,11 @@ origen_vault: "7.2 - Hira Hub/7.2.3 - Diseño Conceptual.md (ADR-H05)"
 tags: [adr, hira-hub, arquitectura]
 ---
 
+> **Superseded por [E-ADR-002](../../decisions/ecosystem/E-ADR-002-arquitectura-hexagonal-para-los-3-productos.md).**
+> Hub adopta Arquitectura Hexagonal — decisión del propietario del ecosistema, prioriza
+> consistencia entre los 3 productos sobre la simplicidad de un solo deployment target.
+> Este documento se conserva como registro histórico del criterio original.
+
 ## Contexto
 
 El proceso exige documentar explícitamente la decisión de arquitectura del backend —
