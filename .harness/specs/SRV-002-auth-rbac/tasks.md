@@ -71,38 +71,68 @@ actualizado: 2026-09-13
       de batches posteriores (fuera de este alcance).
 
 ### Puertos
-- [ ] T-009 — Implementar `core/ports/user_repository_port.py` (`UserRepositoryPort`,
+- [x] T-009 — Implementar `core/ports/user_repository_port.py` (`UserRepositoryPort`,
       `UserRecord` — `Protocol`, sin test propio, igual que `database_port.py` de
       `SRV-001`) [zona: puertos]
-- [ ] T-010 — Test `test_cache_port_contract.py` (dobles): contrato ampliado de
+      **Nota:** `get_by_email`/`get_by_id`/`update_role`; `UserRecord` dataclass
+      frozen (`id, email, password_hash, rol, scope, project_id, activo`). Sin
+      test propio (decisión ya fijada en `tasks.md`).
+- [x] T-010 — Test `test_cache_port_contract.py` (dobles): contrato ampliado de
       `CachePort` (`get/set/incr/expire/delete`) (debe fallar) [zona: test-puertos]
-- [ ] T-011 — Ampliar `core/ports/cache_port.py` (`get/set/incr/expire/delete`) +
+      **Nota:** falló primero con 8/9 tests fallidos (`CachePort` sin
+      `@runtime_checkable`, `hasattr` de los 5 métodos nuevos en `False`). Tras
+      T-011: 9/9 tests passed.
+- [x] T-011 — Ampliar `core/ports/cache_port.py` (`get/set/incr/expire/delete`) +
       `adapters/cache/redis_adapter.py` (implementación real) — sin tocar el
       contrato de `ping()` ya usado por `SRV-001` [zona: puertos/adaptadores]
+      **Nota:** `Protocol` marcado `@runtime_checkable`. `RedisAdapter` real
+      verificado manualmente contra un contenedor Redis real (`docker run --rm
+      -p 16379:6379 redis:7-alpine`): `ping/set/get/incr/expire/delete` — todos
+      correctos (`get` decodifica `bytes`→`str`; `delete` idempotente). Contenedor
+      detenido tras la verificación (`docker stop`, `--rm` limpia el resto).
 
 ### Coordinación — auth_service
-- [ ] T-012 — Test `test_auth_service.py` con dobles de `UserRepositoryPort`/
+- [x] T-012 — Test `test_auth_service.py` con dobles de `UserRepositoryPort`/
       `CachePort`: fuerza bruta (6º intento → 429, resetea en éxito); mismo 401
       genérico en los 3 casos de RF-002; refresh con token revocado → 401; logout
       idempotente (debe fallar) (cubre RF-001, RF-002, RF-010, RF-011, RF-013,
       RF-014) [zona: test-coordinación]
-- [ ] T-013 — Implementar `services/auth_service.py::login/refresh/logout` (cubre
+      **Nota:** falló primero con `ModuleNotFoundError: No module named
+      'services.auth_service'`. Tras T-013: 20/20 tests passed (incluye T-014).
+      **Desviación de implementación** (no reabre `plan.md`, ver nota en el
+      docstring del test y de `auth_service.py`): `login`/`refresh`/`logout`
+      reciben `secret_key: str` explícito — `plan.md §2` no lo listaba en la
+      firma pero `core/security/jwt.py` exige `secret_key` explícito y
+      `services/` no lee `Settings()` (regla `SRV-ADR-017`); el futuro router
+      (T-017/T-018) lo inyectará desde `Settings().secret_key`.
+- [x] T-013 — Implementar `services/auth_service.py::login/refresh/logout` (cubre
       RF-001, RF-002, RF-010, RF-011, RF-013, RF-014) [zona: coordinación]
 
 ### Coordinación — rbac_service
-- [ ] T-014 — Test `test_rbac_service.py` con dobles: *cache-hit* no llama a
+- [x] T-014 — Test `test_rbac_service.py` con dobles: *cache-hit* no llama a
       `UserRepositoryPort`; *cache-miss* sí consulta y repuebla con TTL correcto;
       `update_user_role` invalida el caché (debe fallar) (cubre RF-006, RF-007)
       [zona: test-coordinación]
-- [ ] T-015 — Implementar `services/rbac_service.py::resolve_permissions/
+      **Nota:** falló primero con `ModuleNotFoundError: No module named
+      'services.rbac_service'` (y arrastraba el fallo de import de
+      `test_auth_service.py`, que ya importa `rbac_service`). Tras T-015: 7/7
+      tests propios passed (20/20 combinados con `test_auth_service.py`).
+- [x] T-015 — Implementar `services/rbac_service.py::resolve_permissions/
       invalidate_permissions_cache/update_user_role` (cubre RF-006, RF-007)
       [zona: coordinación]
 
 ### Contrato — Contract-First
-- [ ] T-016 — Ampliar `hira-server/docs/openapi.yaml` con `POST /auth/login|
+- [x] T-016 — Ampliar `hira-server/docs/openapi.yaml` con `POST /auth/login|
       refresh|logout` y el componente `ProblemDetail` — antes del router, sin
       tocar `GET /health` (cubre RF-001, RF-002, RF-010, RF-011, RF-013, RF-014)
       [zona: contrato]
+      **Nota:** `LoginRequest`/`TokenResponse`/`AccessTokenResponse`/
+      `RefreshRequest`/`ProblemDetail` añadidos a `components/schemas`; `GET
+      /health` intacto (verificado con `yaml.safe_load` — 4 paths, 7 schemas).
+      `ProblemDetail` documenta los 8 slugs de `plan.md §4`, aclarando cuáles
+      los emite esta feature (login/refresh) y cuáles quedan para el middleware/
+      dependencias de batches posteriores (`token-missing`, `insufficient-role`,
+      `project-scope-denied`).
 
 ### Adaptador de entrada — router
 - [ ] T-017 — Test `test_auth_router.py` (`TestClient`): contrato exacto de

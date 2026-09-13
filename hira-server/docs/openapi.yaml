@@ -2,10 +2,131 @@ openapi: 3.0.3
 info:
   title: Hira Server API
   description: >
-    Contrato interno de `hira-server` (Contract-First, `SRV-ADR-017`). Este sprint
-    (Walking Skeleton, `SRV-001-walking-skeleton`) solo expone `GET /health`.
-  version: "0.1.0"
+    Contrato interno de `hira-server` (Contract-First, `SRV-ADR-017`). Desde
+    `SRV-001-walking-skeleton` expone `GET /health`; `SRV-002-auth-rbac` añade
+    `POST /auth/login|refresh|logout` (autenticación JWT + RBAC de 3 roles fijos,
+    `SRV-ADR-005`). El sobre de error de los endpoints de negocio sigue RFC 9457
+    (`ProblemDetail`, `E-ADR-003`) — `GET /health` es la única excepción (endpoint
+    de monitoreo, siempre HTTP 200, ver su descripción).
+  version: "0.2.0"
 paths:
+  /auth/login:
+    post:
+      operationId: login
+      summary: Autentica con email/password y emite un par de tokens JWT
+      description: >
+        RF-001, RF-002, RF-014 (`.harness/specs/SRV-002-auth-rbac/spec.md`). Emite
+        un access token (TTL 15 min) y un refresh token (TTL 7 días,
+        revocable). Cualquier fallo de credenciales (email inexistente, password
+        incorrecto, usuario desactivado) responde con el **mismo** 401 genérico
+        (RF-002, evita enumeración de usuarios) e incrementa un contador de
+        intentos fallidos por `email`+IP de origen; al 6º intento fallido en 15
+        minutos, responde 429 (RF-014) sin evaluar credenciales.
+      tags:
+        - auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Credenciales válidas — par de tokens emitido (RF-001).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenResponse"
+        "401":
+          description: Credenciales inválidas (RF-002) — mensaje genérico.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+              examples:
+                invalid_credentials:
+                  value:
+                    type: "https://hira.dev/errors/invalid-credentials"
+                    title: "Credenciales inválidas"
+                    status: 401
+                    detail: "El email o el password no coinciden con ningún usuario activo."
+        "429":
+          description: Demasiados intentos fallidos para esta combinación email+IP (RF-014).
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+              examples:
+                rate_limited:
+                  value:
+                    type: "https://hira.dev/errors/rate-limited"
+                    title: "Demasiados intentos"
+                    status: 429
+                    detail: "Se excedieron los 5 intentos permitidos en 900 segundos para esta combinación."
+  /auth/refresh:
+    post:
+      operationId: refreshToken
+      summary: Emite un nuevo access token a partir de un refresh token vigente
+      description: >
+        RF-011, RF-013. El nuevo access token lleva el `rol`/`scope`/`project_id`
+        **vigentes** del usuario (no los capturados en el refresh al momento del
+        login) — un cambio de rol aplica también en el próximo refresh.
+      tags:
+        - auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshRequest"
+      responses:
+        "200":
+          description: Refresh válido y no revocado — nuevo access token (RF-011).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccessTokenResponse"
+        "401":
+          description: >
+            Refresh inválido (`token-invalid`), expirado (`token-expired`) o
+            revocado (`token-revoked`, RF-013) — no se emite un nuevo access.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+              examples:
+                token_expired:
+                  value:
+                    type: "https://hira.dev/errors/token-expired"
+                    title: "Token expirado"
+                    status: 401
+                    detail: "El refresh token expiró; inicie sesión de nuevo."
+                token_revoked:
+                  value:
+                    type: "https://hira.dev/errors/token-revoked"
+                    title: "Refresh token revocado"
+                    status: 401
+                    detail: "Este refresh token ya fue revocado (logout o expiración de cache)."
+  /auth/logout:
+    post:
+      operationId: logout
+      summary: Revoca un refresh token (cierre de sesión)
+      description: >
+        RF-010. Requiere estar autenticado (`AuthenticationMiddleware`, batch
+        posterior de `tasks.md` — cierra su propia sesión). Revoca el refresh
+        token recibido en el body (`DEL refresh:{jti}` en cache); idempotente —
+        invocarlo dos veces, o con un refresh ya inválido/expirado, no falla.
+      tags:
+        - auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshRequest"
+      responses:
+        "204":
+          description: Refresh token revocado (o ya no vigente) — sin contenido.
   /health:
     get:
       operationId: getHealth
@@ -96,3 +217,74 @@ components:
         trace_id:
           type: string
           description: Correlation ID del request (RF-005).
+    LoginRequest:
+      type: object
+      required: [email, password]
+      additionalProperties: false
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+    TokenResponse:
+      type: object
+      required: [access_token, refresh_token, token_type]
+      additionalProperties: false
+      properties:
+        access_token:
+          type: string
+          description: JWT de acceso, TTL 15 min (RF-001).
+        refresh_token:
+          type: string
+          description: JWT de refresco, TTL 7 días, revocable (RF-001).
+        token_type:
+          type: string
+          enum: [bearer]
+    AccessTokenResponse:
+      type: object
+      required: [access_token, token_type]
+      additionalProperties: false
+      properties:
+        access_token:
+          type: string
+          description: Nuevo JWT de acceso, TTL 15 min, con permisos vigentes (RF-011).
+        token_type:
+          type: string
+          enum: [bearer]
+    RefreshRequest:
+      type: object
+      required: [refresh_token]
+      additionalProperties: false
+      properties:
+        refresh_token:
+          type: string
+    ProblemDetail:
+      type: object
+      description: >
+        Sobre de error RFC 9457 (`E-ADR-003`, convención `type: https://hira.dev/
+        errors/<slug>`). Catálogo de slugs de esta feature (`plan.md §4`):
+        `invalid-credentials` (401), `rate-limited` (429), `token-missing` (401),
+        `token-invalid` (401), `token-expired` (401), `token-revoked` (401),
+        `insufficient-role` (403), `project-scope-denied` (403). Los últimos 4
+        (`token-missing`, `insufficient-role`, `project-scope-denied` y el uso de
+        `token-invalid` en rutas protegidas genéricas) los emite
+        `AuthenticationMiddleware`/`require_role`/`require_project_scope` —
+        batches posteriores de `tasks.md`, sin endpoint propio en este contrato
+        todavía.
+      required: [type, title, status, detail]
+      additionalProperties: false
+      properties:
+        type:
+          type: string
+          format: uri
+          example: "https://hira.dev/errors/invalid-credentials"
+        title:
+          type: string
+          example: "Credenciales inválidas"
+        status:
+          type: integer
+          example: 401
+        detail:
+          type: string

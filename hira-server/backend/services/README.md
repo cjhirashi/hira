@@ -1,7 +1,8 @@
 # services
 
-Lógica de negocio / casos de uso. Importa solo de `core/ports/`, nunca de `adapters/`
-directamente (regla de oro `SRV-ADR-017`).
+Lógica de negocio / casos de uso. Importa solo de `core/ports/`, `core/security/*`
+y `core/errors.py` — nunca de `adapters/` directamente ni de FastAPI (regla de oro
+`SRV-ADR-017`).
 
 - `health_service.py::aggregate_status(results: dict[str, bool]) -> Literal["ok",
   "degraded"]` — núcleo puro, sin I/O (RF-002). "ok" si los tres servicios están `ok`,
@@ -12,3 +13,20 @@ directamente (regla de oro `SRV-ADR-017`).
   `error` sin colgar la respuesta; agrega el `trace_id` vigente del `ContextVar` de
   `core/logger.py`. Recibe los puertos por parámetro — no instancia adaptadores
   (`adapters/factory.py` los inyecta, pendiente de T-019/T-020).
+- `auth_service.py::login/refresh/logout` (`SRV-002-auth-rbac`, RF-001, RF-002,
+  RF-010, RF-011, RF-013, RF-014) — `login` aplica fuerza bruta (`login_attempts:
+  {email}:{ip}`, `MAX_LOGIN_ATTEMPTS=5`/`LOGIN_ATTEMPTS_WINDOW_SECONDS=900`), 401
+  genérico idéntico en los 3 casos de fallo (evita enumeración), emite `TokenPair`
+  (`core/security/jwt.py`) y guarda `refresh:{jti}` en cache (TTL 7 días); `refresh`
+  reemite el access con `rol`/`scope`/`project_id` **vigentes** vía
+  `rbac_service.resolve_permissions`; `logout` revoca el refresh, idempotente ante
+  token ya inválido/expirado/revocado. Reciben `secret_key: str` explícito (misma
+  convención que `core/security/jwt.py`, `services/` no lee `Settings()`).
+- `rbac_service.py::resolve_permissions/invalidate_permissions_cache/
+  update_user_role` (`SRV-002-auth-rbac`, RF-006, RF-007) — `resolve_permissions`
+  es *cache-first* (`rbac:{user_id}`, TTL 7 días): *cache-hit* no consulta
+  `UserRepositoryPort`; *cache-miss* consulta y repuebla; usuario no encontrado o
+  desactivado → `ProblemDetailError(401, "token-invalid")`. `update_user_role`
+  actualiza el rol y **luego** invalida el cache, en ese orden fijo (RF-006). Sin
+  router HTTP en este sprint (`spec.md §2`) — invocable por un futuro endpoint/CLI
+  de administración.
