@@ -113,10 +113,11 @@ actualizado: 2026-09-13
 - Antes de tocar nada: `bash .harness/gate/check.sh`.
 - **`SRV-001-walking-skeleton`** (primera feature real del ecosistema): Fase 1-3
   cerradas y aprobadas (`spec.md`/`plan.md` → `estado: approved`). Fase 4 en curso:
-  **T-001..T-015 implementadas, verificadas por el `revisor` y commiteadas** (6
-  commits en `main`, 37/37 tests, gate verde). Detalle de qué cubre cada tarea y su
-  evidencia vive en `tasks.md` (tabla de Cobertura) y en los mensajes de commit — no
-  se repite aquí (`method.md §10`, un canon por hecho).
+  **T-001..T-018 implementadas, verificadas por el `revisor` y commiteadas** (8
+  commits en `main`, 37/37 tests, `docker compose up` real verificado — postgres/
+  redis/mosquitto/backend `healthy`, MQTT anónimo rechazado de verdad). Detalle de
+  qué cubre cada tarea vive en `tasks.md` (tabla de Cobertura) y en los mensajes de
+  commit — no se repite aquí (`method.md §10`, un canon por hecho).
 - **Directiva de Pausa aplicada y aprobada** (2026-09-13): `adapters/factory.py` nace
   en T-015 (router) con placeholders in-memory, no en T-020 como preveía el plan
   original — `SRV-ADR-017` exige el punto de inyección desde que el router existe.
@@ -124,8 +125,7 @@ actualizado: 2026-09-13
 - Convención de commits fijada: Conventional Commits + `(RF-NNN)` en todo el
   ecosistema (se corrigió un overlay de `hira-server/AGENTS.md` que aún decía
   `[<COMP>-Sprint-N][TIPO][MÓDULO]`).
-- **Siguiente paso:** T-016..T-018 (infra contenedores: compose, `mosquitto.conf`,
-  `.env.example`, `nginx.conf`) → T-019..T-023 (adaptadores reales + seguridad,
-  requieren Docker — confirmado disponible: `docker 29.7.2`, `compose v5.4.0`) →
-  T-024/T-025 (e2e + gate) → T-026..T-030 (`[doc]`). Mismo flujo: `hira-infra`
+- **Siguiente paso:** T-019/T-020 (adaptadores reales Postgres/Redis/Mosquitto,
+  reemplazan el cuerpo de `adapters/factory.py`) → T-021..T-023 (seguridad Mosquitto)
+  → T-024/T-025 (e2e + gate) → T-026..T-030 (`[doc]`). Mismo flujo: `hira-infra`
   implementa por batch → `revisor` verifica → commit → siguiente.
