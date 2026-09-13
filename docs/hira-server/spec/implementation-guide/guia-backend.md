@@ -33,10 +33,9 @@ backend/
 │       └── notification_port.py # Protocol: send()
 │
 ├── adapters/                    # [HEXAGONAL] Implementaciones concretas de los puertos
-│   ├── factory.py               # Selecciona adaptador según HIRA_DEPLOY_MODE
+│   ├── factory.py               # Punto único de selección/instanciación de adaptadores concretos (SRV-ADR-017)
 │   ├── db/
-│   │   ├── postgresql_adapter.py   # Implementa DatabasePort — perfil server
-│   │   └── sqlite_adapter.py       # Implementa DatabasePort — perfil studio
+│   │   └── postgresql_adapter.py   # Implementa DatabasePort — único perfil (`E-ADR-001`)
 │   └── protocol/
 │       ├── bacnet_adapter.py       # Implementa ProtocolPort — BAC0 (IP y MSTP)
 │       ├── modbus_adapter.py       # Implementa ProtocolPort — pymodbus
@@ -85,7 +84,7 @@ backend/
     └── manager.py                # Gestión de conexiones WebSocket
 ```
 
-**Regla de oro:** `services/` solo importa de `core/ports/`. Nunca de `adapters/` directamente. `adapters/factory.py` selecciona la implementación concreta según `HIRA_DEPLOY_MODE`.
+**Regla de oro:** `services/` solo importa de `core/ports/`. Nunca de `adapters/` directamente. `adapters/factory.py` es el punto único de instanciación de la implementación concreta (un solo perfil de despliegue, `E-ADR-001` — sin `HIRA_DEPLOY_MODE`).
 
 ## Integración entre Módulos
 
@@ -94,7 +93,7 @@ backend/
 ```
 Adaptador de protocolo (lectura de punto asociado) → Redis pub/sub → WebSocket manager → Frontend
                                                                     → Alarm worker (evaluación)
-                                                                    → TimescaleDB/SQLite writer (histórico)
+                                                                    → TimescaleDB writer (histórico)
                                                                     → Logic worker (hira.read())
 ```
 

@@ -6,6 +6,10 @@ estado: no-iniciado
 fecha_inicio: —
 ---
 
+> ⚠️ **Superseded** por `.harness/specs/SRV-001-walking-skeleton/` (`spec.md`/`plan.md`/
+> `tasks.md`) — este documento es historia previa a la reestructuración del arnés, no se
+> mantiene activamente.
+
 > Sprint activo del ecosistema. Un solo sprint a la vez por track. HUB-H0 puede correr en
 > paralelo — cuando arranque, se añade aquí una segunda sección `## HUB-H0`.
 

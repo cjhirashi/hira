@@ -44,14 +44,14 @@ Registro centralizado de vulnerabilidades, riesgos técnicos y mejoras de diseñ
 |---|---|
 | **Severidad** | Crítico |
 | **Tipo** | Seguridad |
-| **Estado** | 🟡 En Proceso |
+| **Estado** | 🟢 Resuelto |
 | **Afecta** | Toda instalación |
 
 **Descripción:** Mosquitto con configuración por defecto permite conexiones anónimas. Cualquier dispositivo en la red local puede publicar datos falsos a los topics monitoreados por Hira, disparar alarmas incorrectas o alimentar lógica errónea.
 
 **Resolución:** `mosquitto.conf` con `allow_anonymous false` + `password_file`. Credenciales en variables de entorno `MQTT_USER`/`MQTT_PASSWORD`. El servicio paho-mqtt del backend se autentica al conectarse.
 
-**Verificación:** intentar conectar un cliente MQTT externo sin credenciales debe ser rechazado. Test automatizado en suite de integración.
+**Verificación:** implementado y verificado en `SRV-001-walking-skeleton` contra el broker Mosquitto real (no mocks) — T-016/T-017 (`mosquitto.conf` con `allow_anonymous false` + `password_file` generado y montado, `HEALTHCHECK` con credencial válida alcanza `healthy`), T-021/T-022 (`MosquittoAdapter.connect()` con `MQTT_USER`/`MQTT_PASSWORD`; credencial inválida agota su backoff fijo 1s/2s/4s sin loop ciego, log `level: error`, sin lanzar excepción — RF-008) y T-023 (`tests/integration/test_mqtt_security.py::test_anonymous_mqtt_client_is_rejected_by_real_broker`: cliente `paho-mqtt` externo sin credenciales, `CONNACK rc != 0`, contra el broker real del compose). Reverificado en la verificación e2e formal (T-024, `docker compose up`): `mosquitto` alcanza `healthy` con credencial real y `/health` refleja `mosquitto: ok`.
 
 ---
 
@@ -269,6 +269,7 @@ Registro centralizado de vulnerabilidades, riesgos técnicos y mejoras de diseñ
 
 | ID | Resolución | Fecha |
 |---|---|---|
+| VUL-SRV-001 | Resuelto — `allow_anonymous false` + `password_file` en Mosquitto, credencial propia del backend (`MQTT_USER`/`MQTT_PASSWORD`), verificado contra broker real (`SRV-001-walking-skeleton` T-016/T-017/T-021/T-022/T-023) | 2026-09-13 |
 | VUL-SRV-014 | Resuelto por rediseño — reemplazado por licenciamiento por puntos en línea (SRV-ADR-018) tras adoptar el modelo de un solo producto (SRV-ADR-015) | 2026-07-31 |
 
 ---

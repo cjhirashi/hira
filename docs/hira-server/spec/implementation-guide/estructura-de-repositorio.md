@@ -12,53 +12,58 @@ github: "https://github.com/cjhirashi/hira-server"
 tags: [proyecto, productos-software, hira-server, repositorio, docker]
 ---
 
-## Perfiles de Despliegue
+## Perfil de Despliegue
 
-Un solo código base, un solo repositorio (ver SRV-ADR-015). `HIRA_DEPLOY_MODE` distingue el perfil de despliegue, no un producto distinto (ver SRV-ADR-017):
-
-| Valor | Perfil | Base de datos | Uso típico |
-|---|---|---|---|
-| `server` | Producción | PostgreSQL + TimescaleDB + pgvector | Instalación comercial del cliente, o instalación local del integrador cuando quiere el stack completo |
-| `studio` | Local ligero | SQLite | Instalación local del integrador — diseño offline, multi-proyecto, simuladores |
+Un solo código base, un solo repositorio, **un solo perfil de despliegue** — producción,
+PostgreSQL + TimescaleDB (+ pgvector cuando llegue el módulo de IA). `E-ADR-001` retiró
+`HIRA_DEPLOY_MODE` y el perfil local ligero (`studio`, SQLite): Studio es hoy un producto
+cloud independiente (`hira-studio/`), no un perfil de este repositorio. No reintroducir
+`HIRA_DEPLOY_MODE`, `docker-compose.studio.yml` ni un adaptador SQLite.
 
 ## Árbol de Carpetas
 
+Estructura real, verificada en `SRV-001-walking-skeleton` (T-001..T-023):
+
 ```
-hira/
-├── docker-compose.yml          # Compose base (perfil server — PostgreSQL, stack completo)
+hira-server/
+├── docker-compose.yml          # Compose base (único perfil — PostgreSQL/TimescaleDB, Redis, Mosquitto, backend, nginx)
 ├── docker-compose.dev.yml      # Override: hot reload, puertos expuestos para debug
-├── docker-compose.prod.yml     # Override: restart policies, sin puertos extra
-├── docker-compose.studio.yml   # Override: HIRA_DEPLOY_MODE=studio, SQLite, sin TimescaleDB
 ├── .env.example                # Template de variables de entorno (sin valores reales)
-├── .gitignore
 │
 ├── docs/
 │   └── openapi.yaml            # [CONTRACT-FIRST] Contrato de API — se define ANTES de implementar routers
 │
-├── backend/                    # Ver .harness/spec/hira-server/implementation-guide/guia-backend.md - Guía Backend
+├── backend/                    # Ver implementation-guide/guia-backend.md — Guía Backend
 │   ├── Dockerfile
 │   ├── requirements.txt        # Versiones exactas fijadas, sin rangos ^ ni ~
 │   ├── main.py
-│   ├── core/
-│   ├── adapters/
+│   ├── core/                   # config.py, logger.py, middleware.py, ports/ (Protocol)
+│   ├── adapters/                # db/ (PostgreSQL), cache/ (Redis), mqtt/ (Mosquitto), factory.py
 │   ├── routers/
 │   ├── models/
 │   ├── schemas/
 │   ├── services/
 │   ├── workers/
-│   └── websocket/
+│   ├── websocket/
+│   └── tests/                  # unit + tests/integration/ (contra contenedores reales)
 │
-├── frontend/                   # Ver .harness/spec/hira-server/implementation-guide/guia-frontend.md - Guía Frontend
+├── frontend/                   # Ver implementation-guide/guia-frontend.md — Guía Frontend (stub en este sprint)
 │   ├── Dockerfile
 │   ├── package.json
 │   ├── vite.config.ts
 │   ├── tsconfig.json
 │   └── src/
 │
+├── mosquitto/
+│   ├── mosquitto.conf           # allow_anonymous false, password_file
+│   └── generate_password_file.sh
+│
 └── nginx/
     ├── nginx.conf
     └── ssl/                    # Certificados (no en repo)
 ```
+
+Cada carpeta lleva su propio `README.md` (regla del arnés — sin `MODULE.md`).
 
 ## Prerrequisitos
 
@@ -71,10 +76,10 @@ hira/
 
 ```bash
 git clone <repo>
-cd hira
+cd hira-server
 
-cp .env.example .env.development
-# Editar .env.development con valores locales
+cp .env.example .env
+# Editar .env con valores locales
 
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 
@@ -89,14 +94,7 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 ## Variables de Entorno
 
 ```env
-# ─── Perfil de despliegue ─────────────────────────────────────────────────────
-# server  — PostgreSQL + TimescaleDB + pgvector, dispositivos reales, multi-usuario
-# studio  — Local ligero: SQLite, sin TimescaleDB, pensado para multi-proyecto (SRV-ADR-020)
-HIRA_DEPLOY_MODE=server
-
-# ─── Base de datos ───────────────────────────────────────────────────────────
-# Perfil server: postgresql+asyncpg://hira:hira@postgres:5432/hiradb
-# Perfil studio: sqlite+aiosqlite:///./hira_local.db
+# ─── Base de datos (único perfil — PostgreSQL + TimescaleDB) ─────────────────
 DATABASE_URL=postgresql+asyncpg://hira:hira@postgres:5432/hiradb
 
 # ─── Servicios ───────────────────────────────────────────────────────────────
@@ -137,6 +135,6 @@ BAC0 permite crear un dispositivo BACnet simulado en la misma máquina. El scrip
 
 ## Gate de Salida
 
-- [x] Árbol de carpetas actualizado a perfiles de despliegue (no productos separados)
+- [x] Árbol de carpetas actualizado al perfil único de despliegue (`E-ADR-001`, sin `HIRA_DEPLOY_MODE`/SQLite)
 - [x] Variables de entorno completas
 - [ ] Revisado y aprobado por Charlie
