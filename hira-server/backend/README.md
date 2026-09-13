@@ -8,8 +8,11 @@ Feature activa: `.harness/specs/SRV-001-walking-skeleton/` (Walking Skeleton —
 
 `main.py` — punto de entrada FastAPI. El `lifespan` valida `Settings()` al arrancar
 (RF-003: `ValidationError` → log JSON `level: error` + `sys.exit(1)`, sin arranque
-parcial) y registra `CorrelationIdMiddleware` (RF-005). Sin routers todavía
-(`routers/monitor.py::GET /health` llega en T-013..T-015).
+parcial). Registra `AuthenticationMiddleware` y `CorrelationIdMiddleware`
+(`core/middleware.py`, RF-003/RF-005/RF-007 — ver docstring de `main.py` sobre el
+orden de registro invertido respecto al de ejecución), los routers
+`routers/monitor.py::GET /health` y `routers/auth.py::POST /auth/login|refresh|
+logout`, y el exception handler de `core.errors.ProblemDetailError` → RFC 9457.
 
 ## Subcarpetas
 

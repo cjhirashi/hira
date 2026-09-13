@@ -135,35 +135,77 @@ actualizado: 2026-09-13
       `project-scope-denied`).
 
 ### Adaptador de entrada — router
-- [ ] T-017 — Test `test_auth_router.py` (`TestClient`): contrato exacto de
+- [x] T-017 — Test `test_auth_router.py` (`TestClient`): contrato exacto de
       `openapi.yaml`, shape RFC 9457 en 401/429 (debe fallar) (cubre RF-001,
       RF-002, RF-010, RF-011, RF-013, RF-014) [zona: test-adaptador-entrada]
-- [ ] T-018 — Implementar `routers/auth.py` + `schemas/auth.py` +
+      **Nota:** falló primero con `ImportError: cannot import name
+      'get_user_repository_port' from 'adapters.factory'`. Tras T-018: 9/9
+      tests passed. Usa `app.dependency_overrides` (router) + `monkeypatch`
+      sobre `core.middleware.get_user_repository_port/get_cache_port` (ver nota
+      de T-020) para que `/auth/logout` (protegido por el middleware) resuelva
+      contra las mismas instancias in-memory que usó el login previo del mismo
+      test — sin eso, el middleware golpearía el `RedisAdapter`/
+      `_InMemoryUserRepository` reales de `factory.py` (sin contenedores en este
+      entorno).
+- [x] T-018 — Implementar `routers/auth.py` + `schemas/auth.py` +
       `adapters/factory.py::get_user_repository_port()` (nace aquí con
       placeholder in-memory — mismo patrón que la Directiva de Pausa de `SRV-001`:
       el router necesita el punto de inyección desde que existe) + registro en
       `main.py` (`include_router`, exception handler de `ProblemDetailError`)
       (cubre RF-001, RF-002, RF-010, RF-011, RF-013, RF-014)
       [zona: adaptador-entrada]
+      **Nota:** el placeholder `_InMemoryUserRepository` nace **vacío** (a
+      diferencia de los 3 placeholders de T-015 que "siempre responden ok") —
+      sin CRUD de usuarios en este sprint (`spec.md §2`), la única vía de
+      creación es el seed de T-026 (fuera de este alcance).
 
 ### Middleware — autenticación
-- [ ] T-019 — Test `test_authentication_middleware.py` (`TestClient` sobre app de
+- [x] T-019 — Test `test_authentication_middleware.py` (`TestClient` sobre app de
       prueba): token ausente/inválido/expirado → 401 con forma RFC 9457 exacta;
       ruta del *allowlist* no exige token; `request.state.user` disponible en ruta
       protegida (debe fallar) (cubre RF-003, RF-007) [zona: test-coordinación]
-- [ ] T-020 — Implementar `AuthenticationMiddleware` en `core/middleware.py` +
+      **Nota:** falló primero con `ImportError: cannot import name
+      'PUBLIC_ALLOWLIST' from 'core.middleware'`. Tras T-020: 11/11 tests passed
+      (incluye `/auth/logout` fuera del *allowlist* exige token, usuario
+      inexistente/desactivado → 401 `token-invalid` vía `resolve_permissions`).
+- [x] T-020 — Implementar `AuthenticationMiddleware` en `core/middleware.py` +
       registro en `main.py` (después de `CorrelationIdMiddleware`) (cubre RF-003,
       RF-007) [zona: coordinación]
+      **Desviación de implementación** (no reabre `plan.md`, corrección mecánica
+      de ASGI, no una decisión de producto — reportada al orquestador, no
+      autoaprobada): `plan.md §2` pide registrar `AuthenticationMiddleware`
+      "después de `CorrelationIdMiddleware`" para que el `trace_id` exista antes
+      de que Auth procese un fallo. Verificado empíricamente (ver docstring de
+      `core/middleware.py`/`main.py`) que Starlette envuelve el **último**
+      `add_middleware()` como el más externo (se ejecuta primero) — registrar a
+      `AuthenticationMiddleware` *después* en el código lo deja como el más
+      externo, ejecutándose **antes** que `CorrelationIdMiddleware` y
+      contradiciendo la razón documentada. Para cumplir el resultado exigido
+      (`trace_id` ya fijado cuando Auth actúa), el orden de líneas en `main.py`
+      es el inverso al literal: `add_middleware(AuthenticationMiddleware)`
+      seguido de `add_middleware(CorrelationIdMiddleware)` — `CorrelationId`
+      queda como el más externo. El comentario en `main.py`/`core/middleware.py`
+      documenta esto explícitamente.
 
 ### Dependencias — autorización fina
-- [ ] T-021 — Test `test_rbac_dependencies.py` (app sintética, sin tocar routers
+- [x] T-021 — Test `test_rbac_dependencies.py` (app sintética, sin tocar routers
       de producción): Visor bloqueado en escritura (403); Operador bloqueado en
       recurso Admin (403); `scope=project` cruzando de proyecto (403);
       `scope=global` sin re-login (200) (debe fallar) (cubre RF-004, RF-005,
       RF-008, RF-009) [zona: test-adaptador-entrada]
-- [ ] T-022 — Implementar `core/security/dependencies.py::require_role/
+      **Nota:** falló primero con `ModuleNotFoundError: No module named
+      'core.security.dependencies'`. Tras T-022: 8/8 tests passed (incluye
+      casos positivos: Admin/Operador permitidos en escritura, Admin permitido
+      en recurso reservado, `scope=project` en su propio proyecto).
+- [x] T-022 — Implementar `core/security/dependencies.py::require_role/
       require_project_scope` (cubre RF-004, RF-005, RF-008, RF-009)
       [zona: adaptador-entrada]
+      **Nota:** `require_role(*roles)` es un chequeo genérico de pertenencia —
+      el router decide qué conjunto de roles pasar (p. ej. `require_role(
+      "admin", "operador")` para escritura, equivalente al conjunto de
+      `rbac_policy.can_write`; `require_role("admin")` para un recurso
+      reservado, equivalente a `is_admin`). `require_project_scope` sí llama
+      directamente a `rbac_policy.can_access_project`.
 
 ### Modelo de datos — primera tabla de negocio
 - [ ] T-023 — `models/user_model.py` (`Table` Core) + `alembic.ini`/`alembic/
@@ -220,15 +262,15 @@ actualizado: 2026-09-13
 |---|---|---|---|
 | RF-001 | T-003, T-004, T-012, T-013, T-017, T-018, T-024, T-025, T-027 | `test_jwt_tokens.py`, `test_auth_service.py`, `test_auth_router.py`, `test_user_repository_adapter.py`, `test_auth_security.py` | Pendiente |
 | RF-002 | T-012, T-013, T-017, T-018, T-024, T-025, T-027 | `test_auth_service.py`, `test_auth_router.py`, `test_user_repository_adapter.py`, `test_auth_security.py` | Pendiente |
-| RF-003 | T-003, T-004, T-019, T-020 | `test_jwt_tokens.py`, `test_authentication_middleware.py` | Pendiente |
-| RF-004 | T-005, T-006, T-021, T-022 | `test_rbac_policy.py`, `test_rbac_dependencies.py` | Pendiente |
-| RF-005 | T-005, T-006, T-021, T-022 | `test_rbac_policy.py`, `test_rbac_dependencies.py` | Pendiente |
+| RF-003 | T-003, T-004, T-019, T-020 | `test_jwt_tokens.py`, `test_authentication_middleware.py` | Pass |
+| RF-004 | T-005, T-006, T-021, T-022 | `test_rbac_policy.py`, `test_rbac_dependencies.py` | Pass |
+| RF-005 | T-005, T-006, T-021, T-022 | `test_rbac_policy.py`, `test_rbac_dependencies.py` | Pass |
 | RF-006 | T-014, T-015, T-024, T-025 | `test_rbac_service.py`, `test_user_repository_adapter.py` | Pendiente |
 | RF-007 | T-014, T-015, T-024, T-025 | `test_rbac_service.py`, `test_user_repository_adapter.py` | Pendiente |
-| RF-008 | T-005, T-006, T-021, T-022 | `test_rbac_policy.py`, `test_rbac_dependencies.py` | Pendiente |
-| RF-009 | T-005, T-006, T-021, T-022 | `test_rbac_policy.py`, `test_rbac_dependencies.py` | Pendiente |
+| RF-008 | T-005, T-006, T-021, T-022 | `test_rbac_policy.py`, `test_rbac_dependencies.py` | Pass |
+| RF-009 | T-005, T-006, T-021, T-022 | `test_rbac_policy.py`, `test_rbac_dependencies.py` | Pass |
 | RF-010 | T-012, T-013, T-017, T-018, T-027 | `test_auth_service.py`, `test_auth_router.py`, `test_auth_security.py` | Pendiente |
-| RF-011 | T-003, T-004, T-012, T-013, T-017, T-018 | `test_jwt_tokens.py`, `test_auth_service.py`, `test_auth_router.py` | Pendiente |
+| RF-011 | T-003, T-004, T-012, T-013, T-017, T-018 | `test_jwt_tokens.py`, `test_auth_service.py`, `test_auth_router.py` | Pass |
 | RF-012 | T-001, T-002, T-024, T-025, T-026, T-027 | `test_password_hashing.py`, `test_user_repository_adapter.py`, `test_auth_security.py` | Pendiente |
 | RF-013 | T-003, T-004, T-012, T-013, T-017, T-018, T-027 | `test_jwt_tokens.py`, `test_auth_service.py`, `test_auth_router.py`, `test_auth_security.py` | Pendiente |
 | RF-014 | T-012, T-013, T-017, T-018, T-027 | `test_auth_service.py`, `test_auth_router.py`, `test_auth_security.py` | Pendiente |
@@ -239,3 +281,18 @@ actualizado: 2026-09-13
 
 > Esta tabla **es** la trazabilidad de la feature (no hay `traceability-matrix.md`).
 > Fila sin test, en `Fail` o `Pendiente` → el gate no abre.
+>
+> **Criterio de `Pass` en este checkpoint (T-017..T-022, 2026-09-13):** una fila
+> pasa a `Pass` solo cuando **todas** sus tareas listadas están `[x]` en la
+> sección de arriba — sin excepciones ni "casi completo". Las 6 filas marcadas
+> `Pass` (RF-003, RF-004, RF-005, RF-008, RF-009, RF-011) son exactamente las que
+> no dependen de ninguna tarea `T-024` en adelante: su comportamiento queda
+> demostrado de punta a punta por HTTP (`test_auth_router.py`) y por app de
+> prueba (`test_authentication_middleware.py`, `test_rbac_dependencies.py`) con
+> `UserRepositoryPort`/`CachePort` in-memory — añadir el adaptador real de
+> Postgres (T-024/T-025) no cambia esa lógica, solo amplía la fuente de verdad.
+> El resto de filas `Pendiente` son exactamente las que sí requieren un usuario
+> real persistido (`RF-001/002/006/007/010/012/014`, login/bcrypt/rate-limit/
+> update_role contra datos reales) o el `RF-013` explícitamente casado con la
+> prueba de seguridad end-to-end (T-027) — ninguna quedó pendiente por trabajo
+> de este batch sin hacer.

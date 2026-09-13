@@ -35,6 +35,36 @@ cita la ancla que cubre.
   `detail`; `schemas/errors.py::ProblemDetail` serializa el sobre RFC 9457
   exacto.
 
+### `SRV-002-auth-rbac` (coordinación, T-010..T-015 — dobles de `UserRepositoryPort`/`CachePort`)
+
+- `test_cache_port_contract.py` — contrato ampliado de `CachePort` (`get/set/
+  incr/expire/delete`, `@runtime_checkable`).
+- `test_auth_service.py` — `login/refresh/logout`: fuerza bruta (6º intento →
+  429, resetea en éxito), mismo 401 genérico en los 3 casos de RF-002, refresh
+  con token revocado → 401, logout idempotente (RF-001, RF-002, RF-010, RF-011,
+  RF-013, RF-014).
+- `test_rbac_service.py` — `resolve_permissions` *cache-first* (cache-hit no
+  toca `UserRepositoryPort`; cache-miss consulta y repuebla); `update_user_role`
+  invalida el cache (RF-006, RF-007).
+
+### `SRV-002-auth-rbac` (adaptador de entrada, T-017..T-022)
+
+- `test_auth_router.py` — `POST /auth/login|refresh|logout` contra la app real
+  de `main.py` (`TestClient`), con `UserRepositoryPort`/`CachePort` in-memory vía
+  `app.dependency_overrides` (router) + `monkeypatch` sobre `core.middleware`
+  (para que `AuthenticationMiddleware` resuelva contra las mismas instancias en
+  `/auth/logout`); shape exacto de `openapi.yaml`, 200/401/429 con el sobre RFC
+  9457 correcto (RF-001, RF-002, RF-010, RF-011, RF-013, RF-014).
+- `test_authentication_middleware.py` — `AuthenticationMiddleware` sobre una app
+  de prueba: token ausente/inválido/expirado → 401 RFC 9457 exacto; rutas del
+  *allowlist* (`/health`, `/auth/login`) no exigen token; `/auth/logout` (fuera
+  del *allowlist*) sí lo exige; `request.state.user` disponible en una ruta
+  protegida tras un token válido (RF-003, RF-007).
+- `test_rbac_dependencies.py` — `require_role`/`require_project_scope` sobre una
+  app **sintética** (sin tocar routers de producción): Visor bloqueado en
+  escritura, Operador bloqueado en recurso Admin, `scope=project` cruzando de
+  proyecto, `scope=global` sin re-login (RF-004, RF-005, RF-008, RF-009).
+
 `asyncio_mode = auto` (`pytest.ini`) — los tests `async def` no necesitan el marcador
 `@pytest.mark.asyncio` explícito, aunque algunos lo declaran por claridad.
 

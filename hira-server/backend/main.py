@@ -19,18 +19,37 @@ usa `routers/monitor.py` vía `Depends` (`SRV-ADR-017`).
 `trace_id` propagado o generado (`core/middleware.py`).
 
 `routers/monitor.py::GET /health` se registra aquí (RF-002, T-013..T-015).
+
+`routers/auth.py::POST /auth/login|refresh|logout` (`SRV-002-auth-rbac`,
+T-017/T-018) se registra aquí, junto con el exception handler de
+`core.errors.ProblemDetailError` → `schemas.errors.ProblemDetail` (RFC 9457,
+`media_type="application/problem+json"`, `plan.md §2`/§4).
+
+`AuthenticationMiddleware` (T-019/T-020, RF-003/RF-007) se registra **antes** que
+`CorrelationIdMiddleware` en el código de abajo — a propósito, no es un desliz:
+Starlette envuelve el middleware añadido **último** como el más externo (se
+ejecuta primero), así que para que el `trace_id` ya exista cuando
+`AuthenticationMiddleware` procese (y eventualmente loguee) un fallo de
+autenticación, `CorrelationIdMiddleware` debe ser el añadido en último lugar
+(verificado empíricamente; ver nota de desviación en `tasks.md` T-020 — la
+redacción de `plan.md §2`/§6 describe el resultado deseado, "el trace_id debe
+existir antes", con el orden de líneas de código invertido al que lo logra).
 """
 import sys
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
 from adapters.factory import get_notification_port
 from core.config import Settings
+from core.errors import ProblemDetailError
 from core.logger import get_logger
-from core.middleware import CorrelationIdMiddleware
+from core.middleware import AuthenticationMiddleware, CorrelationIdMiddleware
+from routers.auth import router as auth_router
 from routers.monitor import router as monitor_router
+from schemas.errors import ProblemDetail
 
 _logger = get_logger("main")
 
@@ -63,5 +82,25 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Hira Server", lifespan=lifespan)
+# Orden de registro invertido a propósito respecto al orden de ejecución deseado
+# — ver docstring del módulo (Starlette envuelve el último `add_middleware` como
+# el más externo/primero en ejecutar).
+app.add_middleware(AuthenticationMiddleware)
 app.add_middleware(CorrelationIdMiddleware)
 app.include_router(monitor_router)
+app.include_router(auth_router)
+
+
+@app.exception_handler(ProblemDetailError)
+async def problem_detail_exception_handler(
+    request: Request, exc: ProblemDetailError
+) -> JSONResponse:
+    """RFC 9457 (`E-ADR-003`) — traduce `ProblemDetailError` a la respuesta HTTP."""
+    problem = ProblemDetail(
+        type=exc.type_, title=exc.title, status=exc.status, detail=exc.detail
+    )
+    return JSONResponse(
+        status_code=exc.status,
+        content=problem.model_dump(),
+        media_type="application/problem+json",
+    )

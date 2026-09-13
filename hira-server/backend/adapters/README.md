@@ -9,7 +9,11 @@ de despliegue, sin `HIRA_DEPLOY_MODE` (`E-ADR-001`).
   coherentes con los `Protocol` de `core/ports/`. T-019/T-020 reemplazó el
   **cuerpo** de sus 3 funciones para instanciar los adaptadores reales de abajo
   (singleton perezoso por proceso); la firma no cambió, `routers/monitor.py` no
-  se tocó en ese batch.
+  se tocó en ese batch. `get_user_repository_port()` (`SRV-002-auth-rbac`,
+  T-017/T-018) es una 4ª función, con el mismo patrón: nace con
+  `_InMemoryUserRepository` (vacío por diseño, sin CRUD de usuarios en este
+  sprint) — `adapters/db/user_repository_adapter.py::PostgreSQLUserRepository`
+  (T-024/T-025, fuera de alcance) reemplaza su cuerpo sin cambiar la firma.
 - `db/` — `postgresql_adapter.py` implementa `DatabasePort` (PostgreSQL/TimescaleDB,
   SQLAlchemy 2.x async + `asyncpg`, `SELECT 1`).
 - `cache/` — `redis_adapter.py` implementa `CachePort` (`redis.asyncio`, `PING`).

@@ -11,7 +11,10 @@ mocks, con librerías reales (`bcrypt`, `PyJWT`).
 - `rbac_policy.py` — `can_write`, `is_admin`, `can_access_project`: reglas puras
   del MVP de 3 roles fijos (RF-004, RF-005, RF-008, RF-009). El RBAC dinámico
   completo es v0.2 (`SRV-ADR-005`), no se anticipa aquí.
-
-Pendiente de un batch posterior de `tasks.md` (T-009 en adelante, fuera de
-alcance de este batch): `dependencies.py` (`require_role`/`require_project_scope`,
-`Depends()` de FastAPI — consumen `rbac_policy.py`).
+- `dependencies.py` — `require_role(*roles)`/`require_project_scope(project_id_param)`
+  (T-021/T-022, RF-004, RF-005, RF-008, RF-009): factories de `Depends()` de
+  FastAPI (única excepción de esta carpeta que sí importa FastAPI, justificada en
+  `plan.md §7` — Starlette resuelve los `path params` **después** de que corre
+  `BaseHTTPMiddleware.dispatch`, así que la autorización que depende de
+  `project_id` no puede vivir en el middleware). Leen `request.state.user` (ya
+  fijado por `AuthenticationMiddleware`) y aplican `rbac_policy.py`.

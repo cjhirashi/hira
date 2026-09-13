@@ -8,7 +8,17 @@ Núcleo transversal del backend — no depende de infraestructura concreta.
   service, module, trace_id, message`), cero `print()` (RF-004).
 - `middleware.py` — `CorrelationIdMiddleware` (RF-005): lee `X-Trace-ID` del request o
   genera un `uuid4()`, lo fija en `logger.trace_id_var` durante el request y lo
-  devuelve en la respuesta.
+  devuelve en la respuesta. `AuthenticationMiddleware` (`SRV-002-auth-rbac`,
+  T-019/T-020, RF-003/RF-007): exige `Authorization: Bearer <token>` fuera de
+  `PUBLIC_ALLOWLIST` (`/health`, `/auth/login`, `/auth/refresh`, `/docs`,
+  `/openapi.json`, `/redoc`), decodifica el access token y resuelve
+  `request.state.user` vía `services/rbac_service.py::resolve_permissions`;
+  cualquier 401 se retorna como `JSONResponse` RFC 9457 directamente (no depende
+  del exception handler de FastAPI). Registrado en `main.py` **antes** que
+  `CorrelationIdMiddleware` en el código — Starlette envuelve el último
+  `add_middleware` como el más externo/primero en ejecutar, así que ese orden de
+  líneas es el que logra que el `trace_id` exista antes de que Auth procese un
+  fallo (ver docstring de `core/middleware.py` y de `main.py`).
 - `ports/` — interfaces abstractas (`Protocol`) que `services/` puede importar; `core/`
   nunca importa `adapters/`.
 - `errors.py` — `ProblemDetailError(status, type_, title, detail)`, excepción del
