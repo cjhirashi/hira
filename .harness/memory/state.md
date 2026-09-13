@@ -111,45 +111,21 @@ actualizado: 2026-09-13
 ## Próximo paso concreto
 
 - Antes de tocar nada: `bash .harness/gate/check.sh`.
-- **[2026-09-13] Primera feature real arrancada:** `SRV-001-walking-skeleton` (Walking
-  Skeleton de Hira Server, ex `SRV-Sprint-1`). Fase 1 (Specify) cerrada — usuario
-  confirmó "así es". `spec.md` en `.harness/specs/SRV-001-walking-skeleton/spec.md`,
-  `estado: in-review`, `aprobaciones.fase_1` firmada. `[NEEDS CLARIFICATION] = 0`.
-- De paso se corrigió drift de documentación: `docs/planning/ROADMAP.md` (ancla de
-  `HUB-H0`) y `docs/hira-studio/spec/OPEN-QUESTIONS.md` (SQ-4) citaban "arquitectura
-  directa / `HUB-ADR-05`" — desactualizado desde `E-ADR-002` (2026-09-04, homogeneiza a
-  Hexagonal). Corregido a citar `E-ADR-002`.
-- **[2026-09-13] Fase 2 y 3 cerradas para `SRV-001-walking-skeleton`.** `plan.md`
-  redactado por `arquitecto` (diseño Hexagonal: núcleo = `aggregate_status`,
-  coordinación = `health_service.get_health` sobre 3 puertos, adaptadores Postgres/
-  Redis/Mosquitto con `VUL-SRV-001` resuelto en este sprint). Gate 2 aprobado por el
-  usuario (2026-09-13) — verificado que `ADR-004` (refresco de rutas, mismo día) no
-  contradice el plan. `tasks.md` con 30 tareas (T-001..T-030, TDD, ≤30min c/u) y tabla
-  de cobertura 100 % de RF-001..008/RNF-001-002 + 5 filas `[doc]`. `spec.md`/`plan.md`
-  → `estado: approved`, ambas aprobaciones firmadas.
-- Nota abierta, no bloqueante: `hira-server/AGENTS.md` (overlay regenerado) describe
-  commits `[<COMP>-Sprint-N][TIPO][MÓDULO]`, pero el `AGENTS.md` raíz dice que features
-  nuevas usan Conventional Commits + `(RF-NNN)` (formato con corchetes = histórico, no
-  retroactivo). Discrepancia preexistente entre overlay y raíz, no introducida por esta
-  sesión — resolver antes del primer commit real de Fase 4.
-- **[2026-09-13] Fase 4 en curso — primer batch (T-001..T-007) implementado y
-  verificado.** `hira-infra` implementó estructura de repo + `aggregate_status` +
-  `core/config.py` + `core/logger.py`, TDD real (22 tests, evidencia pegada). El
-  `revisor` rebotó 2 hallazgos menores (RF-003 marcado `Pass` sin matiz cuando el
-  wiring del `lifespan` en `main.py` aún no existe; `covers` de `spec.md` no incluía
-  `hira-server/frontend/**` ni `hira-server/docs/**` que T-001 sí creó) — ambos
-  corregidos: `covers` ampliado, T-012 ahora también cubre el wiring de RF-003
-  (`main.py` nace ahí), fila RF-003 de `tasks.md` marcada `Parcial`. Gate verde. Nada
-  commiteado todavía (queda en el working tree para decisión del usuario).
-- Convención de commits corregida de raíz: overlay `hira-server/AGENTS.md` decía
-  `[<COMP>-Sprint-N][TIPO][MÓDULO]`; ahora usa Conventional Commits + `(RF-NNN)` como
-  el `AGENTS.md` raíz siempre exigió. Fuente: `.harness/claude/{ecosystem,hira-server}.md`
-  (regenerados con `build_claude.py`, `--check` → "al día").
-- **[2026-09-13] T-001..T-012 commiteadas (3 commits) y verificadas por el revisor**
-  (2 rondas, 1 rebote menor ya corregido). 35/35 tests en verde. Docker confirmado
-  disponible en el entorno (`docker 29.7.2`, `compose v5.4.0`) — T-016..T-024 son
-  ejecutables de verdad, no solo diseño.
-- **Siguiente paso:** T-013 (contrato OpenAPI) → T-014/T-015 (router `/health`) →
-  T-016..T-018 (infra contenedores) → T-019..T-023 (adaptadores + seguridad, requieren
-  Docker) → T-024/T-025 (e2e + gate) → T-026..T-030 (`[doc]`). Mismo flujo: `hira-infra`
+- **`SRV-001-walking-skeleton`** (primera feature real del ecosistema): Fase 1-3
+  cerradas y aprobadas (`spec.md`/`plan.md` → `estado: approved`). Fase 4 en curso:
+  **T-001..T-015 implementadas, verificadas por el `revisor` y commiteadas** (6
+  commits en `main`, 37/37 tests, gate verde). Detalle de qué cubre cada tarea y su
+  evidencia vive en `tasks.md` (tabla de Cobertura) y en los mensajes de commit — no
+  se repite aquí (`method.md §10`, un canon por hecho).
+- **Directiva de Pausa aplicada y aprobada** (2026-09-13): `adapters/factory.py` nace
+  en T-015 (router) con placeholders in-memory, no en T-020 como preveía el plan
+  original — `SRV-ADR-017` exige el punto de inyección desde que el router existe.
+  Ver `plan.md §7`.
+- Convención de commits fijada: Conventional Commits + `(RF-NNN)` en todo el
+  ecosistema (se corrigió un overlay de `hira-server/AGENTS.md` que aún decía
+  `[<COMP>-Sprint-N][TIPO][MÓDULO]`).
+- **Siguiente paso:** T-016..T-018 (infra contenedores: compose, `mosquitto.conf`,
+  `.env.example`, `nginx.conf`) → T-019..T-023 (adaptadores reales + seguridad,
+  requieren Docker — confirmado disponible: `docker 29.7.2`, `compose v5.4.0`) →
+  T-024/T-025 (e2e + gate) → T-026..T-030 (`[doc]`). Mismo flujo: `hira-infra`
   implementa por batch → `revisor` verifica → commit → siguiente.
