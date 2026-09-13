@@ -2,7 +2,7 @@
 id: TASKS-SRV-001
 tipo: tasks
 feature: SRV-001-walking-skeleton
-estado: implemented
+estado: verified
 actualizado: 2026-09-13
 ---
 

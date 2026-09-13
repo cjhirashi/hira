@@ -2,7 +2,7 @@
 id: PLAN-SRV-001
 tipo: plan
 feature: SRV-001-walking-skeleton
-estado: implemented
+estado: verified
 aprobaciones:
   fase_2: { por: "Carlos", fecha: 2026-09-13 }
 actualizado: 2026-09-13
