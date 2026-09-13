@@ -25,6 +25,56 @@ Session-End por sesión, con el formato fijo de `method.md §10`. Las bitácoras
 
 ---
 
+## [2026-09-13] SRV-002-auth-rbac — implemented
+
+- **Fase alcanzada:** implement (40/40 tareas, T-001..T-040)
+- **Rebotes del verificador:** 2 — (1) durante la investigación de la
+  Directiva de Pausa de RNF-001, la primera solución propuesta ("solo migrar
+  a ASGI puro") resultó insuficiente al medirla con la lógica real (~29ms,
+  seguía sobre el umbral) — el revisor la rebotó con evidencia propia antes de
+  aceptar el diseño completo; (2) el batch de cierre (T-029..T-031) fue
+  rebotado porque el contenido de las 3 tareas estaba bien pero faltaba el
+  protocolo de Session-End (`estado`, `anchor_commit`, esta entrada,
+  `state.md`) — responsabilidad del coordinador, no del implementador.
+- **Directiva de Pausa:** sí, 1 — `RNF-001` (middleware RBAC <5ms, 100
+  concurrentes) medía ~54ms por 2 causas aditivas confirmadas de forma
+  independiente en 2 rondas de revisor: el piso propio de
+  `starlette.middleware.base.BaseHTTPMiddleware` (~20-36ms sin lógica) y el
+  round-trip real a Redis por request en *cache-hit* (~27-30ms, persiste sin
+  middleware). Solución de raíz aprobada por Carlos: middleware ASGI puro +
+  `LocalPermissionsCache` (caché en memoria del proceso, TTL 30s) con
+  invalidación por *pub/sub* de Redis. Verificado real: overhead final
+  ~0.1ms, confirmado en 5 corridas independientes por 2 rondas de revisor
+  contra Postgres/Redis reales. RF-006 (`spec.md`) ganó una nota de semántica
+  *best-effort* entre procesos/réplicas, confirmada por Carlos.
+- **Drift / re-anchor:** no (primer anclaje de la feature)
+- **Anclas movidas:** `SRV-002-auth-rbac` → `f8157ed6efb7668b90c3dd4a61a97a2616301cf3`
+- **Gate:** verde (21 ok · 1 warn preexistente — `spectral` no instalado)
+- **Docs actualizadas:** `hira-server/docs/openapi.yaml` (ampliado, `GET
+  /health` de `SRV-001` intacto); `hira-server/README.md` (paso operativo
+  Alembic); `docs/hira-server/spec/modules/auth-rbac-seguridad.md`
+  ("Superusuario" → "Admin", MVP de 3 roles fijos); `docs/hira-server/spec/
+  validation/vulnerabilities.md` (`VUL-SRV-004` 🟡→🟢); `docs/decisions/
+  ecosystem/E-ADR-003-convencion-rfc9457-type.md` (nuevo, aplica a los 3
+  productos, no solo a esta feature).
+- **Decisiones de diseño / límites de integración:** MVP de `SRV-ADR-005`
+  (3 roles fijos: Admin/Operador/Visor; RBAC dinámico completo queda para
+  v0.2). `UserRepositoryPort` nuevo (no se fuerza en `DatabasePort`, que sigue
+  siendo *liveness*-only). `CachePort` ampliado con key-value genérico +
+  `publish`/`subscribe` (mismo puerto, no uno nuevo). Autenticación como
+  middleware ASGI puro + autorización fina como `Depends()` (Starlette no
+  resuelve *path params* antes del middleware ASGI). Sobre RFC 9457
+  formalizado como convención de ecosistema (`E-ADR-003`). Solo backend/
+  contrato — la vista de login queda para el sprint de frontend con
+  `experto-ux-ui`.
+- **Próximo paso:** decidir con el usuario la siguiente feature real —
+  `SRV-Sprint-3` (protocolos BACnet/Modbus/MQTT + simuladores, sigue el orden
+  del roadmap sobre Server) o `HUB-H0` (Walking Skeleton de Hira Hub, puede
+  arrancar en paralelo). Aprobación humana final de `estado: verified`
+  pendiente (Gate 4) — el orquestador no se autoaprueba.
+
+---
+
 ## [2026-09-13] SRV-001-walking-skeleton — implemented
 
 - **Fase alcanzada:** implement (30/30 tareas, T-001..T-030)

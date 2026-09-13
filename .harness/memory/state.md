@@ -83,31 +83,25 @@ actualizado: 2026-09-13
   decidió no reescribir ese corpus — es documentación de producto cerrada, no
   maquinaria del arnés. 404 en uno de esos enlaces = doc de producto desactualizada,
   no un problema del arnés; backlog de higiene separado, no se parchea el arnés.
-- Ninguno abierto — `SRV-001-walking-skeleton` cerrada en `estado: verified`
-  (Carlos, 2026-09-13, Gate 4).
+- Ninguno abierto — `SRV-001-walking-skeleton` y `SRV-002-auth-rbac` cerradas.
 
 ## Próximo paso concreto
 
 - Antes de tocar nada: `bash .harness/gate/check.sh`.
-- **Feature activa: `SRV-002-auth-rbac`** (Auth + RBAC MVP, 3 roles fijos —
-  `SRV-ADR-005` fasea el RBAC dinámico completo a v0.2). Fase 1/2 aprobadas.
-  Fase 4: **T-001..T-027 completas y verificadas** (141 tests, Postgres/Redis
-  reales, 8 commits). 13/14 `RF-` en `Pass`.
-- **Directiva de Pausa RNF-001 — resuelta y aprobada, lista para implementar.**
-  `AuthenticationMiddleware` (`BaseHTTPMiddleware`) medía ~54ms (umbral <5ms,
-  100 concurrentes) por 2 causas aditivas confirmadas de forma independiente
-  (2 rondas de revisor): (1) el piso propio de esa clase base (~20-36ms sin
-  ninguna lógica) y (2) el round-trip real a Redis por request en *cache-hit*
-  (~27-30ms, persiste incluso sin middleware — el revisor demostró que "solo
-  migrar a ASGI puro" no bastaba). Carlos aprobó atacar ambas: middleware
-  ASGI puro + `LocalPermissionsCache` (en memoria del proceso, TTL 30s) con
-  invalidación por pub/sub de Redis. RF-006 (`spec.md`) ya tiene la nota de
-  semántica *best-effort* entre procesos, confirmada. Diseño completo:
-  `plan.md §10`; tareas nuevas `T-032..T-040` en `tasks.md` (no reordena las
-  31 ya existentes).
-- **Siguiente paso:** implementar T-032..T-040 con `hira-auth` (batches +
-  `revisor` + commit, mismo flujo). **T-040 es obligatoria y no se asume el
-  resultado** — re-mide RNF-001 con el diseño completo antes de quitar el
-  `xfail` de `test_rbac_latency.py`; si sigue sobre el umbral, se abre una
-  nueva Directiva de Pausa en vez de forzarlo. Después: T-029..T-031 (cierre
-  `[doc]`, incluye `VUL-SRV-004` solo si RNF-001 ya está verificado de verdad).
+- **`SRV-001-walking-skeleton`**: `estado: verified` (Carlos, Gate 4).
+- **`SRV-002-auth-rbac`** (Auth + RBAC MVP, 3 roles fijos): **`estado:
+  implemented`**, 40/40 tareas, ancla en `f8157ed6efb7668b90c3dd4a61a97a2616301cf3`.
+  Incluyó 1 Directiva de Pausa arquitectónica (RNF-001: middleware RBAC
+  <5ms/100 concurrentes, resuelto de raíz con middleware ASGI puro +
+  `LocalPermissionsCache`/pub-sub — de ~54ms a ~0.1ms real, verificado en 5
+  corridas por 2 rondas de revisor) y un nuevo ADR de ecosistema (`E-ADR-003`,
+  convención RFC 9457). Detalle completo: entrada Session-End `[2026-09-13]
+  SRV-002-auth-rbac` en `memory/history.md` y tabla de Cobertura de
+  `tasks.md` — no se repite aquí (`method.md §10`).
+- **Pendiente de tu confirmación:** ¿`SRV-002-auth-rbac` pasa a `estado:
+  verified` (Gate 4, aprobación humana)? El orquestador no se autoaprueba.
+- **Siguiente paso:** elegir la siguiente feature real — `SRV-Sprint-3`
+  (protocolos BACnet/Modbus/MQTT + simuladores, sigue el roadmap sobre
+  Server) o `HUB-H0` (Walking Skeleton de Hira Hub, sin dependencia, puede
+  arrancar en paralelo). Aplicar la rúbrica (`method.md §2`) y Fase 1 con
+  `autor-de-spec` para la que se elija.
