@@ -47,25 +47,33 @@ actualizado: 2026-09-13
       [zona: servicio]
 
 ### Puertos + coordinación — `get_health()`
-- [ ] T-008 — Test `test_health_service.py` con dobles (`Protocol` fakes) de
+- [x] T-008 — Test `test_health_service.py` con dobles (`Protocol` fakes) de
       `DatabasePort`/`CachePort`/`NotificationPort`: timeout de 2s por servicio no
       cuelga la respuesta, agrega `trace_id` (debe fallar) (cubre RF-002, RF-005,
       RF-007) [zona: test-coordinación]
-- [ ] T-009 — Implementar `backend/core/ports/{database_port.py,cache_port.py,
+- [x] T-009 — Implementar `backend/core/ports/{database_port.py,cache_port.py,
       notification_port.py}` (`Protocol`) (cubre RF-002) [zona: puertos]
-- [ ] T-010 — Implementar `backend/services/health_service.py::get_health` —
+- [x] T-010 — Implementar `backend/services/health_service.py::get_health` —
       `asyncio.wait_for(timeout=2)` por puerto, agrega `status`/`services`/`trace_id`
       (cubre RF-002, RF-005, RF-007) [zona: coordinación]
 
 ### Correlation ID
-- [ ] T-011 — Test `test_correlation_id.py`: `X-Trace-ID` propagado o generado si el
+- [x] T-011 — Test `test_correlation_id.py`: `X-Trace-ID` propagado o generado si el
       cliente no lo envía (debe fallar) (cubre RF-005) [zona: test-coordinación]
-- [ ] T-012 — Implementar `backend/core/middleware.py::CorrelationIdMiddleware` +
+- [x] T-012 — Implementar `backend/core/middleware.py::CorrelationIdMiddleware` +
       registro en `backend/main.py` (cubre RF-005) [zona: coordinación]. **Incluye**
       el wiring de `Settings` en el `lifespan` de `main.py` (RF-003: `ValidationError`
       capturado, log JSON `level: error` nombrando el/los campo(s) faltante(s),
       `sys.exit(1)` sin arranque parcial) — es el primer punto donde `main.py` existe;
-      test en `backend/tests/test_main_lifespan.py` (cubre RF-003, RF-005)
+      test en `backend/tests/test_main_lifespan.py` (cubre RF-003, RF-005). **Nota de
+      implementación:** al escribir `test_main_lifespan.py` se detectó un bug real en
+      `core/logger.py` (batch anterior) — `logging.StreamHandler(stream=sys.stdout)`
+      fija la referencia a `sys.stdout` en el momento de crear el logger; un logger
+      creado a nivel de módulo (`main.py::_logger`, en tiempo de import) queda atado
+      al `sys.stdout` real del proceso y `capsys` no puede capturar su salida en
+      tests. Corregido con `_DynamicStdoutHandler` (resuelve `sys.stdout` en cada
+      `emit`, no al crearse) — sin cambiar el formato JSON ni el comportamiento en
+      producción; los tests de `test_logger.py` del batch anterior siguen en verde.
 
 ### Contrato — Contract-First
 - [ ] T-013 — Escribir `hira-server/docs/openapi.yaml` (`GET /health`, payload de
@@ -138,15 +146,15 @@ actualizado: 2026-09-13
 | RF / doc | Tareas | Test(s) | Estado |
 |---|---|---|---|
 | RF-001 | T-001, T-016, T-018, T-024, T-025 | `test_health_router.py` (contrato), verificación e2e (T-024) | Parcial — T-001 (estructura) hecha; T-016/T-018/T-024/T-025 pendientes (requieren contenedores) |
-| RF-002 | T-002, T-003, T-008, T-009, T-010, T-013, T-014, T-015, T-019, T-020 | `test_health_policy.py`, `test_health_service.py`, `test_health_router.py`, `tests/integration/test_adapters.py` | Parcial — `test_health_policy.py` Pass (8/8, 2026-09-13); resto pendiente |
-| RF-003 | T-004, T-005, T-012 | `test_config.py`, `test_main_lifespan.py` (T-012) | Parcial — `test_config.py` Pass (10/10, 2026-09-13); wiring del `lifespan` en `main.py` pendiente (T-012, `main.py` no existe hasta ese paso) |
-| RF-004 | T-006, T-007 | `test_logger.py`, evidencia de T-024 | Parcial — `test_logger.py` Pass (4/4, 2026-09-13); evidencia e2e de T-024 pendiente |
-| RF-005 | T-008, T-010, T-011, T-012 | `test_health_service.py`, `test_correlation_id.py` | Pendiente |
+| RF-002 | T-002, T-003, T-008, T-009, T-010, T-013, T-014, T-015, T-019, T-020 | `test_health_policy.py`, `test_health_service.py`, `test_health_router.py`, `tests/integration/test_adapters.py` | Parcial — `test_health_policy.py` Pass (8/8) y `test_health_service.py` Pass (6/6, 2026-09-13, cubre la coordinación con dobles); router HTTP (T-013..T-015) y adaptadores reales (T-019/T-020) pendientes |
+| RF-003 | T-004, T-005, T-012 | `test_config.py`, `test_main_lifespan.py` (T-012) | Pass — `test_config.py` (10/10) y `test_main_lifespan.py` (3/3, 2026-09-13, wiring del `lifespan` verificado: `ValidationError` → log JSON `level: error` + `sys.exit(1)`, sin arranque parcial) |
+| RF-004 | T-006, T-007 | `test_logger.py`, evidencia de T-024 | Parcial — `test_logger.py` Pass (4/4); además corregido un bug de binding de `sys.stdout` detectado al implementar T-012 (`_DynamicStdoutHandler`), tests siguen en verde (2026-09-13); evidencia e2e de T-024 pendiente |
+| RF-005 | T-008, T-010, T-011, T-012 | `test_health_service.py`, `test_correlation_id.py` | Pass — `test_health_service.py` (trace_id agregado, 2/2 casos) y `test_correlation_id.py` (4/4, 2026-09-13): propaga `X-Trace-ID` o genera `uuid4()`, fija/resetea el `ContextVar` de `core/logger.py` por request |
 | RF-006 | T-017, T-021, T-022, T-023 | `tests/integration/test_adapters.py`, test de seguridad (T-023) | Pendiente |
-| RF-007 | T-008, T-010 | `test_health_service.py` | Pendiente |
+| RF-007 | T-008, T-010 | `test_health_service.py` | Pass — timeout de 2s por servicio no cuelga la respuesta (2.03s para 3 chequeos, uno de ellos simulando 5s), excepción no propaga (2026-09-13) |
 | RF-008 | T-021, T-022 | `tests/integration/test_adapters.py` | Pendiente |
 | RNF-001 | T-016, T-024 | verificación e2e (T-024) | Pendiente |
-| RNF-002 | T-008, T-010 | `test_health_service.py` | Pendiente |
+| RNF-002 | T-008, T-010 | `test_health_service.py` | Pass — `asyncio.wait_for(timeout=2)` por puerto verificado con doble que duerme 5s (2026-09-13) |
 | doc: estructura-de-repositorio | T-026 | — | Pendiente |
 | doc: guia-backend | T-027 | — | Pendiente |
 | doc: SPRINT.md banner | T-028 | — | Pendiente |

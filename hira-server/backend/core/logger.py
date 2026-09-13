@@ -20,6 +20,31 @@ _LOGGER_PREFIX = "hira."
 trace_id_var: ContextVar[str] = ContextVar("trace_id", default="-")
 
 
+class _DynamicStdoutHandler(logging.StreamHandler):
+    """`StreamHandler` que resuelve `sys.stdout` en cada `emit`, no al crearse.
+
+    `logging.StreamHandler(stream=sys.stdout)` fija la referencia al objeto vigente
+    en el momento de la llamada. Como `get_logger` cachea el logger (y su handler)
+    la primera vez que se pide un `module` dado, un logger creado en tiempo de
+    import (p. ej. `core.logger.get_logger("main")` a nivel de módulo en
+    `main.py`) queda atado al `sys.stdout` real del proceso — y un test que
+    redirige `sys.stdout` después (`capsys`) nunca ve la salida. Esta subclase
+    reemplaza `stream` por una propiedad para que cada log use el `sys.stdout`
+    vigente, sin cambiar el formato ni el comportamiento en producción.
+    """
+
+    def __init__(self) -> None:
+        super().__init__(stream=sys.stdout)
+
+    @property
+    def stream(self):  # type: ignore[override]
+        return sys.stdout
+
+    @stream.setter
+    def stream(self, value) -> None:  # pragma: no cover - fijado por __init__ del padre
+        pass
+
+
 class JSONFormatter(logging.Formatter):
     """Formatea cada `LogRecord` como una línea JSON (RF-004)."""
 
@@ -39,7 +64,7 @@ def get_logger(module: str) -> logging.Logger:
     """Retorna un logger JSON para `module`, sin handlers duplicados."""
     logger = logging.getLogger(f"{_LOGGER_PREFIX}{module}")
     if not logger.handlers:
-        handler = logging.StreamHandler(stream=sys.stdout)
+        handler = _DynamicStdoutHandler()
         handler.setFormatter(JSONFormatter())
         logger.addHandler(handler)
         logger.setLevel(logging.INFO)

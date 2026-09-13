@@ -6,6 +6,11 @@ interfaces, `adapters/` las implementa, `services/` orquesta usando solo `core/p
 
 Feature activa: `.harness/specs/SRV-001-walking-skeleton/` (Walking Skeleton — `AC-SRV-01`).
 
+`main.py` — punto de entrada FastAPI. El `lifespan` valida `Settings()` al arrancar
+(RF-003: `ValidationError` → log JSON `level: error` + `sys.exit(1)`, sin arranque
+parcial) y registra `CorrelationIdMiddleware` (RF-005). Sin routers todavía
+(`routers/monitor.py::GET /health` llega en T-013..T-015).
+
 ## Subcarpetas
 
 - `core/` — configuración, logger, middleware, puertos (`core/ports/`).

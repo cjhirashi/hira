@@ -6,7 +6,8 @@ Núcleo transversal del backend — no depende de infraestructura concreta.
   variable de entorno requerida → error explícito nombrándola, sin arranque parcial.
 - `logger.py` — `get_logger(module)`, logging JSON estructurado (`timestamp, level,
   service, module, trace_id, message`), cero `print()` (RF-004).
-- `middleware.py` — `CorrelationIdMiddleware` (RF-005). Pendiente (fuera del alcance
-  de este batch de tareas).
+- `middleware.py` — `CorrelationIdMiddleware` (RF-005): lee `X-Trace-ID` del request o
+  genera un `uuid4()`, lo fija en `logger.trace_id_var` durante el request y lo
+  devuelve en la respuesta.
 - `ports/` — interfaces abstractas (`Protocol`) que `services/` puede importar; `core/`
   nunca importa `adapters/`.

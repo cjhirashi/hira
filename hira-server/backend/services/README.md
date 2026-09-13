@@ -6,5 +6,9 @@ directamente (regla de oro `SRV-ADR-017`).
 - `health_service.py::aggregate_status(results: dict[str, bool]) -> Literal["ok",
   "degraded"]` — núcleo puro, sin I/O (RF-002). "ok" si los tres servicios están `ok`,
   "degraded" si al menos uno falla.
-- `health_service.py::get_health()` — coordinación (RF-002, RF-005, RF-007), pendiente
-  de un batch posterior (requiere `core/ports/` implementados).
+- `health_service.py::get_health(database, cache, notification)` — coordinación
+  (RF-002, RF-005, RF-007): llama a los 3 puertos en paralelo, cada uno con
+  `asyncio.wait_for(timeout=2)` (RNF-002); excepción o timeout → ese servicio queda
+  `error` sin colgar la respuesta; agrega el `trace_id` vigente del `ContextVar` de
+  `core/logger.py`. Recibe los puertos por parámetro — no instancia adaptadores
+  (`adapters/factory.py` los inyecta, pendiente de T-019/T-020).
