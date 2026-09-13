@@ -83,17 +83,12 @@ actualizado: 2026-09-13
   decidió no reescribir ese corpus — es documentación de producto cerrada, no
   maquinaria del arnés. 404 en uno de esos enlaces = doc de producto desactualizada,
   no un problema del arnés; backlog de higiene separado, no se parchea el arnés.
-- **`aprobaciones.fase_1`/`fase_2` de `SRV-001` ya firmadas por Carlos**, y el
-  `revisor` dio el veredicto final de cierre — pero `estado: verified` (vs.
-  `implemented`, el actual) sigue pendiente de que el usuario lo confirme
-  explícitamente (Gate 4, aprobación humana — el orquestador no se autoaprueba).
+- Ninguno abierto — `SRV-001-walking-skeleton` cerrada en `estado: verified`
+  (Carlos, 2026-09-13, Gate 4).
 
 ## Próximo paso concreto
 
 - Antes de tocar nada: `bash .harness/gate/check.sh`.
-- Confirmar con el usuario si `SRV-001-walking-skeleton` pasa a `estado: verified`.
-- Elegir la siguiente feature real: **`SRV-Sprint-2`** (Auth + RBAC dinámico,
-  `SRV-ADR-005`, `AC-SRV-02`) es lo que sigue en `docs/planning/ROADMAP.md` sobre
-  Server; **`HUB-H0`** (Walking Skeleton de Hira Hub) puede arrancar en paralelo, sin
-  dependencia. Aplicar la rúbrica (`method.md §2`) y Fase 1 con `autor-de-spec` para
-  la que se elija.
+- **Feature activa: `SRV-Sprint-2` (Auth + RBAC dinámico)** — `SRV-ADR-005`,
+  `AC-SRV-02`, sobre el Walking Skeleton ya `verified`. Fase 1 (Specify) por arrancar
+  — elicitación interactiva con el usuario, `method.md §3`.
