@@ -6,9 +6,12 @@ verifica el shape exacto pactado en `hira-server/docs/openapi.yaml#/paths/~1heal
 HTTP 200 (decisión cerrada en `spec.md §3`/§6 — sin sobre RFC 9457 en este endpoint
 de monitoreo). Debe fallar antes de T-015 (no existe `routers/monitor.py` todavía).
 """
+from unittest.mock import AsyncMock
+
 import pytest
 from fastapi.testclient import TestClient
 
+from adapters.mqtt.mosquitto_adapter import MosquittoAdapter
 from main import app
 
 REQUIRED_ENV = {
@@ -26,6 +29,13 @@ REQUIRED_ENV = {
 def client(monkeypatch):
     for key, value in REQUIRED_ENV.items():
         monkeypatch.setenv(key, value)
+    # Este test es zona `test-adaptador-entrada` (contrato HTTP del router) — no
+    # depende de red real ni del backoff de Mosquitto (1s/2s/4s, ya probado de
+    # forma aislada en `tests/integration/test_adapters.py`). Mismo patrón que
+    # `test_main_lifespan.py`: se sustituye `connect()` para que el `lifespan`
+    # real que dispara `TestClient(app)` no intente resolver el host "mosquitto"
+    # fuera de la red de docker.
+    monkeypatch.setattr(MosquittoAdapter, "connect", AsyncMock(return_value=None))
     with TestClient(app) as test_client:
         yield test_client
 

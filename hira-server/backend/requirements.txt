@@ -1,9 +1,14 @@
 # Versiones exactas fijadas (sin rangos ^ ni ~) — `docs/hira-server/spec/
 # implementation-guide/guia-backend.md`. Alcance de T-016 (Walking Skeleton,
-# `SRV-001-walking-skeleton`): solo lo que `backend/` importa hoy. Adaptadores
-# reales de PostgreSQL/Redis/Mosquitto (asyncpg, redis, paho-mqtt) llegan con
-# T-020, no antes — no anticipar dependencias sin código que las use (Art. 10).
+# `SRV-001-walking-skeleton`): solo lo que `backend/` importaba en ese batch.
 fastapi==0.141.1
 uvicorn[standard]==0.52.3
 pydantic==2.13.4
 pydantic-settings==2.15.0
+
+# Adaptadores reales de PostgreSQL/Redis/Mosquitto (T-019..T-022, RF-002/RF-006/
+# RF-008) — solo `adapters/*` importa estas librerías (`SRV-ADR-017`).
+sqlalchemy==2.0.52
+asyncpg==0.31.0
+redis==5.2.1
+paho-mqtt==2.1.0

@@ -81,7 +81,16 @@ actualizado: 2026-09-13
 
 ### Adaptador de entrada — router
 - [x] T-014 — Test `test_health_router.py` (`TestClient`): `GET /health` responde 200
-      con el payload del contrato (debe fallar) (cubre RF-002) [zona: test-adaptador-entrada]
+      con el payload del contrato (debe fallar) (cubre RF-002) [zona: test-adaptador-entrada].
+      **Nota (2026-09-13, hallazgo del `revisor` sobre el batch T-019..T-023):** al
+      quedar `main.py::lifespan` invocando `MosquittoAdapter.connect()` de verdad
+      (T-022 ampliada), la fixture `client` (que dispara el `lifespan` real vía
+      `TestClient(app)`) pasó a pagar el backoff completo (~7s x 2 tests) intentando
+      resolver el host `mosquitto` fuera de la red de docker. Corregido con el mismo
+      patrón de `test_main_lifespan.py` (`monkeypatch.setattr(MosquittoAdapter,
+      "connect", AsyncMock(return_value=None))` en la fixture `client`) — esta zona
+      es contrato HTTP del router, no depende de red real ni del backoff de
+      Mosquitto. 2/2 subsegundo de nuevo (0.73s los 2 juntos).
 - [x] T-015 — Implementar `backend/routers/monitor.py` + `backend/schemas/health.py`
       (cubre RF-002) [zona: adaptador-entrada]. **Directiva de Pausa (2026-09-13,
       revisada y aprobada por Carlos — ver `plan.md §7`):** el router necesita
@@ -143,23 +152,77 @@ actualizado: 2026-09-13
       `POSTGRES_PASSWORD`, `POSTGRES_DB`) — sin valores reales, solo placeholders.
 
 ### Adaptadores concretos — integración contra contenedores reales
-- [ ] T-019 — Test `tests/integration/test_adapters.py` (requiere T-016..T-018 arriba):
+- [x] T-019 — Test `tests/integration/test_adapters.py` (requiere T-016..T-018 arriba):
       `DatabasePort.ping()` y `CachePort.ping()` contra Postgres/Redis reales (debe
-      fallar) (cubre RF-002) [zona: test-adaptadores]
-- [ ] T-020 — Implementar `backend/adapters/db/postgresql_adapter.py` (`SELECT 1`) +
-      `backend/adapters/cache/redis_adapter.py` (`PING`) + `backend/adapters/
-      factory.py` (cubre RF-002) [zona: adaptadores]
-- [ ] T-021 — Test de integración: conexión a Mosquitto con credencial inválida no
+      fallar) (cubre RF-002) [zona: test-adaptadores]. Confirmado en rojo: con los
+      adaptadores movidos fuera del árbol y sin contenedores arriba, las 4 pruebas
+      de esta suite + `test_mqtt_security.py` fallaban (`ConnectionRefusedError`) —
+      evidencia pegada en el reporte de la sesión (`pytest -m integration`, 4 failed).
+- [x] T-020 — Implementar `backend/adapters/db/postgresql_adapter.py` (`SELECT 1`,
+      SQLAlchemy 2.x async + `asyncpg`, coherente con el formato
+      `postgresql+asyncpg://` ya fijado en `.env.example`) + `backend/adapters/
+      cache/redis_adapter.py` (`PING`, `redis.asyncio`) + reemplazado el **cuerpo**
+      (no la firma) de `get_database_port`/`get_cache_port` en `backend/adapters/
+      factory.py` — instancian los adaptadores reales como singleton perezoso por
+      proceso (evita crear un `engine`/cliente nuevo por request) (cubre RF-002)
+      [zona: adaptadores]. Verificado real: `docker compose -f docker-compose.yml
+      -f docker-compose.dev.yml up -d postgres redis mosquitto` (los 3 `healthy`
+      en segundos) → `pytest -m integration` → `test_postgresql_adapter_ping_
+      against_real_container` y `test_redis_adapter_ping_against_real_container`
+      en verde contra los contenedores reales. Sanity adicional (no sustituye
+      T-024): `TestClient` sobre `main.py` con env vars apuntando a `localhost` →
+      `GET /health` → `200 {"status":"ok","services":{"postgres":"ok","redis":
+      "ok","mosquitto":"ok"},...}`.
+- [x] T-021 — Test de integración: conexión a Mosquitto con credencial inválida no
       reintenta indefinidamente (backoff 1s/2s/4s, 3 intentos) (debe fallar) (cubre
-      RF-008) [zona: test-adaptadores]
-- [ ] T-022 — Implementar `backend/adapters/mqtt/mosquitto_adapter.py::connect()`
+      RF-008) [zona: test-adaptadores]. Mismo rojo que T-019 (adaptador no existía).
+- [x] T-022 — Implementar `backend/adapters/mqtt/mosquitto_adapter.py::connect()`
       (credencial `MQTT_USER`/`MQTT_PASSWORD`, log `level: error` + backoff fijo en
-      fallo) (cubre RF-006, RF-008) [zona: adaptadores]
+      fallo) (cubre RF-006, RF-008) [zona: adaptadores]. **Decisión de interpretación
+      de "3 intentos"** (spec/plan usan la frase sin desambiguar si cuenta el
+      intento inicial): implementado como 1 intento inicial + 3 reintentos con
+      backoff 1s/2s/4s = 4 intentos de conexión en total, luego se rinde sin lanzar
+      excepción (`is_connected = False`). `ping()` (usado por `/health` en cada
+      chequeo, RF-007) hace un único intento sin el backoff de `connect()` — es el
+      "lazy retry en cada chequeo" que ya describía `plan.md §2`. Reemplazado el
+      cuerpo de `get_notification_port` en `factory.py` (mismo patrón singleton).
+      Verificado real contra Mosquitto real con credencial inválida: `connect()`
+      tardó ~7s (backoff acumulado), registró 4 logs `level: error`, terminó sin
+      lanzar excepción; verificado también con credencial **válida** (`connect()`
+      → `is_connected=True`, `ping()` → `True`) — ambos casos contra el contenedor
+      real, no solo el caso de rechazo TCP sin broker.
+
+      **Directiva de Pausa (2026-09-13, #2 — ver `plan.md §7`, aprobada por el
+      usuario):** el `revisor` encontró que este backoff no se invocaba en
+      ningún camino real de la aplicación (`main.py` nunca llamaba
+      `connect()`, solo `ping()` vía `/health`) — RF-008 no era demostrable a
+      nivel de sistema. **Ampliación de esta misma tarea, cerrada:** el
+      `lifespan` de `backend/main.py` ahora invoca `get_notification_port().
+      connect()` (mismo punto de inyección que ya usa `routers/monitor.py` vía
+      `Depends`) justo después de validar `Settings()`, envuelto en
+      `try/except` que **no** aborta el arranque si falla (a diferencia del
+      error de `Settings()`, que sí hace `sys.exit(1)`) — logueado y dejado
+      para que `/health` lo refleje vía `ping()` (RF-007). Test de sistema
+      ampliado en `backend/tests/test_main_lifespan.py`
+      (`test_lifespan_invokes_mosquitto_connect_and_does_not_abort_on_failure`,
+      `test_lifespan_invokes_mosquitto_connect_and_reflects_success`) con
+      dobles (`AsyncMock`) de `MosquittoAdapter.connect` — verifica que el
+      `lifespan` invoca `connect()` y tolera ambos resultados sin `sys.exit`.
+      Verificado además contra el broker real (`docker compose up -d postgres
+      redis mosquitto`): con credencial inválida, `connect()` corrió su
+      backoff completo (~7s, 4 logs `level: error`, CONNACK rc=5) dentro del
+      `lifespan` real y el proceso siguió (sin `sys.exit`), `is_connected=
+      False`; con credencial válida, mismo camino, `is_connected=True`.
+      Contenedores y `.env`/`password_file` de prueba limpiados al terminar.
 
 ### Seguridad — Mosquitto sin auth (`VUL-SRV-001`)
-- [ ] T-023 — Test de seguridad de integración: cliente MQTT externo sin credenciales
-      es rechazado por el broker (debe fallar antes de T-017, pasa después) (cubre
-      RF-006) [zona: test-seguridad]
+- [x] T-023 — Test de seguridad de integración (`tests/integration/
+      test_mqtt_security.py`): cliente MQTT externo (`paho-mqtt` directo, sin pasar
+      por el adaptador) sin credenciales, es rechazado por el broker real (CONNACK
+      `rc != 0`) — falló antes de tener contenedores arriba (`ConnectionRefusedError`,
+      mismo rojo que T-019), pasa después (cubre RF-006) [zona: test-seguridad].
+      Formaliza automatizado lo que el revisor ya verificó manualmente con
+      `mosquitto_pub` en T-016/T-017.
 
 ### Sistema — verificación e2e
 - [ ] T-024 — `docker compose -f docker-compose.yml -f docker-compose.dev.yml up` →
@@ -192,13 +255,13 @@ actualizado: 2026-09-13
 | RF / doc | Tareas | Test(s) | Estado |
 |---|---|---|---|
 | RF-001 | T-001, T-016, T-018, T-024, T-025 | `test_health_router.py` (contrato), verificación e2e (T-024) | Parcial — T-001, T-016, T-018 hechas (compose real: `postgres`/`redis`/`mosquitto`/`backend` `healthy`; `nginx` verificado aparte por colisión de puerto 80 en esta máquina compartida, ver nota T-016); T-024 (e2e formal con evidencia pegada) y T-025 (gate services.txt) pendientes |
-| RF-002 | T-002, T-003, T-008, T-009, T-010, T-013, T-014, T-015, T-019, T-020 | `test_health_policy.py`, `test_health_service.py`, `test_health_router.py`, `tests/integration/test_adapters.py` | Parcial — `test_health_policy.py` Pass (8/8), `test_health_service.py` Pass (6/6) y `test_health_router.py` Pass (2/2, 2026-09-13: `GET /health` vía `TestClient` sobre la app real de `main.py`, shape exacto del contrato, siempre HTTP 200); router HTTP expuesto con `adapters/factory.py` in-memory (nota de decisión en T-015) — adaptadores reales contra contenedores (T-019/T-020) pendientes |
+| RF-002 | T-002, T-003, T-008, T-009, T-010, T-013, T-014, T-015, T-019, T-020 | `test_health_policy.py`, `test_health_service.py`, `test_health_router.py`, `tests/integration/test_adapters.py` | Pass — `test_health_policy.py` (8/8), `test_health_service.py` (6/6), `test_health_router.py` (2/2, con `factory.py` in-memory hasta T-020) y `tests/integration/test_adapters.py::test_postgresql_adapter_ping_against_real_container`/`test_redis_adapter_ping_against_real_container` (2/2, 2026-09-13, contra `postgres`/`redis` reales de `docker compose up`); `factory.py` ya instancia los adaptadores reales — sanity adicional de `GET /health` end-to-end con `TestClient` + contenedores reales en verde |
 | RF-003 | T-004, T-005, T-012 | `test_config.py`, `test_main_lifespan.py` (T-012) | Pass — `test_config.py` (10/10) y `test_main_lifespan.py` (3/3, 2026-09-13, wiring del `lifespan` verificado: `ValidationError` → log JSON `level: error` + `sys.exit(1)`, sin arranque parcial) |
 | RF-004 | T-006, T-007 | `test_logger.py`, evidencia de T-024 | Parcial — `test_logger.py` Pass (4/4); además corregido un bug de binding de `sys.stdout` detectado al implementar T-012 (`_DynamicStdoutHandler`), tests siguen en verde (2026-09-13); evidencia e2e de T-024 pendiente |
 | RF-005 | T-008, T-010, T-011, T-012 | `test_health_service.py`, `test_correlation_id.py` | Pass — `test_health_service.py` (trace_id agregado, 2/2 casos) y `test_correlation_id.py` (4/4, 2026-09-13): propaga `X-Trace-ID` o genera `uuid4()`, fija/resetea el `ContextVar` de `core/logger.py` por request |
-| RF-006 | T-017, T-021, T-022, T-023 | `tests/integration/test_adapters.py`, test de seguridad (T-023) | Pendiente |
+| RF-006 | T-017, T-021, T-022, T-023 | `tests/integration/test_adapters.py`, `tests/integration/test_mqtt_security.py` (T-023) | Pass — `test_mqtt_security.py::test_anonymous_mqtt_client_is_rejected_by_real_broker` (1/1, 2026-09-13, cliente `paho-mqtt` externo sin credenciales contra el Mosquitto real del compose, CONNACK `rc != 0`); `mosquitto_adapter.py` conecta con `MQTT_USER`/`MQTT_PASSWORD` (verificado con credencial válida contra el contenedor real, `is_connected=True`) |
 | RF-007 | T-008, T-010 | `test_health_service.py` | Pass — timeout de 2s por servicio no cuelga la respuesta (2.03s para 3 chequeos, uno de ellos simulando 5s), excepción no propaga (2026-09-13) |
-| RF-008 | T-021, T-022 | `tests/integration/test_adapters.py` | Pendiente |
+| RF-008 | T-021, T-022 | `tests/integration/test_adapters.py`, `test_main_lifespan.py` | Pass — el backoff (`MosquittoAdapter.connect()`) sigue probado de forma aislada contra el broker real (1/1: 1s/2s/4s, 4 intentos, 4 logs `level: error`, sin excepción); **wiring cerrado** (Directiva de Pausa #2, `plan.md §7`): `backend/main.py::lifespan` invoca `get_notification_port().connect()` tras validar `Settings()`, sin abortar el arranque si falla (`sys.exit(1)` solo aplica al error de `Settings()`) — `test_main_lifespan.py` (5/5, 2026-09-13) cubre ambos casos con dobles, y se verificó además en vivo contra Mosquitto real: credencial inválida → backoff completo (~7s, 4 logs `error`, CONNACK rc=5) dentro del `lifespan` real sin `sys.exit`, `is_connected=False`; credencial válida → mismo camino, `is_connected=True` |
 | RNF-001 | T-016, T-024 | verificación e2e (T-024) | Parcial — `docker compose up -d` real (T-016) alcanzó `postgres`/`redis`/`mosquitto`/`backend` `healthy` en pocos segundos; medición formal de "< 60s" con evidencia de terminal pegada es T-024 (fuera de este batch) |
 | RNF-002 | T-008, T-010 | `test_health_service.py` | Pass — `asyncio.wait_for(timeout=2)` por puerto verificado con doble que duerme 5s (2026-09-13) |
 | doc: estructura-de-repositorio | T-026 | — | Pendiente |
