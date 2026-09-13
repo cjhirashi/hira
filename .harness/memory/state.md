@@ -91,10 +91,11 @@ actualizado: 2026-09-13
 - Antes de tocar nada: `bash .harness/gate/check.sh`.
 - **Feature activa: `SRV-002-auth-rbac`** (Auth + RBAC MVP, 3 roles fijos —
   `SRV-ADR-005` fasea el RBAC dinámico completo a v0.2, no en este sprint).
-  **Fase 1 cerrada** (2026-09-13, usuario confirmó "así es"): 14 `RF-`, 1 `RNF-`,
-  decisiones clave en `spec.md §6` (solo backend/contrato sin vista de login,
-  solo Admin modifica roles, sobre RFC 9457, rate limiting propio en
-  `/auth/login` 5/15min además del genérico de `VUL-SRV-003`).
-- **Siguiente paso:** Fase 2 (Plan) con el agente `arquitecto` → `plan.md`
-  conforme a `SRV-ADR-017` (Hexagonal, sobre el Walking Skeleton ya `verified`) →
-  Gate 2 → Fase 3 (Tasks) → Fase 4 (Implement, TDD, con `hira-auth`).
+  **Fase 1 y 2 cerradas** (2026-09-13): `spec.md` (14 `RF-`, 1 `RNF-`) y `plan.md`
+  (diseño Hexagonal: `UserRepositoryPort` nuevo, `CachePort` ampliado, auth como
+  middleware + autorización fina como `Depends()`) → `estado: approved`, ambas
+  aprobaciones firmadas. De paso: `E-ADR-003` (convención `type` de RFC 9457,
+  ecosistema completo, no solo esta feature).
+- **Siguiente paso:** Fase 3 (Tasks) — consolidar `tasks.md` a partir de `plan.md
+  §6` (19 pasos ya secuenciados) → Fase 4 (Implement, TDD, con `hira-auth`,
+  batches + `revisor` + commit, mismo flujo que `SRV-001`).
