@@ -18,7 +18,7 @@ tags: [proyecto, productos-software, hira-server, autenticación, rbac, segurida
 - RBAC evaluado en cada request — middleware en FastAPI, con caché de permisos en Redis (`rbac:{user_id}`, TTL igual al refresh token) para no consultar la base de datos en cada request
 - Al modificar un rol, se invalida la entrada Redis del usuario afectado
 - Alcance de roles (ver SRV-ADR-020): roles de operación (Operador, Visor, roles de instalación) son `scope=project` — el usuario solo actúa dentro de un proyecto. Roles de integrador son `scope=global` — el usuario accede a todos los proyectos de la instancia
-- Superusuario es el único que puede modificar roles y permisos
+- Admin es el único que puede modificar roles y permisos
 
 ## Ejecución de scripts Python
 

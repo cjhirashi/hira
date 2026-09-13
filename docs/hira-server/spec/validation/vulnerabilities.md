@@ -92,14 +92,14 @@ Registro centralizado de vulnerabilidades, riesgos técnicos y mejoras de diseñ
 |---|---|
 | **Severidad** | Crítico |
 | **Tipo** | Rendimiento / Confiabilidad |
-| **Estado** | 🟡 En Proceso |
+| **Estado** | 🟢 Resuelto |
 | **Afecta** | Toda instalación |
 
 **Descripción:** Si el middleware RBAC hace una query a la base de datos por cada request HTTP, la latencia acumulada es visible en dashboards de tiempo real con múltiples usuarios. Bajo carga alta, puede saturar el pool de conexiones.
 
-**Resolución:** al login, cargar los permisos del usuario en Redis (`rbac:{user_id}`, TTL igual al refresh token). El middleware lee de Redis en cada request. Al modificar un rol, invalidar la entrada Redis del usuario afectado.
+**Resolución:** al login, cargar los permisos del usuario en Redis (`rbac:{user_id}`, TTL igual al refresh token). El middleware lee de Redis en cada request. Al modificar un rol, invalidar la entrada Redis del usuario afectado. Ampliado en `SRV-002-auth-rbac` con un segundo nivel de caché en memoria del proceso (`services/rbac_service.py::LocalPermissionsCache`, TTL 30s de red de seguridad), invalidado en conjunto con Redis vía pub/sub (`rbac:invalidations`) al modificar un rol — el *cache-hit* del caso normal no hace ningún I/O (ni a BD ni a Redis).
 
-**Verificación:** medir latencia de endpoint con RBAC activo — debe añadir < 5ms por request.
+**Verificación:** medir latencia de endpoint con RBAC activo — debe añadir < 5ms por request. **Verificado (`SRV-002-auth-rbac`, T-014/T-015/T-038/T-040):** `tests/integration/test_rbac_latency.py` midió 100 requests concurrentes contra un endpoint protegido con permisos ya cacheados (*cache-hit* puro, 0 consultas a `UserRepositoryPort` y 0 a `CachePort.get` durante la medición) — overhead real **~0.10-0.12ms** por request, más de un orden de magnitud por debajo del umbral de 5ms. Confirmado por el revisor en corridas independientes contra Postgres+Redis reales: 3 corridas consecutivas con `xfail(strict=True)` aún en el código (0.118ms, 0.117ms, 0.111ms, todas `XPASS(strict)` — resultado estable, no un *fluke*) más 1 corrida final tras retirar el `xfail` (0.100ms, `PASSED` real) — evidencia de terminal completa en `plan.md §10`.
 
 ---
 
@@ -270,6 +270,7 @@ Registro centralizado de vulnerabilidades, riesgos técnicos y mejoras de diseñ
 | ID | Resolución | Fecha |
 |---|---|---|
 | VUL-SRV-001 | Resuelto — `allow_anonymous false` + `password_file` en Mosquitto, credencial propia del backend (`MQTT_USER`/`MQTT_PASSWORD`), verificado contra broker real (`SRV-001-walking-skeleton` T-016/T-017/T-021/T-022/T-023) | 2026-09-13 |
+| VUL-SRV-004 | Resuelto — caché de permisos de dos niveles (`rbac:{user_id}` en Redis + `LocalPermissionsCache` en memoria del proceso, invalidación por pub/sub `rbac:invalidations`), *cache-hit* sin ningún I/O a BD ni a Redis. Verificado con `tests/integration/test_rbac_latency.py` (100 requests concurrentes, Postgres+Redis reales): overhead real ~0.10-0.12ms (umbral < 5ms), 0 consultas a `UserRepositoryPort` y 0 a `CachePort.get` durante la medición — confirmado en 4 corridas independientes por el revisor (`SRV-002-auth-rbac` T-014/T-015/T-038/T-040, evidencia completa en `plan.md §10`) | 2026-09-13 |
 | VUL-SRV-014 | Resuelto por rediseño — reemplazado por licenciamiento por puntos en línea (SRV-ADR-018) tras adoptar el modelo de un solo producto (SRV-ADR-015) | 2026-07-31 |
 
 ---

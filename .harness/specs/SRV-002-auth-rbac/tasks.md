@@ -369,18 +369,29 @@ actualizado: 2026-09-13
       de terminal en `plan.md §10` (cubre RNF-001) [zona: sistema-e2e]
 
 ### Documentación (`plan.md §8` + nota operativa de §3)
-- [ ] T-029 — `hira-server/README.md`: añadir el paso operativo
+- [x] T-029 — `hira-server/README.md`: añadir el paso operativo
       `docker compose exec backend alembic upgrade head` (antes de levantar
       tráfico) — nota de `plan.md §3`, no es fila de Art. 11 (no vuelve obsoleto
       nada existente) [doc]
-- [ ] T-030 — Corregir `docs/hira-server/spec/modules/auth-rbac-seguridad.md`:
+      **Nota:** añadida sección "Operación — migraciones (Alembic)" al final
+      del `README.md`, explicando el porqué (sin ejecución automática, evita
+      condiciones de carrera con réplicas) y el comando exacto.
+- [x] T-030 — Corregir `docs/hira-server/spec/modules/auth-rbac-seguridad.md`:
       reemplazar "Superusuario es el único que puede modificar roles y permisos"
       por "Admin" — no tocar el resto de la sección ni la referencia legacy a
       `backup-y-portabilidad.md` (deuda ya registrada, fuera de alcance) [doc]
-- [ ] T-031 — Actualizar `docs/hira-server/spec/validation/vulnerabilities.md`:
+      **Nota:** reemplazo de una sola línea, resto de la sección intacto (JWT/
+      TTL/caché Redis, alcance de roles, referencia legacy).
+- [x] T-031 — Actualizar `docs/hira-server/spec/validation/vulnerabilities.md`:
       `VUL-SRV-004` de 🟡 En Proceso a 🟢 Resuelto — **tarea de cierre**, solo
       después de que T-014/T-015/T-038/**T-040** (antes T-028, ver nota de
       T-028) estén verificados con evidencia real [doc]
+      **Nota:** estado a 🟢 Resuelto, resolución ampliada con
+      `LocalPermissionsCache` + pub/sub y verificación citando
+      `tests/integration/test_rbac_latency.py` (~0.10-0.12ms, 4 corridas
+      independientes del revisor, evidencia en `plan.md §10`); fila nueva en
+      "Historial de Resoluciones". `VUL-SRV-003` no se tocó (fuera de alcance,
+      confirmado en `plan.md §8`).
 
 ## Cobertura (el gate exige 100 %; `Estado` lo rellena el gate)
 | RF / doc | Tareas | Test(s) | Estado |
@@ -400,9 +411,9 @@ actualizado: 2026-09-13
 | RF-013 | T-003, T-004, T-012, T-013, T-017, T-018, T-027 | `test_jwt_tokens.py`, `test_auth_service.py`, `test_auth_router.py`, `test_auth_security.py` | Pass |
 | RF-014 | T-012, T-013, T-017, T-018, T-027 | `test_auth_service.py`, `test_auth_router.py`, `test_auth_security.py` | Pass |
 | RNF-001 | T-020, T-028, T-032, T-033, T-034, T-035, T-036, T-037, T-038, T-039, T-040 | `test_rbac_latency.py` (medición real, `xfail` retirado), `test_cache_port_contract.py`, `test_rbac_service.py`, `test_main_lifespan.py`, `test_authentication_middleware.py` | **Pass — resuelto y verificado con evidencia real (2026-09-13): overhead ~0.10-0.12ms, muy por debajo del umbral de 5ms** |
-| doc: hira-server/README.md (paso operativo) | T-029 | — | Pendiente (fuera de alcance de este batch) |
-| doc: auth-rbac-seguridad.md | T-030 | — | Pendiente (fuera de alcance de este batch) |
-| doc: vulnerabilities.md (VUL-SRV-004) | T-031 | — | Pendiente — condición de cierre ya cumplida (RNF-001 en `Pass`), pero **T-031 en sí no se ejecutó en este batch** (fuera de alcance asignado: T-032..T-040) |
+| doc: hira-server/README.md (paso operativo) | T-029 | — | hecho |
+| doc: auth-rbac-seguridad.md | T-030 | — | hecho |
+| doc: vulnerabilities.md (VUL-SRV-004) | T-031 | — | hecho |
 
 > Esta tabla **es** la trazabilidad de la feature (no hay `traceability-matrix.md`).
 > Fila sin test, en `Fail` o `Pendiente` → el gate no abre.
@@ -441,3 +452,20 @@ actualizado: 2026-09-13
 > pero T-031 en sí (actualizar el documento) **no se ejecutó en este batch**
 > (fuera del alcance asignado T-032..T-040) — queda para el batch de cierre
 > (T-029..T-031).
+>
+> **Checkpoint T-029..T-031 (2026-09-13, batch de cierre de documentación):**
+> las 3 tareas `[doc]` de `plan.md §8`/nota de §3 se ejecutaron. T-029 añadió
+> el paso operativo `docker compose exec backend alembic upgrade head` a
+> `hira-server/README.md`. T-030 corrigió `docs/hira-server/spec/modules/
+> auth-rbac-seguridad.md`: "Superusuario" → "Admin" (el modelo de 3 roles
+> fijos de este sprint no tiene un concepto de superusuario separado —
+> RBAC dinámico completo queda fasado a v0.2, `SRV-ADR-005`), sin tocar el
+> resto de la sección ni la referencia legacy a `backup-y-portabilidad.md`.
+> T-031 cerró `VUL-SRV-004` a 🟢 Resuelto en `docs/hira-server/spec/
+> validation/vulnerabilities.md`, citando `LocalPermissionsCache` + caché
+> Redis de dos niveles y la medición real de RNF-001 (~0.10-0.12ms, 4
+> corridas independientes del revisor, evidencia en `plan.md §10`) — con fila
+> nueva en "Historial de Resoluciones" (mismo formato que el cierre de
+> `VUL-SRV-001`). Las 14 filas `RF-*`, `RNF-001` y las 3 filas `doc:` de la
+> tabla de Cobertura quedan en `Pass`/`hecho` — **sin ninguna fila
+> `Pendiente`/`Parcial`**.

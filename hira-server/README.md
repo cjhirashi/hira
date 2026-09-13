@@ -14,3 +14,13 @@ Se reimplementa desde cero bajo el harness SDD-Anchored.
 > (ver [`../docs/legacy/README.md`](../docs/legacy/README.md)).
 
 Arranca por `SRV-001-walking-skeleton` (Walking Skeleton).
+
+## Operación — migraciones (Alembic)
+
+Las migraciones de base de datos **no se ejecutan automáticamente** al arrancar el
+contenedor `backend` (evita condiciones de carrera si en el futuro hay más de una
+réplica). Aplícalas a mano, **antes de levantar tráfico**:
+
+```bash
+docker compose exec backend alembic upgrade head
+```
