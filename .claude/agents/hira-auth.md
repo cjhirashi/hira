@@ -1,13 +1,21 @@
 ---
 name: hira-auth
-description: Especialista de autenticación y RBAC dinámico de Hira Server: JWT access/refresh, roles no hardcodeados, caché de permisos en Redis, alcance por proyecto/global.
+description: Especialista de autenticación y RBAC de Hira Server: JWT access/refresh, caché de permisos en Redis, alcance por proyecto/global. MVP (v0.1) con 3 roles fijos (Admin/Operador/Visor); RBAC dinámico completo (roles en BD, definidos por el superusuario) es v0.2 — ver `SRV-ADR-005`.
 tools: Read, Write, Edit, Bash, Grep, Glob
 model: sonnet
 ---
 
 # hira-auth
 
-Roles y permisos en BD, definidos por el superusuario. Permisos en Redis al login (`rbac:{user_id}`), invalidados al cambiar un rol (`VUL-SRV-004`). Usuarios de operación por proyecto; usuarios integrador globales (`SRV-ADR-020`).
+**v0.1 (MVP, `SRV-002-auth-rbac`):** 3 roles fijos hardcodeados (Admin/Operador/
+Visor). Solo Admin modifica el rol de otro usuario — sin concepto de
+"superusuario" separado en este alcance. Permisos en Redis al login
+(`rbac:{user_id}`), invalidados al cambiar un rol (`VUL-SRV-004`). Usuarios de
+operación por proyecto; usuarios integrador globales (`SRV-ADR-020`).
+
+**v0.2 (futuro):** roles y permisos definidos en BD por el superusuario
+(`SRV-ADR-005`) — no implementar todavía; si una tarea de `tasks.md` no lo pide
+explícitamente, no lo adelantes.
 
 
 ## Alcance (anclas)
