@@ -179,6 +179,33 @@ exige Directiva de Pausa con revisión humana antes de continuar, no una nota
 unilateral post-hoc. Este párrafo y el cambio de §6 son esa revisión, pendientes
 de aprobación explícita del usuario antes de dar T-013..T-015 por verificadas.
 
+### Directiva de Pausa (2026-09-13, #2) — falta la tarea de wiring de `connect()` en el `lifespan`
+
+**Asunción original inviable:** §2 de este plan ("Conexión de arranque a
+Mosquitto") siempre dijo que `mosquitto_adapter.py::connect()` se invoca "en el
+`lifespan`" para implementar RF-006/RF-008. Pero ninguna tarea numerada de
+`tasks.md` programó ese wiring explícitamente — T-012 creó `main.py`/`lifespan`
+antes de que el adaptador existiera; T-021/T-022 crearon `MosquittoAdapter` con el
+backoff real, probado de forma aislada, sin que nada en la aplicación lo invoque.
+Al implementar T-019..T-023, `hira-infra` detectó el hueco pero lo trató como
+"fuera de mi alcance, es de T-024" sin pausar — y el `revisor` verificó en vivo
+que el backoff (1s/2s/4s, 4 logs `error`) es hoy **código muerto**: `/health`
+solo llama `ping()` (un intento perezoso, sin backoff), nunca `connect()`. RF-006
+se sostiene igual (`ping()` también usa credencial propia, nunca anónima), pero
+RF-008 no es demostrable a nivel de sistema con el código actual.
+
+**Solución de raíz:** ampliar T-022 (no crear T-024 nuevo) para que también
+invoque `mosquitto_adapter.connect()` en el `lifespan` de `main.py` (en el mismo
+punto donde ya se valida `Settings()`), sin bloquear el arranque si falla (loguea
+y deja el estado para que `/health` lo refleje — coherente con RF-007). Un test
+de sistema (`TestClient` sobre `main.py` con Mosquitto real apagado/con credencial
+inválida) verifica que el backoff sí corre al arrancar el proceso, no solo cuando
+un test instancia el adaptador a mano.
+
+**Proceso:** pendiente de aprobación explícita del usuario (revisión por *git
+diff* de este párrafo + el cambio de `tasks.md` T-022) antes de reanudar la
+implementación de ese fragmento y volver a someter T-019..T-023 a verificación.
+
 ## 8. Impacto en documentación *(obligatorio — Constitución Art. 11)*
 | Documento del mapa | Qué cambia | Acción |
 |---|---|---|
