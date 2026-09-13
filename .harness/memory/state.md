@@ -59,72 +59,41 @@ actualizado: 2026-09-13
 
 ## Estado del backlog
 
-- **Reestructuración del arnés al esquema simplificado completada** (2026-09-04). Ver
-  `ADR-001`. Sin código todavía en `hira-server/`, `hira-studio/`, `hira-hub/` — fase de
-  diseño (F0 cerrada: "diseño de plataforma de Hira Studio", SQ-1..SQ-8 resueltas).
-- **Roadmap y sprint activo:** `docs/planning/ROADMAP.md` (3 tracks: SRV/HUB/STU),
-  `docs/planning/SPRINT.md` (sprint detallado vigente antes de esta reestructuración —
-  revisar si sigue siendo el siguiente paso real).
-- **Bitácoras previas** (pre-restructuración, no re-narradas aquí): `docs/planning/sprint-history.md`,
-  `docs/planning/hira-server-bitacora.md`, `docs/planning/hira-hub-bitacora.md`,
-  `docs/planning/hira-hub-sprint-plan.md`.
-- **Desviaciones históricas:** `docs/legacy/deviations/LOG.md` (DEV-000, resuelta →
-  `E-ADR-001`; sin desviaciones abiertas al momento de la reestructuración).
-
-## Decisiones tomadas (2026-09-04)
-
-- Adoptar el esquema simplificado del arnés genérico (repo `harness`). `ADR-001`.
-- Todo el corpus de especificación/ADRs/contratos/roadmap (~115 archivos) se relocalizó
-  de `.harness/` a `docs/` (es documentación de producto, no del arnés — Constitución,
-  separación estricta).
-- Se retira el sistema de anclas paralelo (`anchors/registry.yaml` + checksums) y los
-  gates de CI standalone (`contract_gate.py`, `openapi_lint.py`, `traceability_gate.py`):
-  quedan en `docs/legacy/` como referencia; el anclaje simplificado (`covers` +
-  `anchor_commit` en el front-matter de cada `spec.md`) los reemplaza.
-
-## Decisiones tomadas (2026-09-13)
-
-- **`ADR-004`** — refresco de rutas pendiente desde `ADR-001` en `.harness/claude/*.md`
-  (5 overlays), los 16 especialistas de `.claude/agents/`, `README.md` raíz,
-  `docs/contracts/README.md` y los 3 `README.md` de producto. `hira-hub`/`hub-infra`/
-  `ORCHESTRATION.md` corregidos de "`HUB-ADR-05` directa" a **Hexagonal** (`E-ADR-002`,
-  vigente desde 2026-09-04 pero no propagado a esos archivos). `build_claude.py` ya no
-  genera la raíz (dejaba de estar en sincronía con el stub manual del `CLAUDE.md` raíz).
-- **`MODULE.md` retirado** (resolvía un pendiente de `ADR-001`): cada carpeta nueva lleva
-  solo `README.md`; el anclaje vive en `covers`/`tasks.md`, no en un frontmatter aparte.
-- Regenerados `hira-{server,hub,studio}/{AGENTS,CLAUDE}.md` con `build_claude.py`
-  (`--check` → "al día"). Gate verde tras la corrección.
+- **Reestructuración del arnés al esquema simplificado** (2026-09-04, `ADR-001`) y
+  refresco de rutas (2026-09-13, `ADR-004`) — completos. Convención de commits:
+  Conventional Commits + `(RF-NNN)` (corregido un overlay que aún decía el formato
+  histórico con corchetes).
+- **`SRV-001-walking-skeleton` — `estado: implemented`.** Primera feature real del
+  ecosistema, ciclo completo Fase 1→4 (30/30 tareas, `T-001..T-030`), verificada por
+  el `revisor` en cada batch, ancla movida a `b4248e749d6a9eceaa68b9f117b79116222c1eb9`.
+  Incluyó 2 Directivas de Pausa (secuenciación de `adapters/factory.py`; wiring de
+  `MosquittoAdapter.connect()` en el `lifespan`) y un fix genérico al arnés
+  (`.harness/gate/check.sh` excluye `-m integration` del bloque 5 por defecto).
+  Detalle completo: entrada Session-End `[2026-09-13]` en `memory/history.md` y
+  tabla de Cobertura de `tasks.md` — no se repite aquí (`method.md §10`).
+- `docs/planning/SPRINT.md` (el sprint pre-reestructuración) lleva banner de
+  superseded — ya no es fuente viva, la reemplazó `SRV-001-walking-skeleton`.
+- **Bitácoras previas** (pre-reestructuración): `docs/planning/sprint-history.md`,
+  `docs/planning/hira-{server,hub}-bitacora.md`, `docs/planning/hira-hub-sprint-plan.md`.
 
 ## Obstáculos y desviaciones abiertas
 
-- **Pendiente de decisión:** si `docs/planning/SPRINT.md` (el sprint SRV-Sprint-1 que
-  estaba detallado antes de esta reestructuración) sigue siendo la prioridad, o si el
-  operador quiere reconsiderar el orden ahora que el arnés cambió de forma.
 - **Fuera de alcance de `ADR-004`:** el corpus de `docs/<producto>/spec/` (~40 archivos)
-  tiene enlaces internos cruzados que siguen citando rutas pre-`ADR-001`
-  (`.harness/spec/`, `.harness/adr/`, `.harness/ci/`, etc.). `ADR-001` ya decidió no
-  reescribir ese corpus — es documentación de producto cerrada, no maquinaria del
-  arnés. Si algún agente sigue uno de esos enlaces y encuentra 404, es una **doc de
-  producto** desactualizada, no un problema del arnés — regla de raíz: no parchear el
-  arnés para tapar esto, es un backlog de higiene documental de producto, separado.
+  tiene enlaces internos cruzados que siguen citando rutas pre-`ADR-001`. `ADR-001` ya
+  decidió no reescribir ese corpus — es documentación de producto cerrada, no
+  maquinaria del arnés. 404 en uno de esos enlaces = doc de producto desactualizada,
+  no un problema del arnés; backlog de higiene separado, no se parchea el arnés.
+- **`aprobaciones.fase_1`/`fase_2` de `SRV-001` ya firmadas por Carlos**, y el
+  `revisor` dio el veredicto final de cierre — pero `estado: verified` (vs.
+  `implemented`, el actual) sigue pendiente de que el usuario lo confirme
+  explícitamente (Gate 4, aprobación humana — el orquestador no se autoaprueba).
 
 ## Próximo paso concreto
 
 - Antes de tocar nada: `bash .harness/gate/check.sh`.
-- **`SRV-001-walking-skeleton`** (primera feature real del ecosistema): Fase 1-3
-  cerradas y aprobadas (`spec.md`/`plan.md` → `estado: approved`). Fase 4 en curso:
-  **T-001..T-023 implementadas, verificadas por el `revisor` y commiteadas** (10
-  commits en `main`, 43/43 tests, adaptadores reales de Postgres/Redis/Mosquitto
-  contra contenedores reales, 2 Directivas de Pausa procesadas y aprobadas (ver
-  `plan.md §7`)). Detalle de qué cubre cada tarea vive en `tasks.md` (tabla de
-  Cobertura) y en los mensajes de commit — no se repite aquí (`method.md §10`).
-- **Directiva de Pausa aplicada y aprobada** (2026-09-13): `adapters/factory.py` nace
-  en T-015 (router) con placeholders in-memory, no en T-020 como preveía el plan
-  original — `SRV-ADR-017` exige el punto de inyección desde que el router existe.
-  Ver `plan.md §7`.
-- Convención de commits fijada: Conventional Commits + `(RF-NNN)` en todo el
-  ecosistema (se corrigió un overlay de `hira-server/AGENTS.md` que aún decía
-  `[<COMP>-Sprint-N][TIPO][MÓDULO]`).
-- **Siguiente paso:** T-024 (verificación e2e formal con evidencia pegada) → T-025
-  (`services.txt`: `hira-server/backend:python`) → T-026..T-030 (`[doc]`, incluye
-  cerrar `VUL-SRV-001` a 🟢 Resuelto). Últimas 7 tareas del walking skeleton.
+- Confirmar con el usuario si `SRV-001-walking-skeleton` pasa a `estado: verified`.
+- Elegir la siguiente feature real: **`SRV-Sprint-2`** (Auth + RBAC dinámico,
+  `SRV-ADR-005`, `AC-SRV-02`) es lo que sigue en `docs/planning/ROADMAP.md` sobre
+  Server; **`HUB-H0`** (Walking Skeleton de Hira Hub) puede arrancar en paralelo, sin
+  dependencia. Aplicar la rúbrica (`method.md §2`) y Fase 1 con `autor-de-spec` para
+  la que se elija.

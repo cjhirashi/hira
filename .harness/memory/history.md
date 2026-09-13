@@ -25,6 +25,46 @@ Session-End por sesión, con el formato fijo de `method.md §10`. Las bitácoras
 
 ---
 
+## [2026-09-13] SRV-001-walking-skeleton — implemented
+
+- **Fase alcanzada:** implement (30/30 tareas, T-001..T-030)
+- **Rebotes del verificador:** 5 (RF-003 sin matiz + drift de `covers` en T-001..T-007;
+  secuenciación de `adapters/factory.py` en T-013..T-015; RF-008 código muerto en
+  T-019..T-023; higiene de tests en el mismo batch; `check.sh --full` cerraba la
+  compuerta sin Docker en T-024..T-030)
+- **Directiva de Pausa:** sí, 2 — (1) `adapters/factory.py` nace en el router (T-015),
+  no en T-020 como ataba el plan aprobado: `SRV-ADR-017` exige el punto de inyección
+  desde que el router existe; (2) `MosquittoAdapter.connect()` no se invocaba en
+  ningún camino real (backoff de RF-008 era código muerto): se amplió T-022 para
+  invocarlo en el `lifespan` de `main.py`, sin abortar el arranque si falla. Ambas
+  documentadas en `plan.md §7`, revisadas por *git diff* y aprobadas por Carlos antes
+  de reanudar.
+- **Drift / re-anchor:** no (primer anclaje de la feature, no un re-anchor)
+- **Anclas movidas:** `SRV-001-walking-skeleton` → `b4248e749d6a9eceaa68b9f117b79116222c1eb9`
+- **Gate:** verde (19 ok · 1 warn preexistente — `spectral` no instalado)
+- **Docs actualizadas:** `docs/planning/ROADMAP.md`, `docs/hira-studio/spec/OPEN-QUESTIONS.md`
+  (drift `HUB-ADR-05`/"directa" → `E-ADR-002`, detectado al arrancar);
+  `docs/hira-server/spec/implementation-guide/{estructura-de-repositorio.md,guia-backend.md}`
+  (retirado `HIRA_DEPLOY_MODE`/perfil `studio`/SQLite); `docs/planning/SPRINT.md`
+  (banner superseded); `hira-server/README.md`; `docs/hira-server/spec/validation/
+  vulnerabilities.md` (`VUL-SRV-001` 🟡→🟢); `.harness/gate/check.sh` (fix: excluir
+  `-m integration` del bloque 5 por defecto — gap genérico del arnés, no solo de esta
+  feature); overlays `.harness/claude/{ecosystem,hira-server}.md` (convención de
+  commits: Conventional Commits + `(RF-NNN)`, no el formato con corchetes).
+- **Decisiones de diseño / límites de integración:** Walking Skeleton de Hira Server
+  por puertos/adaptadores (`SRV-ADR-017`) — núcleo puro (`aggregate_status`),
+  coordinación (`health_service.get_health`, timeout 2s/servicio, nunca cuelga),
+  3 adaptadores reales (Postgres/Redis/Mosquitto) verificados contra contenedores
+  reales, no mocks. `VUL-SRV-001` (Mosquitto sin auth, crítico) resuelto en el mismo
+  sprint, no diferido. `GET /health` siempre HTTP 200 (detalle en el body, sin sobre
+  RFC 9457 — es monitoreo, no negocio).
+- **Próximo paso:** decidir con el usuario si sigue `SRV-Sprint-2` (Auth + RBAC
+  dinámico) o `HUB-H0` (Walking Skeleton de Hira Hub, puede correr en paralelo).
+  Aprobación humana final de `estado: verified` sigue pendiente (Gate 4) — el
+  orquestador no se autoaprueba.
+
+---
+
 ## [2026-09-10] Especialista `experto-ux-ui` añadido al arnés — ADR-003
 
 - **Fase alcanzada:** (mantenimiento del arnés — no aplica ciclo de feature)
