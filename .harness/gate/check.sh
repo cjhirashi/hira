@@ -140,8 +140,8 @@ else
         py=""; for v in venv_test venv .venv venv_run; do
           [ -x "$path/$v/bin/python" ] && "$path/$v/bin/python" -c "import pytest" 2>/dev/null && { py="$v/bin/python"; break; }; done
         if [ -z "$py" ]; then skip "$path · pytest no instalado en su venv — SKIP"; else
-          echo "  ${BLU}→${NC} $path · pytest"
-          ( cd "$path" && "$py" -m pytest -q -o addopts='' -p no:cacheprovider ) >/tmp/gate_$$.log 2>&1 \
+          echo "  ${BLU}→${NC} $path · pytest (unit; -m integration requiere infra real, se corre aparte)"
+          ( cd "$path" && "$py" -m pytest -q -o addopts='' -p no:cacheprovider -m "not integration" ) >/tmp/gate_$$.log 2>&1 \
             && ok "$path · tests" || { err "$path · tests FALLAN"; sed 's/^/      /' /tmp/gate_$$.log | tail -25; }
           rm -f /tmp/gate_$$.log
         fi ;;

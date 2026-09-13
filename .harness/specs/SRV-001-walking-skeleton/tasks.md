@@ -225,50 +225,92 @@ actualizado: 2026-09-13
       `mosquitto_pub` en T-016/T-017.
 
 ### Sistema — verificación e2e
-- [ ] T-024 — `docker compose -f docker-compose.yml -f docker-compose.dev.yml up` →
+- [x] T-024 — `docker compose -f docker-compose.yml -f docker-compose.dev.yml up` →
       todos los contenedores `healthy` en < 60s; `curl :8000/health` → 200 con los tres
       servicios `ok`; logs del backend en JSON — evidencia de terminal pegada (cubre
-      RF-001, RNF-001, RNF-002, RF-004) [zona: sistema-e2e]
+      RF-001, RNF-001, RNF-002, RF-004) [zona: sistema-e2e]. Verificado real
+      (2026-09-13, `.env`/`password_file` de prueba generados desde `.env.example`,
+      limpiados al terminar): `up -d` (imagen ya construida) → `postgres`/`redis`/
+      `mosquitto` `healthy` ~16s después de arrancar, `backend` `healthy` ~22s
+      después — los 4 muy por debajo de 60s (RNF-001). `nginx` volvió a chocar con el
+      puerto 80 de esta máquina compartida (mismo hallazgo que T-016, no es un fallo
+      del compose) — verificado aparte con un contenedor `nginx:1.27-alpine` +
+      `nginx.conf` real en un puerto libre (`18080`) contra la red del compose:
+      `curl :18080/health` → 200 con el proxy `location / { proxy_pass http://
+      backend:8000; }` funcionando end-to-end. `curl :8000/health` (directo) → 200
+      `{"status":"ok","services":{"postgres":"ok","redis":"ok","mosquitto":"ok"},
+      "version":"0.1.0","trace_id":"..."}`. Logs del backend: revisados con `docker
+      compose logs backend` — en el camino feliz solo hay logs de `uvicorn` (texto
+      plano, librería de terceros, fuera del alcance de RF-004 que aplica al código
+      propio vía `core/logger.py`); para demostrar RF-004 con evidencia real de
+      terminal se detuvo `mosquitto` un momento (`docker compose stop mosquitto`):
+      `GET /health` devolvió `200 {"status":"degraded",...,"mosquitto":"error"}` y
+      `docker compose logs backend` mostró una línea JSON válida con los 6 campos
+      exigidos (`timestamp, level, service, module, trace_id, message`) —
+      verificado además parseando esa línea con `json.loads` (campos completos);
+      `mosquitto` reiniciado y `/health` volvió a `ok`. Contenedores, imagen,
+      `.env`, `password_file` y override temporal de puerto limpiados al cerrar.
 
 ### Arnés
-- [ ] T-025 — Declarar `hira-server/backend:python` en `.harness/gate/services.txt`
-      para activar el bloque 5 (tests del servicio) (cubre RF-001) [zona: arnés]
+- [x] T-025 — Declarar `hira-server/backend:python` en `.harness/gate/services.txt`
+      para activar el bloque 5 (tests del servicio) (cubre RF-001) [zona: arnés].
+      Declarado; `check.sh` (modo rápido) pasó de "vacío — declara los servicios" a
+      "hira-server/backend · sin cambios — SKIP" (activado). `.venv` local
+      (gitignored) creado con `requirements.txt` + `pytest`/`pytest-asyncio`/`httpx`.
 
-### Documentación (`plan.md §8`) — pueden correr en paralelo desde T-002
-- [ ] T-026 — Corregir `docs/hira-server/spec/implementation-guide/estructura-de-
+      **Hallazgo del `revisor` (2026-09-13) y corrección de raíz — arnés, no
+      producto:** `check.sh --full` corría `pytest` sin excluir el marker
+      `integration`, así que sin contenedores arriba daba `3 failed` y **cerraba
+      la compuerta** (no un warning cosmético — `⛔ COMPUERTA CERRADA` real). Es un
+      gap genérico del bloque 5 (afecta a cualquier futuro servicio Python con
+      tests de integración, no solo a este), y calificó como corrección trivial
+      por la rúbrica de `method.md §2` (sin lógica de negocio, revertir cuesta
+      segundos): `.harness/gate/check.sh` línea del bloque 5 ahora corre
+      `pytest -m "not integration"` por defecto — la suite de integración se
+      verifica aparte, explícitamente, con contenedores reales arriba (mismo
+      patrón que ya usaron `hira-infra`/`revisor` durante todo T-019..T-024).
+      Re-verificado: `check.sh --full` sin contenedores → **40 passed, 0 failed**,
+      compuerta abierta. Con contenedores arriba → **43/43** (incluye los 3 de
+      integración).
+- [x] T-026 — Corregir `docs/hira-server/spec/implementation-guide/estructura-de-
       repositorio.md`: retirar `HIRA_DEPLOY_MODE`, perfil `studio`, `docker-compose.
       studio.yml`, referencias a SQLite [doc]
-- [ ] T-027 — Corregir `docs/hira-server/spec/implementation-guide/guia-backend.md`:
+- [x] T-027 — Corregir `docs/hira-server/spec/implementation-guide/guia-backend.md`:
       retirar `adapters/db/sqlite_adapter.py` y `HIRA_DEPLOY_MODE` en `factory.py`
       (no tocar la nota "Nginx → Caddy") [doc]
-- [ ] T-028 — Añadir banner "superseded por `.harness/specs/SRV-001-walking-skeleton/`"
+- [x] T-028 — Añadir banner "superseded por `.harness/specs/SRV-001-walking-skeleton/`"
       al inicio de `docs/planning/SPRINT.md`, sin reescribir su contenido histórico
       [doc]
-- [ ] T-029 — Corregir enlaces rotos en `hira-server/README.md` (apuntar a
+- [x] T-029 — Corregir enlaces rotos en `hira-server/README.md` (apuntar a
       `.harness/specs/SRV-001-walking-skeleton/`, `docs/hira-server/decisions/`,
-      `docs/hira-server/spec/`, `docs/planning/SPRINT.md` con su banner) [doc]
-- [ ] T-030 — Actualizar `docs/hira-server/spec/validation/vulnerabilities.md`:
+      `docs/hira-server/spec/`, `docs/planning/SPRINT.md` con su banner) [doc].
+      Hallazgo: los enlaces ya estaban correctos (corregidos por `ADR-004`,
+      2026-09-13, commit `26d4795`) — solo faltaba el enlace a
+      `docs/planning/SPRINT.md`, añadido.
+- [x] T-030 — Actualizar `docs/hira-server/spec/validation/vulnerabilities.md`:
       `VUL-SRV-001` de 🟡 En Proceso a 🟢 Resuelto — **tarea de cierre**, solo después
-      de que T-021/T-022/T-023 estén verificados con evidencia real [doc]
+      de que T-021/T-022/T-023 estén verificados con evidencia real [doc]. Hecho tras
+      confirmar T-024; cita T-016/T-017/T-021/T-022/T-023 y añadida fila en
+      "Historial de Resoluciones".
 
 ## Cobertura (el gate exige 100 %; `Estado` lo rellena el gate)
 | RF / doc | Tareas | Test(s) | Estado |
 |---|---|---|---|
-| RF-001 | T-001, T-016, T-018, T-024, T-025 | `test_health_router.py` (contrato), verificación e2e (T-024) | Parcial — T-001, T-016, T-018 hechas (compose real: `postgres`/`redis`/`mosquitto`/`backend` `healthy`; `nginx` verificado aparte por colisión de puerto 80 en esta máquina compartida, ver nota T-016); T-024 (e2e formal con evidencia pegada) y T-025 (gate services.txt) pendientes |
+| RF-001 | T-001, T-016, T-018, T-024, T-025 | `test_health_router.py` (contrato), verificación e2e (T-024) | Pass — T-001/T-016/T-018 (compose real) + T-024 (2026-09-13, e2e formal con evidencia pegada: `postgres`/`redis`/`mosquitto`/`backend` `healthy` bien por debajo de 60s; `nginx` verificado aparte por colisión de puerto 80 en esta máquina compartida, mismo hallazgo no-bloqueante de T-016, proxy real confirmado en puerto alterno) + T-025 (`hira-server/backend:python` declarado en `services.txt`, bloque 5 del gate activado) |
 | RF-002 | T-002, T-003, T-008, T-009, T-010, T-013, T-014, T-015, T-019, T-020 | `test_health_policy.py`, `test_health_service.py`, `test_health_router.py`, `tests/integration/test_adapters.py` | Pass — `test_health_policy.py` (8/8), `test_health_service.py` (6/6), `test_health_router.py` (2/2, con `factory.py` in-memory hasta T-020) y `tests/integration/test_adapters.py::test_postgresql_adapter_ping_against_real_container`/`test_redis_adapter_ping_against_real_container` (2/2, 2026-09-13, contra `postgres`/`redis` reales de `docker compose up`); `factory.py` ya instancia los adaptadores reales — sanity adicional de `GET /health` end-to-end con `TestClient` + contenedores reales en verde |
 | RF-003 | T-004, T-005, T-012 | `test_config.py`, `test_main_lifespan.py` (T-012) | Pass — `test_config.py` (10/10) y `test_main_lifespan.py` (3/3, 2026-09-13, wiring del `lifespan` verificado: `ValidationError` → log JSON `level: error` + `sys.exit(1)`, sin arranque parcial) |
-| RF-004 | T-006, T-007 | `test_logger.py`, evidencia de T-024 | Parcial — `test_logger.py` Pass (4/4); además corregido un bug de binding de `sys.stdout` detectado al implementar T-012 (`_DynamicStdoutHandler`), tests siguen en verde (2026-09-13); evidencia e2e de T-024 pendiente |
+| RF-004 | T-006, T-007 | `test_logger.py`, evidencia de T-024 | Pass — `test_logger.py` (4/4); bug de binding de `sys.stdout` corregido en T-012 (`_DynamicStdoutHandler`), tests en verde; evidencia e2e de T-024 (2026-09-13) confirma en `docker compose logs backend` una línea JSON real con los 6 campos exigidos (`timestamp, level, service, module, trace_id, message`), parseada y validada con `json.loads` |
 | RF-005 | T-008, T-010, T-011, T-012 | `test_health_service.py`, `test_correlation_id.py` | Pass — `test_health_service.py` (trace_id agregado, 2/2 casos) y `test_correlation_id.py` (4/4, 2026-09-13): propaga `X-Trace-ID` o genera `uuid4()`, fija/resetea el `ContextVar` de `core/logger.py` por request |
 | RF-006 | T-017, T-021, T-022, T-023 | `tests/integration/test_adapters.py`, `tests/integration/test_mqtt_security.py` (T-023) | Pass — `test_mqtt_security.py::test_anonymous_mqtt_client_is_rejected_by_real_broker` (1/1, 2026-09-13, cliente `paho-mqtt` externo sin credenciales contra el Mosquitto real del compose, CONNACK `rc != 0`); `mosquitto_adapter.py` conecta con `MQTT_USER`/`MQTT_PASSWORD` (verificado con credencial válida contra el contenedor real, `is_connected=True`) |
 | RF-007 | T-008, T-010 | `test_health_service.py` | Pass — timeout de 2s por servicio no cuelga la respuesta (2.03s para 3 chequeos, uno de ellos simulando 5s), excepción no propaga (2026-09-13) |
 | RF-008 | T-021, T-022 | `tests/integration/test_adapters.py`, `test_main_lifespan.py` | Pass — el backoff (`MosquittoAdapter.connect()`) sigue probado de forma aislada contra el broker real (1/1: 1s/2s/4s, 4 intentos, 4 logs `level: error`, sin excepción); **wiring cerrado** (Directiva de Pausa #2, `plan.md §7`): `backend/main.py::lifespan` invoca `get_notification_port().connect()` tras validar `Settings()`, sin abortar el arranque si falla (`sys.exit(1)` solo aplica al error de `Settings()`) — `test_main_lifespan.py` (5/5, 2026-09-13) cubre ambos casos con dobles, y se verificó además en vivo contra Mosquitto real: credencial inválida → backoff completo (~7s, 4 logs `error`, CONNACK rc=5) dentro del `lifespan` real sin `sys.exit`, `is_connected=False`; credencial válida → mismo camino, `is_connected=True` |
-| RNF-001 | T-016, T-024 | verificación e2e (T-024) | Parcial — `docker compose up -d` real (T-016) alcanzó `postgres`/`redis`/`mosquitto`/`backend` `healthy` en pocos segundos; medición formal de "< 60s" con evidencia de terminal pegada es T-024 (fuera de este batch) |
+| RNF-001 | T-016, T-024 | verificación e2e (T-024) | Pass — medición formal con evidencia de terminal pegada (2026-09-13, `date`/`docker inspect`): `postgres`/`redis`/`mosquitto` `healthy` ~16s tras arrancar, `backend` `healthy` ~22s tras arrancar — ambos muy por debajo de 60s |
 | RNF-002 | T-008, T-010 | `test_health_service.py` | Pass — `asyncio.wait_for(timeout=2)` por puerto verificado con doble que duerme 5s (2026-09-13) |
-| doc: estructura-de-repositorio | T-026 | — | Pendiente |
-| doc: guia-backend | T-027 | — | Pendiente |
-| doc: SPRINT.md banner | T-028 | — | Pendiente |
-| doc: hira-server/README.md | T-029 | — | Pendiente |
-| doc: vulnerabilities.md (VUL-SRV-001) | T-030 | — | Pendiente |
+| doc: estructura-de-repositorio | T-026 | — | Pass — `HIRA_DEPLOY_MODE`/perfil `studio`/`docker-compose.studio.yml`/SQLite retirados, árbol alineado a la estructura real |
+| doc: guia-backend | T-027 | — | Pass — `sqlite_adapter.py` y `HIRA_DEPLOY_MODE` retirados de `factory.py`; nota "Nginx → Caddy" intacta |
+| doc: SPRINT.md banner | T-028 | — | Pass — banner de superseded añadido al inicio, contenido histórico intacto |
+| doc: hira-server/README.md | T-029 | — | Pass — enlaces ya corregidos por `ADR-004`; añadido el enlace faltante a `docs/planning/SPRINT.md` |
+| doc: vulnerabilities.md (VUL-SRV-001) | T-030 | — | Pass — `VUL-SRV-001` 🟢 Resuelto, cita evidencia real de T-016/T-017/T-021/T-022/T-023, fila añadida en "Historial de Resoluciones" |
 
 > Esta tabla **es** la trazabilidad de la feature (no hay `traceability-matrix.md`).
 > Fila sin test, en `Fail` o `Pendiente` → el gate no abre.
