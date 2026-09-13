@@ -2,14 +2,19 @@
 id: SPEC-SRV-002
 tipo: spec
 feature: SRV-002-auth-rbac
-estado: in-review
+estado: approved
 anchor_commit: ‹pendiente›
 anchor_mode: advisory
 covers:
   - hira-server/backend/**
+  - hira-server/docs/openapi.yaml
+  - hira-server/README.md
+  - docs/hira-server/spec/modules/auth-rbac-seguridad.md
+  - docs/hira-server/spec/validation/vulnerabilities.md
+  - docs/decisions/ecosystem/E-ADR-003-convencion-rfc9457-type.md
 aprobaciones:
   fase_1: { por: "Carlos", fecha: 2026-09-13 }
-  fase_2: pendiente
+  fase_2: { por: "Carlos", fecha: 2026-09-13 }
 actualizado: 2026-09-13
 ---
 
