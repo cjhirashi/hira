@@ -19,34 +19,56 @@ actualizado: 2026-09-13
 ## Tareas
 
 ### Núcleo — passwords
-- [ ] T-001 — Test `test_password_hashing.py`: `hash_password`/`verify_password`
+- [x] T-001 — Test `test_password_hashing.py`: `hash_password`/`verify_password`
       con bcrypt real (factor 12); hash nunca igual al texto plano; verificación
       cruzada falla con password incorrecto (debe fallar) (cubre RF-012)
       [zona: test-núcleo]
-- [ ] T-002 — Implementar `core/security/passwords.py` (cubre RF-012)
+      **Nota:** falló primero con `ModuleNotFoundError: No module named
+      'core.security'` (módulo no existía). Tras implementar T-002: 5/5 tests
+      passed (incluye caso extra de salt aleatorio por llamada).
+- [x] T-002 — Implementar `core/security/passwords.py` (cubre RF-012)
       [zona: núcleo]
+      **Nota:** `hash_password`/`verify_password` con `bcrypt` real,
+      `rounds=12`. Añadido `bcrypt==4.3.0` a `requirements.txt` e instalado en
+      `.venv`.
 
 ### Núcleo — JWT
-- [ ] T-003 — Test `test_jwt_tokens.py`: `create_access_token`/`create_refresh_token`/
+- [x] T-003 — Test `test_jwt_tokens.py`: `create_access_token`/`create_refresh_token`/
       `decode_token` con JWT real; TTL correcto (15min/7días); `TokenExpiredError`
       con token vencido; `TokenInvalidError` con firma alterada o `type` incorrecto
       (debe fallar) (cubre RF-001, RF-003, RF-011, RF-013) [zona: test-núcleo]
-- [ ] T-004 — Implementar `core/security/jwt.py` (cubre RF-001, RF-003, RF-011,
+      **Nota:** falló primero con `ModuleNotFoundError: No module named
+      'core.security.jwt'`. Tras implementar T-004: 8/8 tests passed.
+- [x] T-004 — Implementar `core/security/jwt.py` (cubre RF-001, RF-003, RF-011,
       RF-013) [zona: núcleo]
+      **Nota:** `HS256`, `secret_key` como parámetro explícito (no lee
+      `Settings()`), `TokenExpiredError`/`TokenInvalidError` propias, sin
+      dependencia de FastAPI. Añadido `PyJWT==2.10.1` a `requirements.txt` e
+      instalado en `.venv`.
 
 ### Núcleo — política RBAC
-- [ ] T-005 — Test `test_rbac_policy.py`: matriz completa de `can_write` por rol;
+- [x] T-005 — Test `test_rbac_policy.py`: matriz completa de `can_write` por rol;
       `can_access_project` para las 4 combinaciones de `scope`/coincidencia de
       `project_id` (debe fallar) (cubre RF-004, RF-005, RF-008, RF-009)
       [zona: test-núcleo]
-- [ ] T-006 — Implementar `core/security/rbac_policy.py` (cubre RF-004, RF-005,
+      **Nota:** falló primero con `ModuleNotFoundError: No module named
+      'core.security.rbac_policy'`. Tras implementar T-006: 10/10 tests passed
+      (incluye `is_admin` además de `can_write`/`can_access_project`).
+- [x] T-006 — Implementar `core/security/rbac_policy.py` (cubre RF-004, RF-005,
       RF-008, RF-009) [zona: núcleo]
+      **Nota:** reglas hardcodeadas del MVP de 3 roles fijos, sin I/O.
 
 ### Núcleo — catálogo de errores (RFC 9457, `E-ADR-003`)
-- [ ] T-007 — Test `test_errors.py`: `ProblemDetailError` expone `status`/`type_`/
+- [x] T-007 — Test `test_errors.py`: `ProblemDetailError` expone `status`/`type_`/
       `title`/`detail` correctos por slug (debe fallar) [zona: test-núcleo]
-- [ ] T-008 — Implementar `core/errors.py` + `schemas/errors.py::ProblemDetail`
+      **Nota:** falló primero con `ModuleNotFoundError: No module named
+      'core.errors'`. Tras implementar T-008: 4/4 tests passed (incluye
+      serialización de `schemas/errors.py::ProblemDetail`).
+- [x] T-008 — Implementar `core/errors.py` + `schemas/errors.py::ProblemDetail`
       [zona: núcleo]
+      **Nota:** solo la clase/schema genéricos (`plan.md §2`); el catálogo
+      concreto de 8 slugs de `plan.md §4` se consume en `services/`/`routers/`
+      de batches posteriores (fuera de este alcance).
 
 ### Puertos
 - [ ] T-009 — Implementar `core/ports/user_repository_port.py` (`UserRepositoryPort`,

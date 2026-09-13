@@ -12,3 +12,9 @@ sqlalchemy==2.0.52
 asyncpg==0.31.0
 redis==5.2.1
 paho-mqtt==2.1.0
+
+# Núcleo de seguridad (`SRV-002-auth-rbac`, T-001..T-008) — bcrypt para hashing de
+# passwords (RF-012), PyJWT para tokens de acceso/refresh (RF-001/RF-003/RF-011/
+# RF-013). Solo `core/security/*` importa estas librerías.
+bcrypt==4.3.0
+PyJWT==2.10.1

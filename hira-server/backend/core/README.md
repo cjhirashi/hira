@@ -11,3 +11,9 @@ Núcleo transversal del backend — no depende de infraestructura concreta.
   devuelve en la respuesta.
 - `ports/` — interfaces abstractas (`Protocol`) que `services/` puede importar; `core/`
   nunca importa `adapters/`.
+- `errors.py` — `ProblemDetailError(status, type_, title, detail)`, excepción del
+  sobre de error RFC 9457 (`SRV-002-auth-rbac`, `plan.md §2`/`§4`, `E-ADR-003`).
+  Sin I/O; el catálogo concreto de slugs se consume en `services/`/routers de
+  batches posteriores.
+- `security/` — núcleo de autenticación/RBAC de 3 roles fijos
+  (`SRV-002-auth-rbac`), ver `core/security/README.md`. Sin I/O.

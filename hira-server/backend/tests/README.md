@@ -18,6 +18,23 @@ cita la ancla que cubre.
   log JSON `level: error` nombrando el/los campo(s) faltante(s) + `sys.exit(1)`, sin
   arranque parcial (RF-003).
 
+### `SRV-002-auth-rbac` (núcleo puro, T-001..T-008 — sin mocks, sin puertos)
+
+- `test_password_hashing.py` — `hash_password`/`verify_password` con bcrypt real
+  (factor 12); hash nunca igual al texto plano; salt aleatorio por llamada;
+  verificación cruzada falla con password incorrecto (RF-012).
+- `test_jwt_tokens.py` — `create_access_token`/`create_refresh_token`/
+  `decode_token` con JWT real (`PyJWT`); TTL exacto (15min/7días);
+  `TokenExpiredError` con `exp` fijado manualmente en el pasado (sin
+  `time.sleep`); `TokenInvalidError` con firma alterada, `type` incorrecto o
+  token malformado (RF-001, RF-003, RF-011, RF-013).
+- `test_rbac_policy.py` — matriz completa de `can_write`/`is_admin` por rol; las
+  4 combinaciones de `can_access_project` (`scope`/coincidencia de
+  `project_id`) (RF-004, RF-005, RF-008, RF-009).
+- `test_errors.py` — `ProblemDetailError` expone `status`/`type_`/`title`/
+  `detail`; `schemas/errors.py::ProblemDetail` serializa el sobre RFC 9457
+  exacto.
+
 `asyncio_mode = auto` (`pytest.ini`) — los tests `async def` no necesitan el marcador
 `@pytest.mark.asyncio` explícito, aunque algunos lo declaran por claridad.
 
