@@ -119,6 +119,34 @@ actualizado: 2026-09-13
   `HUB-H0`) y `docs/hira-studio/spec/OPEN-QUESTIONS.md` (SQ-4) citaban "arquitectura
   directa / `HUB-ADR-05`" — desactualizado desde `E-ADR-002` (2026-09-04, homogeneiza a
   Hexagonal). Corregido a citar `E-ADR-002`.
-- **Siguiente paso:** Fase 2 (Plan) de `SRV-001-walking-skeleton` con el agente
-  `arquitecto` → `plan.md` conforme a `SRV-ADR-017` (Hexagonal) → Gate 2 (aprobación
-  humana) → Fase 3 (Tasks) → Fase 4 (Implement, TDD, una tarea a la vez).
+- **[2026-09-13] Fase 2 y 3 cerradas para `SRV-001-walking-skeleton`.** `plan.md`
+  redactado por `arquitecto` (diseño Hexagonal: núcleo = `aggregate_status`,
+  coordinación = `health_service.get_health` sobre 3 puertos, adaptadores Postgres/
+  Redis/Mosquitto con `VUL-SRV-001` resuelto en este sprint). Gate 2 aprobado por el
+  usuario (2026-09-13) — verificado que `ADR-004` (refresco de rutas, mismo día) no
+  contradice el plan. `tasks.md` con 30 tareas (T-001..T-030, TDD, ≤30min c/u) y tabla
+  de cobertura 100 % de RF-001..008/RNF-001-002 + 5 filas `[doc]`. `spec.md`/`plan.md`
+  → `estado: approved`, ambas aprobaciones firmadas.
+- Nota abierta, no bloqueante: `hira-server/AGENTS.md` (overlay regenerado) describe
+  commits `[<COMP>-Sprint-N][TIPO][MÓDULO]`, pero el `AGENTS.md` raíz dice que features
+  nuevas usan Conventional Commits + `(RF-NNN)` (formato con corchetes = histórico, no
+  retroactivo). Discrepancia preexistente entre overlay y raíz, no introducida por esta
+  sesión — resolver antes del primer commit real de Fase 4.
+- **[2026-09-13] Fase 4 en curso — primer batch (T-001..T-007) implementado y
+  verificado.** `hira-infra` implementó estructura de repo + `aggregate_status` +
+  `core/config.py` + `core/logger.py`, TDD real (22 tests, evidencia pegada). El
+  `revisor` rebotó 2 hallazgos menores (RF-003 marcado `Pass` sin matiz cuando el
+  wiring del `lifespan` en `main.py` aún no existe; `covers` de `spec.md` no incluía
+  `hira-server/frontend/**` ni `hira-server/docs/**` que T-001 sí creó) — ambos
+  corregidos: `covers` ampliado, T-012 ahora también cubre el wiring de RF-003
+  (`main.py` nace ahí), fila RF-003 de `tasks.md` marcada `Parcial`. Gate verde. Nada
+  commiteado todavía (queda en el working tree para decisión del usuario).
+- Convención de commits corregida de raíz: overlay `hira-server/AGENTS.md` decía
+  `[<COMP>-Sprint-N][TIPO][MÓDULO]`; ahora usa Conventional Commits + `(RF-NNN)` como
+  el `AGENTS.md` raíz siempre exigió. Fuente: `.harness/claude/{ecosystem,hira-server}.md`
+  (regenerados con `build_claude.py`, `--check` → "al día").
+- **Siguiente paso:** decidir si se commitea T-001..T-007 ahora o se sigue con el
+  siguiente batch (T-008..T-012: puertos + `health_service.get_health` + Correlation
+  ID) antes de commitear. Luego: T-013 (contrato) → T-014/T-015 (router) → T-016..T-018
+  (infra contenedores) → T-019..T-023 (adaptadores + seguridad, requieren Docker) →
+  T-024/T-025 (e2e + gate) → T-026..T-030 (`[doc]`).

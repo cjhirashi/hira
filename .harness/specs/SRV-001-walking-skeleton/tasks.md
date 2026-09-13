@@ -1,0 +1,157 @@
+---
+id: TASKS-SRV-001
+tipo: tasks
+feature: SRV-001-walking-skeleton
+estado: draft
+actualizado: 2026-09-13
+---
+
+# TASKS-SRV-001 · Walking Skeleton de Hira Server
+
+## Reglas
+- Cada tarea: ≤ 30 min, un solo propósito, `(cubre RF-NNN)`, zona del patrón (o `[doc]`).
+- Orden por dependencias. **Test antes que código.**
+- Cada fila de `plan.md §8` (Impacto en documentación) → una tarea `[doc]`.
+- Implementador: `hira-infra` (`.claude/agents/hira-infra.md`) — anclas exactas de este
+  sprint (`SRV-ADR-001/002/003/004/017`, `AC-SRV-01`).
+
+## Tareas
+
+### Estructura
+- [x] T-001 — Crear árbol `hira-server/backend/{core/ports,adapters/{db,cache,mqtt},
+      routers,models,schemas,services,workers,websocket,tests/integration}`,
+      `frontend/` (stub), `nginx/`, `mosquitto/`, `docs/`; cada carpeta con su
+      `README.md` (sin `MODULE.md`, retirado por `ADR-004`) (cubre RF-001) [zona: infra]
+
+### Núcleo — regla de agregación de salud
+- [x] T-002 — Test `test_health_policy.py`: 8 combinaciones de 3 booleanos →
+      `aggregate_status` retorna `ok`/`degraded` correcto (debe fallar) (cubre RF-002)
+      [zona: test-núcleo]
+- [x] T-003 — Implementar `backend/services/health_service.py::aggregate_status`
+      (cubre RF-002) [zona: núcleo]
+
+### Config — arranque validado
+- [x] T-004 — Test `test_config.py`: variable de entorno faltante → error nombrando la
+      variable, sin arranque parcial (debe fallar) (cubre RF-003) [zona: test-servicio]
+- [x] T-005 — Implementar `backend/core/config.py` (`Settings(BaseSettings)`, Pydantic
+      v2) (cubre RF-003) [zona: servicio]. **Nota de alcance:** el manejo del error en
+      el `lifespan` de `backend/main.py` queda pendiente para cuando exista `main.py`
+      (batch posterior, T-012+) — fuera del alcance de este batch (T-001..T-007, sin
+      contenedores/FastAPI todavía).
+
+### Logger — observabilidad
+- [x] T-006 — Test `test_logger.py`: cada log es JSON válido con `timestamp, level,
+      service, module, trace_id, message`; cero `print()` (debe fallar) (cubre RF-004)
+      [zona: test-servicio]
+- [x] T-007 — Implementar `backend/core/logger.py::get_logger(module)` (cubre RF-004)
+      [zona: servicio]
+
+### Puertos + coordinación — `get_health()`
+- [ ] T-008 — Test `test_health_service.py` con dobles (`Protocol` fakes) de
+      `DatabasePort`/`CachePort`/`NotificationPort`: timeout de 2s por servicio no
+      cuelga la respuesta, agrega `trace_id` (debe fallar) (cubre RF-002, RF-005,
+      RF-007) [zona: test-coordinación]
+- [ ] T-009 — Implementar `backend/core/ports/{database_port.py,cache_port.py,
+      notification_port.py}` (`Protocol`) (cubre RF-002) [zona: puertos]
+- [ ] T-010 — Implementar `backend/services/health_service.py::get_health` —
+      `asyncio.wait_for(timeout=2)` por puerto, agrega `status`/`services`/`trace_id`
+      (cubre RF-002, RF-005, RF-007) [zona: coordinación]
+
+### Correlation ID
+- [ ] T-011 — Test `test_correlation_id.py`: `X-Trace-ID` propagado o generado si el
+      cliente no lo envía (debe fallar) (cubre RF-005) [zona: test-coordinación]
+- [ ] T-012 — Implementar `backend/core/middleware.py::CorrelationIdMiddleware` +
+      registro en `backend/main.py` (cubre RF-005) [zona: coordinación]. **Incluye**
+      el wiring de `Settings` en el `lifespan` de `main.py` (RF-003: `ValidationError`
+      capturado, log JSON `level: error` nombrando el/los campo(s) faltante(s),
+      `sys.exit(1)` sin arranque parcial) — es el primer punto donde `main.py` existe;
+      test en `backend/tests/test_main_lifespan.py` (cubre RF-003, RF-005)
+
+### Contrato — Contract-First
+- [ ] T-013 — Escribir `hira-server/docs/openapi.yaml` (`GET /health`, payload de
+      `spec.md §3`) — antes del router (cubre RF-002) [zona: contrato]
+
+### Adaptador de entrada — router
+- [ ] T-014 — Test `test_health_router.py` (`TestClient`): `GET /health` responde 200
+      con el payload del contrato (debe fallar) (cubre RF-002) [zona: test-adaptador-entrada]
+- [ ] T-015 — Implementar `backend/routers/monitor.py` + `backend/schemas/health.py`
+      (cubre RF-002) [zona: adaptador-entrada]
+
+### Infraestructura de contenedores
+- [ ] T-016 — `hira-server/docker-compose.yml` + `docker-compose.dev.yml`: servicios
+      `backend`/`postgres`/`redis`/`mosquitto`/`nginx` con `HEALTHCHECK` propio y
+      `depends_on: condition: service_healthy` (cubre RF-001) [zona: infra]
+- [ ] T-017 — `hira-server/mosquitto/mosquitto.conf` (`allow_anonymous false`,
+      `password_file`) + script de generación del `password_file` desde
+      `MQTT_USER`/`MQTT_PASSWORD` (nunca en claro en el repo) (cubre RF-006)
+      [zona: infra-seguridad]
+- [ ] T-018 — `hira-server/.env.example` completo (sin `HIRA_DEPLOY_MODE`) +
+      `hira-server/nginx/nginx.conf` (cubre RF-001) [zona: infra]
+
+### Adaptadores concretos — integración contra contenedores reales
+- [ ] T-019 — Test `tests/integration/test_adapters.py` (requiere T-016..T-018 arriba):
+      `DatabasePort.ping()` y `CachePort.ping()` contra Postgres/Redis reales (debe
+      fallar) (cubre RF-002) [zona: test-adaptadores]
+- [ ] T-020 — Implementar `backend/adapters/db/postgresql_adapter.py` (`SELECT 1`) +
+      `backend/adapters/cache/redis_adapter.py` (`PING`) + `backend/adapters/
+      factory.py` (cubre RF-002) [zona: adaptadores]
+- [ ] T-021 — Test de integración: conexión a Mosquitto con credencial inválida no
+      reintenta indefinidamente (backoff 1s/2s/4s, 3 intentos) (debe fallar) (cubre
+      RF-008) [zona: test-adaptadores]
+- [ ] T-022 — Implementar `backend/adapters/mqtt/mosquitto_adapter.py::connect()`
+      (credencial `MQTT_USER`/`MQTT_PASSWORD`, log `level: error` + backoff fijo en
+      fallo) (cubre RF-006, RF-008) [zona: adaptadores]
+
+### Seguridad — Mosquitto sin auth (`VUL-SRV-001`)
+- [ ] T-023 — Test de seguridad de integración: cliente MQTT externo sin credenciales
+      es rechazado por el broker (debe fallar antes de T-017, pasa después) (cubre
+      RF-006) [zona: test-seguridad]
+
+### Sistema — verificación e2e
+- [ ] T-024 — `docker compose -f docker-compose.yml -f docker-compose.dev.yml up` →
+      todos los contenedores `healthy` en < 60s; `curl :8000/health` → 200 con los tres
+      servicios `ok`; logs del backend en JSON — evidencia de terminal pegada (cubre
+      RF-001, RNF-001, RNF-002, RF-004) [zona: sistema-e2e]
+
+### Arnés
+- [ ] T-025 — Declarar `hira-server/backend:python` en `.harness/gate/services.txt`
+      para activar el bloque 5 (tests del servicio) (cubre RF-001) [zona: arnés]
+
+### Documentación (`plan.md §8`) — pueden correr en paralelo desde T-002
+- [ ] T-026 — Corregir `docs/hira-server/spec/implementation-guide/estructura-de-
+      repositorio.md`: retirar `HIRA_DEPLOY_MODE`, perfil `studio`, `docker-compose.
+      studio.yml`, referencias a SQLite [doc]
+- [ ] T-027 — Corregir `docs/hira-server/spec/implementation-guide/guia-backend.md`:
+      retirar `adapters/db/sqlite_adapter.py` y `HIRA_DEPLOY_MODE` en `factory.py`
+      (no tocar la nota "Nginx → Caddy") [doc]
+- [ ] T-028 — Añadir banner "superseded por `.harness/specs/SRV-001-walking-skeleton/`"
+      al inicio de `docs/planning/SPRINT.md`, sin reescribir su contenido histórico
+      [doc]
+- [ ] T-029 — Corregir enlaces rotos en `hira-server/README.md` (apuntar a
+      `.harness/specs/SRV-001-walking-skeleton/`, `docs/hira-server/decisions/`,
+      `docs/hira-server/spec/`, `docs/planning/SPRINT.md` con su banner) [doc]
+- [ ] T-030 — Actualizar `docs/hira-server/spec/validation/vulnerabilities.md`:
+      `VUL-SRV-001` de 🟡 En Proceso a 🟢 Resuelto — **tarea de cierre**, solo después
+      de que T-021/T-022/T-023 estén verificados con evidencia real [doc]
+
+## Cobertura (el gate exige 100 %; `Estado` lo rellena el gate)
+| RF / doc | Tareas | Test(s) | Estado |
+|---|---|---|---|
+| RF-001 | T-001, T-016, T-018, T-024, T-025 | `test_health_router.py` (contrato), verificación e2e (T-024) | Parcial — T-001 (estructura) hecha; T-016/T-018/T-024/T-025 pendientes (requieren contenedores) |
+| RF-002 | T-002, T-003, T-008, T-009, T-010, T-013, T-014, T-015, T-019, T-020 | `test_health_policy.py`, `test_health_service.py`, `test_health_router.py`, `tests/integration/test_adapters.py` | Parcial — `test_health_policy.py` Pass (8/8, 2026-09-13); resto pendiente |
+| RF-003 | T-004, T-005, T-012 | `test_config.py`, `test_main_lifespan.py` (T-012) | Parcial — `test_config.py` Pass (10/10, 2026-09-13); wiring del `lifespan` en `main.py` pendiente (T-012, `main.py` no existe hasta ese paso) |
+| RF-004 | T-006, T-007 | `test_logger.py`, evidencia de T-024 | Parcial — `test_logger.py` Pass (4/4, 2026-09-13); evidencia e2e de T-024 pendiente |
+| RF-005 | T-008, T-010, T-011, T-012 | `test_health_service.py`, `test_correlation_id.py` | Pendiente |
+| RF-006 | T-017, T-021, T-022, T-023 | `tests/integration/test_adapters.py`, test de seguridad (T-023) | Pendiente |
+| RF-007 | T-008, T-010 | `test_health_service.py` | Pendiente |
+| RF-008 | T-021, T-022 | `tests/integration/test_adapters.py` | Pendiente |
+| RNF-001 | T-016, T-024 | verificación e2e (T-024) | Pendiente |
+| RNF-002 | T-008, T-010 | `test_health_service.py` | Pendiente |
+| doc: estructura-de-repositorio | T-026 | — | Pendiente |
+| doc: guia-backend | T-027 | — | Pendiente |
+| doc: SPRINT.md banner | T-028 | — | Pendiente |
+| doc: hira-server/README.md | T-029 | — | Pendiente |
+| doc: vulnerabilities.md (VUL-SRV-001) | T-030 | — | Pendiente |
+
+> Esta tabla **es** la trazabilidad de la feature (no hay `traceability-matrix.md`).
+> Fila sin test, en `Fail` o `Pendiente` → el gate no abre.

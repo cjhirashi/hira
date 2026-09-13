@@ -2,16 +2,17 @@
 id: SPEC-SRV-001
 tipo: spec
 feature: SRV-001-walking-skeleton
-estado: in-review
+estado: approved
 anchor_commit: ‹pendiente›
 anchor_mode: advisory
 covers:
   - hira-server/backend/**
-  - hira-server/docs/openapi.yaml
+  - hira-server/docs/**
   - hira-server/docker-compose*.yml
   - hira-server/.env.example
   - hira-server/mosquitto/**
   - hira-server/nginx/**
+  - hira-server/frontend/**
   - hira-server/README.md
   - .harness/gate/services.txt
   - docs/hira-server/spec/implementation-guide/estructura-de-repositorio.md
@@ -20,7 +21,7 @@ covers:
   - docs/planning/SPRINT.md
 aprobaciones:
   fase_1: { por: "Carlos", fecha: 2026-09-13 }
-  fase_2: pendiente
+  fase_2: { por: "Carlos", fecha: 2026-09-13 }
 actualizado: 2026-09-13
 ---
 
