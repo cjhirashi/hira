@@ -95,8 +95,13 @@ usuario desactivado (RF-002, evita enumeración).
 - **RF-005** — SI un usuario con rol Operador intenta acceder a un recurso
   reservado a Admin ENTONCES el sistema DEBE responder 403.
 - **RF-006** — CUANDO Admin modifica el rol de un usuario, el sistema DEBE
-  invalidar la entrada de caché Redis (`rbac:{user_id}`) de ese usuario antes de
-  confirmar la modificación.
+  invalidar la entrada de caché Redis (`rbac:{user_id}`) y la caché en memoria
+  del proceso que ejecuta la modificación, antes de confirmar la modificación.
+  En procesos/réplicas adicionales del backend, la invalidación se propaga por
+  *pub/sub* de forma *best-effort* (típicamente sub-segundo), acotada por un
+  TTL de seguridad de 30s como cota máxima de obsolescencia si un mensaje se
+  pierde — decisión de la Directiva de Pausa RNF-001 (2026-09-13, `plan.md
+  §10`), no garantiza invalidación instantánea cruzada entre procesos.
 - **RF-007** — El middleware RBAC DEBE resolver permisos desde caché Redis sin
   consultar PostgreSQL en cada request (solo en *cache-miss*) — resuelve
   `VUL-SRV-004` (RBAC con query a BD en cada request, crítico).
@@ -134,4 +139,25 @@ usuario desactivado (RF-002, evita enumeración).
   request, medido con 100 requests concurrentes (`AC-SRV-02.6`).
 
 ## Marcadores abiertos
-- `[NEEDS CLARIFICATION] = 0`. Usuario confirmó "así es" (2026-09-13).
+- `[NEEDS CLARIFICATION] = 1` (2026-09-13, **Directiva de Pausa RNF-001,
+  `method.md §5` — solución de raíz APROBADA por Carlos el mismo día, pendiente
+  de re-medición real**): midiendo RNF-001 con el método que esta misma spec
+  exige (100 requests concurrentes), la implementación original de
+  `AuthenticationMiddleware` (`starlette.middleware.base.BaseHTTPMiddleware`)
+  no cumplía el umbral de <5ms — dos causas aditivas confirmadas de forma
+  independiente (por dos rondas de revisor, medidas 3 veces por métodos
+  distintos): (1) el piso de latencia de esa clase base y (2) el round-trip
+  real a Redis por request en *cache-hit*. Carlos aprobó atacar ambas a la vez:
+  migrar el middleware a ASGI puro + caché en memoria del proceso con
+  invalidación por pub/sub de Redis en `services/rbac_service.py`. Diseño
+  completo, evidencia de ambas causas y tareas (`T-032..T-040`): `plan.md`,
+  sección "10. RNF-001 — Directiva de Pausa (histórico) y solución aprobada".
+  Este marcador sigue en `1` (no se cierra a `0`) hasta que la re-medición real
+  (`T-040`) confirme <5ms con el diseño completo —
+  `tests/integration/test_rbac_latency.py` sigue `xfail(strict=True)` mientras
+  tanto, no se relaja el umbral ni se asume el resultado sin medir.
+  **Nota de RF-006 ya aplicada y confirmada por Carlos (2026-09-13):** el
+  matiz de semántica de invalidación cruzada entre procesos/réplicas
+  (propagación *best-effort* vía pub/sub, TTL 30s de cota máxima) queda
+  explícito en el propio texto de RF-006 (§4) — no queda pendiente.
+  Resto de la spec (2026-09-13, "así es") sin cambios.

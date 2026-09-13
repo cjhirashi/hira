@@ -52,6 +52,9 @@ actualizado: 2026-09-13
 | `update_user_role` (RF-006) sin router HTTP propio en este sprint | `spec.md §2` excluye explícitamente "gestión de usuarios más allá del mínimo" — no hay `PATCH /users/{id}/role` en el contrato de esta feature. Se implementa y prueba como función de coordinación (`services/rbac_service.py`), invocable por un futuro endpoint de administración o un script, sin bloquear el cierre de esta feature | Añadir un endpoint `PATCH /users/{id}/role` fuera del alcance ya cerrado en Fase 1 |
 | Sobre RFC 9457 con `type: https://hira.dev/errors/<slug>` | Constitución Art. 6 exige RFC 9457; el ecosistema no tenía convención de `type` todavía (primer sprint que lo usa, `SRV-001` optó por no usarlo). Se fija aquí un URI estable (no necesita resolver) para no reinventar el formato en cada feature futura | `type: "about:blank"` (RFC 9457 default, pierde valor de distinguir causas) |
 | TTLs de JWT y umbral de fuerza bruta como constantes de código, no variables de entorno | `spec.md` los fija como valores concretos (15 min/7 días/5 intentos/15 min) — no hay necesidad de configurarlos por instalación en este MVP (regla de oro Art. 10: no anticipar) | Añadir `ACCESS_TOKEN_TTL_MINUTES` etc. a `Settings` |
+| **(2026-09-13, resolución de RNF-001 — ver §10)** `CachePort` se amplía **de nuevo** con `publish(channel, message)`/`subscribe(channel) -> AsyncIterator[str]`, no un puerto nuevo (`RbacPubSubPort`/`CacheInvalidationPort`) | Mismo criterio ya aplicado a `get/set/incr/expire/delete` (T-010/T-011): el propósito de `CachePort` ("acceso a Redis") no cambia, solo crece su superficie — y a diferencia del caso `UserRepositoryPort` vs `DatabasePort` (donde el segundo era *liveness-only* y forzar ahí métodos de dominio violaba su propósito), aquí Pub/Sub **es** acceso a Redis, la misma tecnología, sin lógica de dominio de por medio. Además la Constitución (Art. 2, `adaptadores_salida` de `hira-server`) **ya lista "Redis Pub/Sub"** como capacidad anticipada — no es abstracción especulativa, es la capacidad prevista desde la Génesis que hasta ahora nadie había necesitado | Puerto nuevo dedicado a invalidación/pub-sub — fragmentaría el acceso a Redis en 2+ puertos sin una razón de dominio (viola Anti-Abstraction, `plan.md §0`) |
+| **(2026-09-13)** Caché en memoria del proceso (`LocalPermissionsCache`) vive en `services/rbac_service.py`, no en un puerto/adaptador nuevo | Es una estructura de datos en proceso (`dict` + TTL), sin I/O — no es una "frontera de salida" (no habla con ningún sistema externo), por lo tanto no le corresponde un puerto (Art. 1: `services/` puede tener estado interno puro, lo que no puede hacer es importar `adapters/`) | Modelarla como si fuera un `CachePort` adicional ("`InProcessCachePort`") — confundiría "puerto = frontera con el exterior" con una simple optimización interna |
+| **(2026-09-13)** `AuthenticationMiddleware` migra de `BaseHTTPMiddleware` a ASGI puro (`__call__(scope, receive, send)`), reemplazando la implementación de T-019/T-020 | Resuelve la Directiva de Pausa de RNF-001 (§10): el piso de latencia de `BaseHTTPMiddleware` (~20-40ms a 100 concurrentes) es inherente a la clase base, no a la lógica de negocio — un middleware ASGI puro construye y envía la respuesta 401 directamente vía `send()`, sin `call_next()`, preservando el motivo original de usar una clase con control total de la respuesta (evitar que una excepción se pierda en la `ExceptionMiddleware`) sin pagar el costo de `anyio.create_task_group()`/*memory stream* por request. Cambio de implementación interna, no de contrato — `tests/test_authentication_middleware.py` (T-019) debe seguir pasando sin relajar ninguna aserción | Mantener `BaseHTTPMiddleware` y optimizar solo `services/rbac_service.py` — no alcanza (§10: el piso ya existe con un middleware vacío) |
 
 ## 2. Arquitectura de la feature *(Hexagonal)*
 
@@ -67,11 +70,35 @@ actualizado: 2026-09-13
   - `refresh(refresh_token, cache) -> str` (nuevo access) ← **RF-011, RF-013**: decodifica el refresh (`core/security/jwt.py`, `type="refresh"`) → JWT inválido/expirado → `ProblemDetailError(401, "token-invalid"/"token-expired")`; verifica `refresh:{jti}` existe en `cache` → si no, `ProblemDetailError(401, "token-revoked")`; emite nuevo access con el `rol`/`scope`/`project_id` **vigentes** (releídos vía `services/rbac_service.py::resolve_permissions`, no los del JWT viejo — para que un cambio de rol aplique también aquí).
   - `logout(refresh_token, cache) -> None` ← **RF-010**: decodifica el refresh, `DEL refresh:{jti}` en `cache` (idempotente si ya no existe).
   - Constantes: `MAX_LOGIN_ATTEMPTS = 5`, `LOGIN_ATTEMPTS_WINDOW_SECONDS = 900` (RF-014).
-- **`services/rbac_service.py`**:
-  - `resolve_permissions(user_id, users_repo: UserRepositoryPort, cache: CachePort) -> AuthenticatedUser` ← **RF-006, RF-007**: `GET rbac:{user_id}` en `cache`; *cache-hit* → deserializa y retorna (sin tocar `users_repo`, cumple RF-007: "no consulta BD salvo *cache-miss*"); *cache-miss* → `users_repo.get_by_id(user_id)`, construye `AuthenticatedUser(user_id, rol, scope, project_id, activo)`, `SET rbac:{user_id}` con TTL = TTL del refresh (7 días), retorna. Usuario no encontrado o `activo=False` → `ProblemDetailError(401, "token-invalid")` (revocación efectiva por desactivación).
-  - `invalidate_permissions_cache(user_id, cache: CachePort) -> None` ← **RF-006**: `DEL rbac:{user_id}`.
-  - `update_user_role(user_id, new_role, users_repo: UserRepositoryPort, cache: CachePort) -> None` ← **RF-006**: `users_repo.update_role(user_id, new_role)` y **luego** `invalidate_permissions_cache` (orden fijado por RF-006: "DEBE invalidar... antes de confirmar la modificación" → se invalida como parte atómica de la misma operación, antes de retornar éxito al llamador). Sin router HTTP en este sprint (ver Registro de decisiones); se prueba con dobles en `tests/test_rbac_service.py` y queda disponible para el futuro endpoint/CLI de gestión de usuarios.
-- **`core/middleware.py`** (se amplía, no se reemplaza) — **`AuthenticationMiddleware`** ← implementa **RF-003, RF-007**: para toda ruta que no esté en el *allowlist* público (`/health`, `/auth/login`, `/auth/refresh`, `/docs`, `/openapi.json`, `/redoc`), exige `Authorization: Bearer <token>`; ausente → `token-missing`; decodifica con `core/security/jwt.py` (`type="access"`) → inválido/expirado → `token-invalid`/`token-expired`; válido → `services/rbac_service.py::resolve_permissions(sub, ...)` (vía `adapters/factory.py`, mismo patrón que `main.py` ya usa para `get_notification_port()` en el `lifespan`) y fija `request.state.user: AuthenticatedUser`. Cualquier 401 se retorna como `JSONResponse` con el sobre RFC 9457 directamente desde el middleware (no se apoya en el exception handler de FastAPI — evita el problema conocido de `BaseHTTPMiddleware` + excepciones fuera de la cadena de `ExceptionMiddleware`). `/auth/logout` **sí** requiere este middleware (debe estar autenticado para cerrar su propia sesión); `/auth/refresh` y `/auth/login` están en el *allowlist* porque su propósito es funcionar sin (o con) un access token vigente.
+- **`services/rbac_service.py`** — **ampliado (2026-09-13) para resolver RNF-001, ver §10**:
+  - `LocalPermissionsCache` ← clase nueva, **sin I/O** (no es un puerto — ver Registro de decisiones): envuelve un `dict[str, tuple[AuthenticatedUser, float]]` (valor + timestamp de expiración) con `LOCAL_CACHE_TTL_SECONDS = 30` (red de seguridad si el pub/sub falla — no es el mecanismo principal de invalidación, es el respaldo). Expone `get(user_id) -> AuthenticatedUser | None` (`None` si no existe o expiró), `set(user_id, user, ttl_seconds=LOCAL_CACHE_TTL_SECONDS)`, `invalidate(user_id)`. Se instancia un *singleton* de módulo (`_default_local_cache`) para el uso real en producción; todas las funciones de abajo aceptan `local_cache: LocalPermissionsCache = _default_local_cache` como parámetro **inyectable** — no para DI de puertos (no es una frontera externa), sino para que los tests puedan simular **2 procesos** con 2 instancias independientes de `LocalPermissionsCache` en el mismo test (§5).
+  - `resolve_permissions(user_id, users_repo: UserRepositoryPort, cache: CachePort, local_cache: LocalPermissionsCache = _default_local_cache) -> AuthenticatedUser` ← **RF-006, RF-007, RNF-001**: 1) `local_cache.get(user_id)` → *hit* → retorna **sin ningún I/O** (ni Redis ni BD) — esta es la ruta caliente que resuelve RNF-001; 2) *miss* local → `GET rbac:{user_id}` en `cache` (Redis, como antes) → *hit* → deserializa, repuebla `local_cache.set(user_id, ...)`, retorna (sin tocar `users_repo`, sigue cumpliendo RF-007 literal: "no consulta BD salvo *cache-miss*" — *cache* aquí es el nivel Redis, el nivel local es una capa adicional, no sustituye la semántica ya verificada); 3) *miss* en ambos niveles → `users_repo.get_by_id(user_id)`, construye `AuthenticatedUser`, repuebla **ambos** niveles (`cache.set` TTL 7 días, `local_cache.set` TTL 30s), retorna. Usuario no encontrado o `activo=False` → `ProblemDetailError(401, "token-invalid")` (sin cachear en ningún nivel).
+  - `invalidate_permissions_cache(user_id, cache: CachePort, local_cache: LocalPermissionsCache = _default_local_cache) -> None` ← **RF-006**: `DEL rbac:{user_id}` en `cache` (Redis, como antes) + `local_cache.invalidate(user_id)` (invalida **solo la instancia de este proceso** — ver `run_invalidation_subscriber` abajo para la propagación a otros procesos) + `cache.publish("rbac:invalidations", user_id)` (nuevo — dispara la propagación).
+  - `update_user_role(user_id, new_role, users_repo: UserRepositoryPort, cache: CachePort, local_cache: LocalPermissionsCache = _default_local_cache) -> None` ← **RF-006**: `users_repo.update_role(user_id, new_role)` y **luego** `invalidate_permissions_cache(..., local_cache=local_cache)` (mismo orden fijado ya en `spec.md`: invalida antes de confirmar). **Matiz de semántica (nuevo, ver §10 y Registro de decisiones):** lo que ocurre "antes de confirmar la modificación" — invalidación de Redis + del `LocalPermissionsCache` **del proceso que ejecuta la llamada** — sigue siendo síncrono y atómico dentro de la misma función, sin cambios respecto al comportamiento ya verificado (T-014/T-015). Lo que es **nuevo y distinto**: si hay más de un proceso/réplica de backend corriendo, la caché en memoria de **esos otros procesos** converge por el mensaje pub/sub, típicamente en milisegundos pero **sin garantía atómica cruzada** — es propagación *best-effort*, con la TTL de 30s de `LocalPermissionsCache` como cota máxima de obsolescencia ante un mensaje perdido. Sin router HTTP en este sprint (ver Registro de decisiones); se prueba con dobles en `tests/test_rbac_service.py` y queda disponible para el futuro endpoint/CLI de gestión de usuarios.
+  - `run_invalidation_subscriber(cache: CachePort, local_cache: LocalPermissionsCache = _default_local_cache) -> None` ← función nueva, coordinación pura (solo importa `core/ports/cache_port.py`, `SRV-ADR-017`): `async for user_id in cache.subscribe("rbac:invalidations"): local_cache.invalidate(user_id)` — bucle infinito, pensado para correr como tarea de fondo (`asyncio.create_task`) desde `main.py::lifespan` (ver abajo), uno por proceso backend. Debe salir limpio ante `asyncio.CancelledError` (no debe tragarse la cancelación) para que el `lifespan` pueda apagarlo en el *shutdown*.
+- **`core/middleware.py`** (se amplía, no se reemplaza) — **`AuthenticationMiddleware`** ← implementa **RF-003, RF-007** — **migrado (2026-09-13) de `BaseHTTPMiddleware` a middleware ASGI puro para resolver RNF-001 (§10), reemplazando la implementación de T-019/T-020**:
+  ```python
+  class AuthenticationMiddleware:
+      def __init__(self, app: ASGIApp) -> None:
+          self.app = app
+
+      async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+          if scope["type"] != "http":
+              await self.app(scope, receive, send)
+              return
+          request = Request(scope, receive=receive)
+          if request.url.path in PUBLIC_ALLOWLIST:
+              await self.app(scope, receive, send)
+              return
+          # ... misma lógica de validación de token / resolve_permissions que hoy ...
+          if <error>:
+              response = _problem_response(...)  # JSONResponse, sin cambios
+              await response(scope, receive, send)  # envía directo por send(), sin call_next()
+              return
+          request.state.user = authenticated_user  # persiste en scope["state"], visible río abajo
+          await self.app(scope, receive, send)
+  ```
+  Para toda ruta que no esté en el *allowlist* público (`/health`, `/auth/login`, `/auth/refresh`, `/docs`, `/openapi.json`, `/redoc`), exige `Authorization: Bearer <token>`; ausente → `token-missing`; decodifica con `core/security/jwt.py` (`type="access"`) → inválido/expirado → `token-invalid`/`token-expired`; válido → `services/rbac_service.py::resolve_permissions(sub, ...)` (vía `adapters/factory.py`, mismo patrón que hoy) y fija `request.state.user: AuthenticatedUser`. **Cómo se envía un 401 sin `call_next()`:** `starlette.responses.Response`/`JSONResponse` ya implementa el protocolo ASGI (`async def __call__(self, scope, receive, send)` construye y emite los mensajes `http.response.start`/`http.response.body`); el middleware ASGI puro simplemente invoca `await response(scope, receive, send)` directamente — no hay `ExceptionMiddleware` de por medio porque nunca se lanza una excepción ni se llama a una app interna, se construye y envía la respuesta él mismo. `request.state.user` sigue funcionando igual porque el objeto `Request` que construye el middleware comparte el mismo `scope` que la app interna recibirá — `Request.state` lee/escribe `scope["state"]` (un `dict` mutable dentro de `scope`), así que fijarlo aquí es visible para cualquier `Request` construido más adelante en la cadena a partir del mismo `scope`. **Contrato observable sin cambios:** mismo *allowlist*, mismo `request.state.user`, mismo *shape* RFC 9457 en los 401 — `tests/test_authentication_middleware.py` (T-019, 12 casos) debe seguir pasando **sin relajar ninguna aserción**; solo su fixture interna (`monkeypatch.setattr(middleware_module, ...)`) podría necesitar ajustes menores si el nombre de algún atributo de instancia cambia. `/auth/logout` **sí** requiere este middleware; `/auth/refresh` y `/auth/login` están en el *allowlist*.
 - **`core/security/dependencies.py`** — `require_role(*roles: str)` y `require_project_scope(project_id_param: str = "project_id")`, factories de `Depends()` que leen `request.state.user` (ya fijado por el middleware) y aplican `core/security/rbac_policy.py` ← implementan **RF-004, RF-005, RF-008, RF-009** a nivel de *cualquier* router futuro que las use. En este sprint, sin router de negocio real que proteger todavía (`spec.md §2`: solo backend/contrato de auth), se verifican con una app FastAPI sintética construida en el propio test (mismo patrón que `tests/test_correlation_id.py::_build_app()` de `SRV-001`) — no se crea un endpoint de producción especulativo solo para probarlas.
 - **Exception handler** — `main.py` registra `app.add_exception_handler(ProblemDetailError, ...)` que serializa a `schemas/errors.py::ProblemDetail` (RFC 9457) con `media_type="application/problem+json"`.
 
@@ -90,6 +117,15 @@ actualizado: 2026-09-13
 > el propósito de `CachePort` (acceso a Redis) no cambia, solo se completa su
 > superficie mínima de *liveness-only* a *cache real*, que es exactamente para lo que
 > se preveía (`SRV-ADR-003`, "Redis" en Art. 2 ya lo lista como cache/pub-sub futuro).
+>
+> **Segunda ampliación (2026-09-13, resolución de RNF-001 — §10):** `CachePort` crece
+> **de nuevo**, en el mismo archivo, con `publish(channel: str, message: str) -> None`
+> y `subscribe(channel: str) -> AsyncIterator[str]` — necesarios para que
+> `services/rbac_service.py::update_user_role` (RF-006) propague la invalidación de su
+> caché en memoria a otros procesos/réplicas del backend (`RedisAdapter` los
+> implementa con `client.publish(...)`/`client.pubsub()` reales). Mismo criterio que
+> la ampliación anterior — ver Registro de decisiones arriba para la justificación
+> completa frente a la alternativa de un puerto nuevo.
 
 ### Adaptadores de entrada
 - `routers/auth.py` — `POST /auth/login`, `POST /auth/refresh`, `POST /auth/logout`
@@ -99,6 +135,18 @@ actualizado: 2026-09-13
 - `AuthenticationMiddleware` — registrado en `main.py` después de
   `CorrelationIdMiddleware` (el `trace_id` debe existir antes, para que los logs de
   fallo de autenticación ya lo lleven).
+- `main.py::lifespan` — **ampliado (2026-09-13, §10)**: arranca
+  `services/rbac_service.py::run_invalidation_subscriber(get_cache_port())` como
+  tarea de fondo (`asyncio.create_task`, guardada en una variable local del
+  `lifespan`) **junto al `connect()` de `MosquittoAdapter` ya existente** — mismo
+  punto del ciclo de vida, mismo patrón de "arranca infraestructura de fondo sin
+  bloquear el resto del arranque". A diferencia de `connect()` (que retorna), la
+  suscripción es un bucle infinito — por eso es una tarea (`asyncio.create_task`),
+  no un `await` directo. En el *shutdown* (después del `yield`), el `lifespan`
+  cancela la tarea (`task.cancel()`) y espera su terminación limpia (`await task`
+  dentro de un `try/except asyncio.CancelledError`) — sin tareas huérfanas al
+  apagar el proceso (relevante para que la suite de tests no deje *warnings* de
+  tareas sin recoger).
 
 ### `adapters/factory.py` (se amplía)
 - Nueva función `get_user_repository_port() -> UserRepositoryPort`: nace en el paso 9
@@ -186,11 +234,15 @@ detail: string      # mensaje específico de la instancia (sin datos sensibles)
 | Núcleo (`core/errors.py`) | `ProblemDetailError` expone `status`/`type_`/`title`/`detail` correctos por slug | unit puro |
 | Coordinación (`services/auth_service.py`) | Fuerza bruta (6º intento → 429, contador resetea en éxito); mismo 401 genérico en los 3 casos de RF-002; refresh con token revocado → 401; logout idempotente | unit + dobles (`Protocol` fakes) de `UserRepositoryPort`/`CachePort` |
 | Coordinación (`services/rbac_service.py`) | *Cache-hit* no llama a `UserRepositoryPort` (verificado con un doble que lanza si se invoca); *cache-miss* sí consulta y repuebla con el TTL correcto; `update_user_role` invalida el caché | unit + dobles |
+| Coordinación (`services/rbac_service.py`, ampliado §10) | **Hit en memoria evita Redis:** con `LocalPermissionsCache` ya caliente, `resolve_permissions` no llama a `CachePort.get` (doble de `CachePort` que lanza si se invoca) ni a `UserRepositoryPort`. **Miss local + hit Redis:** repuebla el nivel local sin tocar `UserRepositoryPort`. **TTL local expira:** tras `LOCAL_CACHE_TTL_SECONDS`, vuelve a consultar Redis (usar reloj inyectable o `freezegun`, no `sleep` real). **Invalidación cruza de proceso:** simulado con **2 instancias** de `LocalPermissionsCache` (`local_cache_a`, `local_cache_b`) en el mismo test — representan 2 procesos backend — y un doble de `CachePort` cuyo `publish`/`subscribe` está respaldado por un `asyncio.Queue` en memoria (simula el canal Redis real sin un Redis real); `update_user_role(..., local_cache=local_cache_a)` invalida `local_cache_a` síncronamente y publica; una tarea `run_invalidation_subscriber(fake_cache, local_cache_b)` corriendo en el mismo test loop consume el mensaje y se verifica (`await asyncio.sleep(0)` o `asyncio.wait_for` con timeout corto) que `local_cache_b` quedó invalidado — sin necesidad de 2 procesos ni contenedores reales | unit + dobles — RF-006, RF-007, RNF-001 |
+| Puertos (`CachePort`/`RedisAdapter`, ampliado §10) | Contrato ampliado expone `publish`/`subscribe`; con un Redis real (mismo patrón que T-011), un `publish` en un cliente es recibido por un `subscribe` en otro cliente del mismo canal | unit (dobles, contrato) + verificación manual contra Redis real (mismo patrón que T-011) |
+| Adaptador de entrada (`main.py::lifespan`, ampliado §10) | El `lifespan` arranca la tarea de suscripción al entrar y la cancela limpio (`CancelledError` capturado, sin *warning* de tarea huérfana) al salir — verificado con un doble de `CachePort.subscribe` controlado por el test | unit, `TestClient` como *context manager* (mismo patrón que `tests/test_main_lifespan.py` ya usa para Mosquitto) |
 | Middleware (`AuthenticationMiddleware`) | Token ausente/inválido/expirado → 401 con forma RFC 9457 exacta; ruta del *allowlist* no exige token; `request.state.user` disponible en la ruta protegida | unit, app FastAPI real de prueba + `TestClient` (mismo patrón que `test_correlation_id.py`) |
+| Middleware (`AuthenticationMiddleware`, migración a ASGI puro, §10) | **Mismos 12 casos ya verificados en T-019** (`tests/test_authentication_middleware.py`) deben seguir pasando **sin relajar ninguna aserción** tras la migración — es la prueba de regresión de que el contrato observable no cambió (solo la implementación interna) | unit, `TestClient` (archivo existente, ejecutado de nuevo contra la nueva implementación) |
 | Dependencias (`require_role`, `require_project_scope`) | Visor bloqueado en escritura (403); Operador bloqueado en recurso Admin (403); scope=project cruzando de proyecto (403); scope=global sin re-login (200) | unit, app FastAPI **sintética** construida en el test (sin tocar routers de producción) — RF-004, RF-005, RF-008, RF-009 |
 | Adaptador (`PostgreSQLUserRepository`) | `get_by_email`/`get_by_id`/`update_role` contra Postgres **real** con la migración aplicada; `email` duplicado rechazado por `UNIQUE`; `CHECK` de `scope`/`project_id` rechaza combinaciones inválidas | integración — `docker compose up -d postgres` + `alembic upgrade head` + `pytest -m integration` |
 | Router (`routers/auth.py`) | Contrato exacto de `openapi.yaml` (`TestClient`, con `UserRepositoryPort`/`CachePort` in-memory del `factory.py` placeholder) — 200/401/429 con el *shape* RFC 9457 correcto | unit + `TestClient`, sin contenedores |
-| Seguridad end-to-end | Fuerza bruta real contra Redis real; bcrypt real de extremo a extremo (seed → login); revocación de refresh real (logout → refresh con ese token → 401); latencia del middleware RBAC < 5ms con 100 requests concurrentes (RNF-001) | integración — contenedores reales del compose, evidencia de terminal pegada |
+| Seguridad end-to-end | Fuerza bruta real contra Redis real; bcrypt real de extremo a extremo (seed → login); revocación de refresh real (logout → refresh con ese token → 401); **re-medición real** de la latencia del middleware RBAC < 5ms con 100 requests concurrentes (RNF-001) con el diseño **completo** (caché en memoria + pub/sub + middleware ASGI puro) — **obligatorio medir de verdad, no asumir** que el rediseño alcanza el umbral: es el primer paso de implementación de esta pieza en Fase 4, exactamente porque una suposición sin medir fue la causa de la Directiva de Pausa original (§10). Si la medición real no da <5ms, se abre una **nueva** Directiva de Pausa (no se relaja el umbral ni se fuerza un `Pass`) | integración — contenedores reales del compose, evidencia de terminal pegada |
 
 ## 6. Secuenciación de archivos (tests antes que código)
 1. `tests/test_password_hashing.py` (falla) → `core/security/passwords.py` — RF-012.
@@ -209,9 +261,14 @@ detail: string      # mensaje específico de la instancia (sin datos sensibles)
 14. `tests/integration/test_user_repository_adapter.py` (falla, requiere Postgres real + migración aplicada) → `adapters/db/user_repository_adapter.py::PostgreSQLUserRepository` — reemplaza el **cuerpo** (no la firma) de `adapters/factory.py::get_user_repository_port()` — RF-001, RF-002, RF-006, RF-007, RF-012 (reales).
 15. `backend/scripts/seed_admin_user.py` + `SEED_ADMIN_EMAIL`/`SEED_ADMIN_PASSWORD` en `.env.example` — necesario para poder ejercer login end-to-end sin CRUD de usuarios.
 16. `tests/integration/test_auth_security.py` (contenedores reales: Postgres+Redis) → fuerza bruta real (RF-014), revocación real (RF-010/013), bcrypt+JWT reales de punta a punta (login→acceso protegido→refresh→logout), forma RFC 9457 exacta.
-17. Medición de latencia del middleware (RNF-001, 100 requests concurrentes) — script documentado en `tasks.md`, evidencia de terminal pegada.
-18. `hira-server/README.md` — añadir el paso operativo `alembic upgrade head` (no es Art. 11, ver nota de §3).
-19. Tareas `[doc]` de §8 — pueden ejecutarse en paralelo desde el paso 1.
+17. **(2026-09-13, resolución de RNF-001 — §10)** `tests/test_cache_port_contract.py` — ampliar (falla) → `core/ports/cache_port.py` (**ampliar de nuevo**: `publish`/`subscribe`) + `adapters/cache/redis_adapter.py` (implementación real vía `client.publish`/`client.pubsub()`). Debe ir **antes** del paso 18 — `rbac_service.py` va a depender de estos métodos.
+18. `tests/test_rbac_service.py` — ampliar (falla: hit en memoria evita Redis; miss local + hit Redis repuebla el local; invalidación cruzada entre 2 instancias de `LocalPermissionsCache` simulando 2 procesos, ver §5) → `services/rbac_service.py::LocalPermissionsCache` (nueva) + `resolve_permissions`/`invalidate_permissions_cache`/`update_user_role` (ampliados) + `run_invalidation_subscriber` (nueva) — RF-006, RF-007, RNF-001.
+19. `tests/test_main_lifespan.py` — ampliar (falla) → `main.py::lifespan` arranca `run_invalidation_subscriber(get_cache_port())` como tarea de fondo (junto al `connect()` de Mosquitto) y la cancela limpio en el *shutdown* — RF-006.
+20. Migrar `core/middleware.py::AuthenticationMiddleware` de `BaseHTTPMiddleware` a ASGI puro (`__init__(app)`, `async def __call__(scope, receive, send)`) — **reemplaza** la implementación de T-019/T-020, mismo contrato observable. `tests/test_authentication_middleware.py` (ya existente) se corre de nuevo **sin modificar sus aserciones** — es la prueba de regresión de esta migración — RF-003, RF-007, RNF-001.
+21. `tests/integration/test_rbac_latency.py` — ampliar (sigue `xfail(strict=True)` por ahora): además de verificar 0 consultas a `UserRepositoryPort` tras el warm-up, verificar 0 consultas a `CachePort.get` durante la medición (el cache-hit ahora es 100 % en memoria, ni siquiera toca Redis) — RNF-001.
+22. **Re-medición real de RNF-001** (100 requests concurrentes, Postgres+Redis reales) con el diseño completo del paso 17-20 — **primer paso de implementación de esta pieza, no un supuesto** (ver §5, nota de "obligatorio medir de verdad"). Si <5ms: quitar `xfail(strict=True)` de `tests/integration/test_rbac_latency.py` y pegar la evidencia de terminal real en `tasks.md`/`plan.md §10`. Si no: nueva Directiva de Pausa (`method.md §5`), no se relaja el umbral.
+23. `hira-server/README.md` — añadir el paso operativo `alembic upgrade head` (no es Art. 11, ver nota de §3).
+24. Tareas `[doc]` de §8 — pueden ejecutarse en paralelo desde el paso 1; la que cierra `VUL-SRV-004` a 🟢 depende del resultado del paso 22, no antes.
 
 > `.harness/gate/services.txt` ya declara `hira-server/backend:python` (`SRV-001`) —
 > sin cambios necesarios, la suite nueva se integra en la misma suite de `pytest`.
@@ -222,6 +279,8 @@ detail: string      # mensaje específico de la instancia (sin datos sensibles)
 | Autorización fina (`require_role`/`require_project_scope`) como `Depends()` de FastAPI en vez de vivir enteramente dentro del middleware ASGI | Restricción real de Starlette: los `path params` no están disponibles todavía cuando corre `BaseHTTPMiddleware.dispatch` (se resuelven en el enrutamiento, después de los middlewares). No es una capa especulativa: es la única forma correcta de implementar RF-008/009 (dependen de `project_id` de la ruta) sin duplicar el parseo de rutas a mano dentro del middleware. |
 | `CachePort` se amplía con métodos genéricos (`get/set/incr/expire/delete`) en vez de crear un `RbacCachePort`/`AuthCachePort` separado | El propósito del puerto (acceso a Redis) no cambia — solo pasa de *liveness-only* a *cache real*, que ya era su rol previsto (`SRV-ADR-003`). Introducir un puerto nuevo solo para no tocar el archivo existente sería abstracción especulativa y fragmentaría el acceso a Redis en 2+ puertos sin razón de dominio. |
 | `update_user_role` sin router HTTP en este sprint (queda "sin llamador" en producción hasta el futuro endpoint/CLI de gestión de usuarios) | `spec.md §2` ya cerró explícitamente "sin CRUD de usuarios más allá del mínimo" en Fase 1 — añadir un endpoint ahora sería expandir un alcance ya decidido y aprobado por el usuario. Se prueba con dobles para dejar RF-006 verificable sin violar esa decisión (ver Registro de decisiones). |
+| **(2026-09-13, §10)** `CachePort` se amplía **de nuevo** con `publish`/`subscribe` en vez de un puerto nuevo dedicado a invalidación | Ver Registro de decisiones (arriba) y Nota de ampliación de §2 — mismo criterio ya usado, y Redis Pub/Sub ya está anticipado en Constitución Art. 2. |
+| **(2026-09-13, §10)** `LocalPermissionsCache` lleva su propia TTL de seguridad (30s) **además de** la invalidación por pub/sub, en vez de confiar solo en el mensaje | El pub/sub es *best-effort* (§10, matiz de RF-006): un mensaje puede perderse (reinicio de Redis, red). La TTL acota el peor caso de obsolescencia a 30s sin necesidad de una cola persistente ni reintentos de entrega — no se anticipa más mecanismo de fiabilidad que ese (Art. 10: no anticipar); si en producción real 30s resulta insuficiente o excesivo, es un ajuste de constante, no un rediseño. |
 
 ## 8. Impacto en documentación *(obligatorio — Constitución Art. 11)*
 | Documento del mapa | Qué cambia | Acción |
@@ -253,9 +312,12 @@ completos; no hay nada que quede obsoleto en ese documento por este plan.
 - Tests: `tests/test_auth_service.py` (3 causas → mismo 401), `tests/test_auth_router.py`, `tests/integration/test_auth_security.py`.
 
 ### Implementación de RF-003
-- `core/middleware.py::AuthenticationMiddleware`.
+- `core/middleware.py::AuthenticationMiddleware` — **(2026-09-13, §10)** migrado
+  de `BaseHTTPMiddleware` a ASGI puro (`__call__(scope, receive, send)`), mismo
+  contrato observable, resuelve la Causa raíz #1 de RNF-001.
 - `core/security/jwt.py::decode_token` (rama `access`).
-- Tests: `tests/test_authentication_middleware.py`.
+- Tests: `tests/test_authentication_middleware.py` (mismo archivo, mismas
+  aserciones — regresión de la migración).
 
 ### Implementación de RF-004
 - `core/security/rbac_policy.py::can_write`.
@@ -270,13 +332,29 @@ completos; no hay nada que quede obsoleto en ese documento por este plan.
 - `services/rbac_service.py::update_user_role/invalidate_permissions_cache`.
 - `core/ports/user_repository_port.py::UserRepositoryPort.update_role`.
 - `adapters/db/user_repository_adapter.py::PostgreSQLUserRepository.update_role`.
-- Tests: `tests/test_rbac_service.py`, `tests/integration/test_user_repository_adapter.py`.
+- **(2026-09-13, §10)** `services/rbac_service.py::LocalPermissionsCache`,
+  `run_invalidation_subscriber` — invalidación del caché en memoria del proceso
+  que ejecuta la llamada (síncrona, antes de retornar, sin cambio de contrato) +
+  propagación *best-effort* sub-segundo a otros procesos/réplicas vía
+  `cache.publish("rbac:invalidations", user_id)` (ver matiz de semántica en §2 y
+  §10 — **recomendado** añadir una nota aclaratoria en `spec.md §4 RF-006`,
+  pendiente de confirmación de Carlos por tocar un documento de Fase 1 ya
+  aprobado).
+- `core/ports/cache_port.py` (ampliado: `publish`/`subscribe`) +
+  `adapters/cache/redis_adapter.py` (real).
+- `main.py::lifespan` — arranca/cancela `run_invalidation_subscriber`.
+- Tests: `tests/test_rbac_service.py` (ampliado), `tests/test_cache_port_contract.py`
+  (ampliado), `tests/test_main_lifespan.py` (ampliado),
+  `tests/integration/test_user_repository_adapter.py`.
 - Doc: fila de cierre en `docs/hira-server/spec/validation/vulnerabilities.md` (`VUL-SRV-004`).
 
 ### Implementación de RF-007
 - `services/rbac_service.py::resolve_permissions` (cache-first).
 - `core/ports/cache_port.py` (ampliado: `get/set`).
-- Tests: `tests/test_rbac_service.py` (doble que falla si se consulta `UserRepositoryPort` en cache-hit).
+- **(2026-09-13, §10)** `services/rbac_service.py::LocalPermissionsCache` — nivel
+  adicional consultado **antes** que Redis, sin I/O en *hit* (resuelve RNF-001).
+- Tests: `tests/test_rbac_service.py` (dobles que fallan si se consulta
+  `CachePort.get`/`UserRepositoryPort` en un *hit* de `LocalPermissionsCache`).
 - Doc: misma fila de cierre `VUL-SRV-004`.
 
 ### Implementación de RF-008
@@ -317,5 +395,177 @@ completos; no hay nada que quede obsoleto en ese documento por este plan.
 - Tests: `tests/test_auth_service.py`, `tests/integration/test_auth_security.py`.
 
 ### Implementación de RNF-001
-- `core/middleware.py::AuthenticationMiddleware` + `services/rbac_service.py::resolve_permissions` (cache-first, sin BD en la ruta caliente).
-- Medición: script de 100 requests concurrentes (paso 17 de §6), evidencia de terminal pegada — `tests/integration/test_auth_security.py` o script aparte documentado en `tasks.md`.
+> **Estado (2026-09-13): Directiva de Pausa resuelta en el papel — pendiente de
+> re-medición real. Ver §10 para el detalle completo (histórico + solución
+> aprobada).**
+- `core/middleware.py::AuthenticationMiddleware` — migrado a ASGI puro (§2, §10):
+  elimina el piso de latencia de `BaseHTTPMiddleware` (~20-40ms a 100 concurrentes).
+- `services/rbac_service.py::LocalPermissionsCache` + `resolve_permissions`
+  ampliado (cache-first **en memoria**, sin ningún I/O en *hit* — ni Redis ni BD)
+  + `invalidate_permissions_cache`/`update_user_role` ampliados +
+  `run_invalidation_subscriber` (nuevo).
+- `core/ports/cache_port.py` (ampliado: `publish`/`subscribe`) +
+  `adapters/cache/redis_adapter.py` (real).
+- `main.py::lifespan` — arranca/cancela la tarea de suscripción.
+- Medición: `tests/integration/test_rbac_latency.py` (100 requests concurrentes,
+  cache-hit puro con 0 consultas a `UserRepositoryPort` **y** 0 a `CachePort.get`)
+  — **re-ejecutar contra el diseño completo de arriba y pegar evidencia de
+  terminal real antes de quitar el `xfail(strict=True)`** (paso 22 de §6, primer
+  paso de implementación de esta pieza en Fase 4 — no se asume el resultado).
+
+## 10. RNF-001 — Directiva de Pausa (histórico) y solución aprobada (2026-09-13)
+
+**Estado actual: Directiva de Pausa RESUELTA por decisión de Carlos (2026-09-13,
+mismo día) — diseño aprobado, documentado en §2/§5/§6/§9 de este plan y en
+`tasks.md` (T-032..T-040). No se marca `RNF-001` como `Pass` todavía: la
+resolución está aprobada **en el papel**; falta la re-medición real (paso 22 de
+§6, T-040) antes de quitar el `xfail(strict=True)` de
+`tests/integration/test_rbac_latency.py` y cerrar `VUL-SRV-004`. Esta sección
+conserva el historial completo de qué se midió y por qué (no se borra), y añade
+al final la causa raíz #2 (confirmada en una ronda de revisión posterior) y el
+diseño de la solución de raíz para ambas causas.**
+
+### Qué se midió y cómo
+Método exacto (documentado también en el docstring del test): dos apps
+FastAPI/Starlette con un único `GET /bench` que no toca Postgres/Redis; la
+única diferencia es si registran `AuthenticationMiddleware` o no. Se disparan
+100 requests **concurrentes** (`asyncio.gather`) contra cada una — primero vía
+`httpx.AsyncClient(transport=ASGITransport(...))`, y luego, para descartar que
+`httpx` fuera la causa, con una llamada ASGI directa (`await app(scope,
+receive, send)`, sin ninguna librería HTTP de por medio). Ambos métodos dan el
+mismo patrón. Se repitió con `starlette.applications.Starlette` puro (sin
+FastAPI) para descartar que fuera un costo de la capa de *dependency
+injection* de FastAPI.
+
+### Evidencia (terminal real, 2026-09-13)
+Con un `AuthenticationMiddleware`-equivalente **completamente vacío** (`class
+NoopMiddleware(BaseHTTPMiddleware): async def dispatch(self, request,
+call_next): return await call_next(request)` — sin JWT, sin Redis, sin
+`resolve_permissions`), llamada ASGI directa, FastAPI:
+
+```
+n=   1 avg=   0.374ms max=   0.374ms
+n=   5 avg=   1.135ms max=   1.226ms
+n=  10 avg=   2.195ms max=   2.385ms
+n=  25 avg=   8.634ms max=   9.755ms
+n=  50 avg=   9.763ms max=  10.711ms
+n= 100 avg=  26.388ms max=  28.718ms
+n= 200 avg=  39.836ms max=  43.432ms
+```
+
+Sin el middleware (mismo harness, misma ruta): `n=100 avg=0.070ms`. Con
+`starlette.applications.Starlette` puro (sin FastAPI) a n=100: `avg≈14-22ms`
+con el mismo `NoopMiddleware`, `avg≈0.02ms` sin él. El `AuthenticationMiddleware`
+real (con JWT+Redis reales, cache-hit puro verificado con un espía que cuenta
+0 consultas a `UserRepositoryPort` durante la medición) mide `~54ms` de
+overhead sobre el mismo `GET /bench` a 100 concurrentes — consistente con el
+piso ya impuesto por la clase base antes de sumarle ninguna lógica propia.
+
+### Causa raíz
+El overhead es de `starlette.middleware.base.BaseHTTPMiddleware` en sí mismo
+(`anyio.create_task_group()` + *memory object stream* por request para poder
+interceptar la respuesta antes de que salga) — **no** de
+`core/security/jwt.py::decode_token` ni de `services/rbac_service.py::
+resolve_permissions`/Redis (probado aislado, sin ninguna de las dos). Escala
+**superlineal** con la concurrencia (n=10 ≈ 2ms, n=25 ≈ 8.6ms ya sobre el
+umbral, n=100 ≈ 26ms solo de la clase base) — un problema de rendimiento
+documentado de esa clase en el ecosistema Starlette/FastAPI, reproducido aquí
+de forma directa y aislada (3 métodos de medición distintos, mismo patrón).
+
+### Por qué es una asunción inviable de `plan.md` (no un bug de código)
+`plan.md §2` fija `AuthenticationMiddleware(BaseHTTPMiddleware)` por una razón
+funcional real, ya documentada ahí y en `core/middleware.py`: un
+`BaseHTTPMiddleware` puede devolver un `JSONResponse` (401) directamente desde
+`dispatch()` sin depender de `app.add_exception_handler`, porque las
+excepciones lanzadas dentro de `call_next()` no llegan limpias a la
+`ExceptionMiddleware` de Starlette. Esa elección de clase base, **tal como
+está**, no puede cumplir RNF-001 (<5ms agregados, medido con 100 concurrentes,
+`spec.md §7`) bajo ningún ajuste de `services/`/Redis — el techo lo impone la
+clase base antes de que la lógica de negocio del middleware corra siquiera una
+línea.
+
+### Solución de raíz recomendada (para decisión de Carlos, no aplicada)
+Migrar `AuthenticationMiddleware` de `BaseHTTPMiddleware` a **middleware ASGI
+puro** (`class AuthenticationMiddleware: def __init__(self, app): ...; async
+def __call__(self, scope, receive, send): ...`). Un middleware ASGI puro
+controla el ciclo de vida completo de la respuesta él mismo (puede construir y
+enviar un `JSONResponse` de 401 directamente vía `send()`, sin pasar por
+`call_next()` ni por la `ExceptionMiddleware`) — **resuelve las dos
+restricciones a la vez**: (1) el problema original que motivó usar
+`BaseHTTPMiddleware` (propagación de excepciones) deja de aplicar, porque ya
+no hay un `call_next()` intermedio; (2) el costo de `anyio.create_task_group()`
++ *memory stream* por request desaparece (confirmado: la llamada ASGI directa
+sin middleware mide ~0.02-0.4ms a 100 concurrentes, prácticamente sin *floor*).
+Es un cambio de implementación interna, no de contrato — `request.state.user`,
+`PUBLIC_ALLOWLIST`, y el *shape* RFC 9457 de los 401 se mantienen idénticos;
+`tests/test_authentication_middleware.py` debería seguir verificando el mismo
+comportamiento observable, aunque su fixture (`app.add_middleware`) y el mock
+interno de Starlette pueden requerir ajustes menores.
+
+**Alternativas descartadas (peores que la de arriba):**
+| Alternativa | Por qué se descarta |
+|---|---|
+| Relajar el umbral de RNF-001 (p. ej. a 30-60ms) o medir con menos de 100 concurrentes | No resuelve el riesgo real de producción bajo carga concurrente (varios dashboards/usuarios simultáneos) — solo esconde la métrica; contradice Art. 10 (solución de raíz, no parche) |
+| Optimizar `services/rbac_service.py`/Redis | No aplica **por sí sola** — el overhead ya existe con un middleware vacío, sin ninguna llamada a Redis/JWT de por medio (medido y aislado). Ver Causa raíz #2 abajo: sí es **necesaria como parte** de la solución completa (junto con la migración del middleware), no como sustituto de ella |
+| Quitar `AuthenticationMiddleware` del *request path* global y mover la autenticación a `Depends()` por router | Cambia el contrato de RF-003 (`plan.md §2`: "toda ruta fuera del allowlist" exige el middleware) — expansión de alcance mayor que la opción recomendada, mismo riesgo de excepciones no capturadas que ya se documentó al elegir `BaseHTTPMiddleware` originalmente |
+
+### Causa raíz #2 (confirmada en una ronda de revisión posterior, mismo 2026-09-13) — round-trip a Redis
+Además del piso de `BaseHTTPMiddleware` (Causa raíz #1, arriba), una **segunda
+causa aditiva** fue confirmada de forma independiente por dos rondas de
+revisor, con mediciones reproducidas 3 veces por métodos distintos: el
+round-trip real a Redis por request (`resolve_permissions` en *cache-hit*
+todavía hace un `GET rbac:{user_id}` real) cuesta **~27-30ms** bajo 100
+concurrentes dentro del stack de despacho de FastAPI/Starlette — este costo
+**persiste incluso sin ningún middleware** (medido con una llamada directa a
+Redis desde el handler, sin `AuthenticationMiddleware` de por medio); es
+inherente a hacer I/O de red real bajo esa concurrencia en ese stack, no un
+defecto de `RedisAdapter`. Es aditivo a la Causa raíz #1: `BaseHTTPMiddleware`
+(~20-36ms) + Redis por request (~27-30ms) ≈ el `~54ms` medido con el
+`AuthenticationMiddleware` real de punta a punta. **Ninguna de las dos causas
+por sí sola explica el total ni se resuelve optimizando solo la otra** — de
+ahí que la solución de raíz deba atacar **ambas a la vez** (ver subsección
+siguiente).
+
+### Solución de raíz aprobada (Carlos, 2026-09-13) — ataca ambas causas
+1. **Causa raíz #1 (piso de `BaseHTTPMiddleware`):** migrar
+   `AuthenticationMiddleware` a middleware ASGI puro — diseño exacto en `§2`.
+2. **Causa raíz #2 (round-trip a Redis por request):** caché en memoria del
+   proceso (`LocalPermissionsCache`) delante de Redis en `resolve_permissions`,
+   con invalidación por pub/sub de Redis para mantener coherencia entre
+   procesos/réplicas cuando `update_user_role` cambia un rol — diseño exacto en
+   `§2` (`services/rbac_service.py`) y ampliación de `CachePort` (`§2`, Nota de
+   ampliación, y Registro de decisiones al inicio del plan).
+
+**Ambas son necesarias juntas** — ya verificado con evidencia: con solo el
+caché en memoria (sin migrar el middleware), `AuthenticationMiddleware` seguiría
+constando ~20-36ms de la clase base sola (Causa raíz #1 sigue intacta), muy por
+encima del umbral de 5ms. Con solo la migración del middleware (sin el caché en
+memoria), cada request en *cache-hit* seguiría pagando ~27-30ms de round-trip a
+Redis (Causa raíz #2 sigue intacta). Ninguna de las dos por separado alcanza
+RNF-001 — la combinación de ambas sí tiene el potencial de hacerlo, **pero eso
+se confirma midiendo de verdad (T-040), no se asume** (§5, §6 paso 22).
+
+### Impacto en tareas (aprobado 2026-09-13 por Carlos — ver `tasks.md`)
+- T-028 queda **fusionada/superada por T-040** (re-medición real con el diseño
+  completo) — no se vuelve a ejecutar como tarea separada; su nota en
+  `tasks.md` se actualiza para señalar esta resolución y no se marca `[x]`
+  hasta que T-040 mida <5ms real.
+- RF-003/RF-007 no cambian de estado (`Pass`, ya verificadas funcionalmente
+  con dobles y con Postgres/Redis reales, T-024/T-025/T-027) — el hallazgo
+  sigue siendo de **rendimiento** (RNF-001), no de corrección funcional; la
+  migración del middleware y la ampliación de `rbac_service.py` deben mantener
+  ese `Pass` intacto (regresión verificada por los mismos tests, §5/§6).
+- Tareas nuevas **aprobadas y numeradas** (`tasks.md`, no reabren T-001..T-031):
+  `T-032`..`T-040` — ampliación de `CachePort`/`RedisAdapter` (pub/sub),
+  `LocalPermissionsCache` + invalidación cruzada en `rbac_service.py`,
+  suscriptor en `main.py::lifespan`, migración del middleware a ASGI puro, y la
+  re-medición real de RNF-001 (T-040, condición de cierre).
+- `docs/hira-server/spec/validation/vulnerabilities.md::VUL-SRV-004` (T-031)
+  **sigue sin cerrarse** a 🟢 — su condición cambia de "T-028 verificado" a
+  "T-040 verificado" (mismo criterio: no evidencia real, no cierre).
+- **Pendiente de confirmación explícita de Carlos** (no autoaprobado por este
+  plan): si `spec.md §4 RF-006` necesita una nota aclaratoria sobre la
+  propagación *best-effort* sub-segundo entre procesos (ver matiz de semántica
+  en `§2`, bullet de `update_user_role`) — es un cambio a un documento de Fase 1
+  ya aprobado (Gate 1), fuera de lo que este plan (Fase 2) puede decidir por su
+  cuenta.
