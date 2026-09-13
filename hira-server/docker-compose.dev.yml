@@ -1,0 +1,24 @@
+# Override de desarrollo — hot-reload del backend + puertos expuestos al host
+# para debug directo (Postgres/Redis/Mosquitto). `SRV-001-walking-skeleton` T-016.
+#
+# Uso: docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+
+services:
+  backend:
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+  postgres:
+    ports:
+      - "5432:5432"
+
+  redis:
+    ports:
+      - "6379:6379"
+
+  mosquitto:
+    ports:
+      - "1883:1883"

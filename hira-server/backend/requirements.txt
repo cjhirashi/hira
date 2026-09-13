@@ -1,0 +1,9 @@
+# Versiones exactas fijadas (sin rangos ^ ni ~) — `docs/hira-server/spec/
+# implementation-guide/guia-backend.md`. Alcance de T-016 (Walking Skeleton,
+# `SRV-001-walking-skeleton`): solo lo que `backend/` importa hoy. Adaptadores
+# reales de PostgreSQL/Redis/Mosquitto (asyncpg, redis, paho-mqtt) llegan con
+# T-020, no antes — no anticipar dependencias sin código que las use (Art. 10).
+fastapi==0.141.1
+uvicorn[standard]==0.52.3
+pydantic==2.13.4
+pydantic-settings==2.15.0

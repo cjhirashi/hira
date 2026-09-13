@@ -98,21 +98,49 @@ actualizado: 2026-09-13
       `ok`) coherentes con los `Protocol` de `core/ports/`, inyectadas al router vía
       `fastapi.Depends`. T-020 reemplaza solo el **cuerpo** de esas 3 funciones para
       instanciar los adaptadores reales — la firma no cambia, `routers/monitor.py`
-      no se toca en ese batch. No es un cambio de diseño: adelanta la creación de un
-      archivo ya previsto en el plan, sin alterar `services/`, los `Protocol` ni la
-      regla de dependencia (`services/`/`routers/` → `core/ports/` únicamente). No
-      se consideró que ameritara Directiva de Pausa.
+      no se toca en ese batch. El `revisor` rebotó esto en primera instancia porque
+      el plan **aprobado** ataba la creación de `factory.py` al paso 9, no al 7 —
+      aunque el resultado técnico era inocuo, reordenar un paso de un plan ya
+      aprobado es cambiar una decisión de plan, no solo el síntoma (`method.md §2`).
+      Se procesó como Directiva de Pausa real: `plan.md §6`/§7 actualizado con la
+      restricción real y la solución de raíz, revisado por *git diff* y aprobado
+      explícitamente por Carlos (2026-09-13) antes de dar T-013..T-015 por
+      verificadas. Ver el commit `docs(SRV-001): Directiva de Pausa...`.
 
 ### Infraestructura de contenedores
-- [ ] T-016 — `hira-server/docker-compose.yml` + `docker-compose.dev.yml`: servicios
+- [x] T-016 — `hira-server/docker-compose.yml` + `docker-compose.dev.yml`: servicios
       `backend`/`postgres`/`redis`/`mosquitto`/`nginx` con `HEALTHCHECK` propio y
-      `depends_on: condition: service_healthy` (cubre RF-001) [zona: infra]
-- [ ] T-017 — `hira-server/mosquitto/mosquitto.conf` (`allow_anonymous false`,
+      `depends_on: condition: service_healthy` (cubre RF-001) [zona: infra]. Incluye
+      `backend/Dockerfile` (Python 3.12-slim, `curl` para el `HEALTHCHECK`,
+      `uvicorn main:app`) y `backend/requirements.txt` (versiones exactas, solo lo
+      que `backend/` importa hoy: `fastapi`, `uvicorn[standard]`, `pydantic`,
+      `pydantic-settings` — sin adelantar `asyncpg`/`redis`/`paho-mqtt` de T-020).
+      Verificado con `docker compose config` (sintaxis válida) y `up -d` real:
+      `postgres`/`redis`/`mosquitto`/`backend` alcanzan `healthy`; `nginx` no pudo
+      publicar el puerto 80 en esta máquina compartida (`caddy_proxy` de otro
+      proyecto ya lo ocupa — colisión de host, no del compose) — verificado aparte
+      con `nginx:1.27-alpine` + `nginx.conf` en un puerto libre (`18080`):
+      `curl :18080/health` → `200 {"status":"ok","services":{"postgres":"ok",
+      "redis":"ok","mosquitto":"ok"},...,"trace_id":"..."}`, confirmando el proxy
+      `location / { proxy_pass http://backend:8000; }` end-to-end.
+- [x] T-017 — `hira-server/mosquitto/mosquitto.conf` (`allow_anonymous false`,
       `password_file`) + script de generación del `password_file` desde
       `MQTT_USER`/`MQTT_PASSWORD` (nunca en claro en el repo) (cubre RF-006)
-      [zona: infra-seguridad]
-- [ ] T-018 — `hira-server/.env.example` completo (sin `HIRA_DEPLOY_MODE`) +
-      `hira-server/nginx/nginx.conf` (cubre RF-001) [zona: infra]
+      [zona: infra-seguridad]. `generate_password_file.sh` usa un contenedor
+      descartable de `eclipse-mosquitto:2` (no requiere `mosquitto_passwd` en el
+      host) y fija `chown 1883:1883` (uid/gid del proceso `mosquitto` dentro del
+      contenedor, confirmado en `docker logs`) + `chmod 600` — sin esto Mosquitto
+      rechaza el arranque (`Unable to open pwfile`, detectado y corregido durante
+      la verificación real de este batch). Verificado real: `mosquitto` alcanza
+      `healthy` en `docker compose up -d` con el `HEALTHCHECK` de
+      `mosquitto_pub`/credencial válida.
+- [x] T-018 — `hira-server/.env.example` completo (sin `HIRA_DEPLOY_MODE`) +
+      `hira-server/nginx/nginx.conf` (cubre RF-001) [zona: infra]. `.env.example`
+      cubre exactamente las variables de `core/config.py::Settings` (requeridas:
+      `DATABASE_URL`, `REDIS_URL`, `MQTT_BROKER_HOST`, `MQTT_USER`,
+      `MQTT_PASSWORD`, `SECRET_KEY`, `CORS_ORIGINS`; opcionales:
+      `ENVIRONMENT`, `LOG_LEVEL`) + las de compose (`POSTGRES_USER`,
+      `POSTGRES_PASSWORD`, `POSTGRES_DB`) — sin valores reales, solo placeholders.
 
 ### Adaptadores concretos — integración contra contenedores reales
 - [ ] T-019 — Test `tests/integration/test_adapters.py` (requiere T-016..T-018 arriba):
@@ -163,7 +191,7 @@ actualizado: 2026-09-13
 ## Cobertura (el gate exige 100 %; `Estado` lo rellena el gate)
 | RF / doc | Tareas | Test(s) | Estado |
 |---|---|---|---|
-| RF-001 | T-001, T-016, T-018, T-024, T-025 | `test_health_router.py` (contrato), verificación e2e (T-024) | Parcial — T-001 (estructura) hecha; T-016/T-018/T-024/T-025 pendientes (requieren contenedores) |
+| RF-001 | T-001, T-016, T-018, T-024, T-025 | `test_health_router.py` (contrato), verificación e2e (T-024) | Parcial — T-001, T-016, T-018 hechas (compose real: `postgres`/`redis`/`mosquitto`/`backend` `healthy`; `nginx` verificado aparte por colisión de puerto 80 en esta máquina compartida, ver nota T-016); T-024 (e2e formal con evidencia pegada) y T-025 (gate services.txt) pendientes |
 | RF-002 | T-002, T-003, T-008, T-009, T-010, T-013, T-014, T-015, T-019, T-020 | `test_health_policy.py`, `test_health_service.py`, `test_health_router.py`, `tests/integration/test_adapters.py` | Parcial — `test_health_policy.py` Pass (8/8), `test_health_service.py` Pass (6/6) y `test_health_router.py` Pass (2/2, 2026-09-13: `GET /health` vía `TestClient` sobre la app real de `main.py`, shape exacto del contrato, siempre HTTP 200); router HTTP expuesto con `adapters/factory.py` in-memory (nota de decisión en T-015) — adaptadores reales contra contenedores (T-019/T-020) pendientes |
 | RF-003 | T-004, T-005, T-012 | `test_config.py`, `test_main_lifespan.py` (T-012) | Pass — `test_config.py` (10/10) y `test_main_lifespan.py` (3/3, 2026-09-13, wiring del `lifespan` verificado: `ValidationError` → log JSON `level: error` + `sys.exit(1)`, sin arranque parcial) |
 | RF-004 | T-006, T-007 | `test_logger.py`, evidencia de T-024 | Parcial — `test_logger.py` Pass (4/4); además corregido un bug de binding de `sys.stdout` detectado al implementar T-012 (`_DynamicStdoutHandler`), tests siguen en verde (2026-09-13); evidencia e2e de T-024 pendiente |
@@ -171,7 +199,7 @@ actualizado: 2026-09-13
 | RF-006 | T-017, T-021, T-022, T-023 | `tests/integration/test_adapters.py`, test de seguridad (T-023) | Pendiente |
 | RF-007 | T-008, T-010 | `test_health_service.py` | Pass — timeout de 2s por servicio no cuelga la respuesta (2.03s para 3 chequeos, uno de ellos simulando 5s), excepción no propaga (2026-09-13) |
 | RF-008 | T-021, T-022 | `tests/integration/test_adapters.py` | Pendiente |
-| RNF-001 | T-016, T-024 | verificación e2e (T-024) | Pendiente |
+| RNF-001 | T-016, T-024 | verificación e2e (T-024) | Parcial — `docker compose up -d` real (T-016) alcanzó `postgres`/`redis`/`mosquitto`/`backend` `healthy` en pocos segundos; medición formal de "< 60s" con evidencia de terminal pegada es T-024 (fuera de este batch) |
 | RNF-002 | T-008, T-010 | `test_health_service.py` | Pass — `asyncio.wait_for(timeout=2)` por puerto verificado con doble que duerme 5s (2026-09-13) |
 | doc: estructura-de-repositorio | T-026 | — | Pendiente |
 | doc: guia-backend | T-027 | — | Pendiente |
