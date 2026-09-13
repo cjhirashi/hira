@@ -145,8 +145,11 @@ actualizado: 2026-09-13
   `[<COMP>-Sprint-N][TIPO][MÓDULO]`; ahora usa Conventional Commits + `(RF-NNN)` como
   el `AGENTS.md` raíz siempre exigió. Fuente: `.harness/claude/{ecosystem,hira-server}.md`
   (regenerados con `build_claude.py`, `--check` → "al día").
-- **Siguiente paso:** decidir si se commitea T-001..T-007 ahora o se sigue con el
-  siguiente batch (T-008..T-012: puertos + `health_service.get_health` + Correlation
-  ID) antes de commitear. Luego: T-013 (contrato) → T-014/T-015 (router) → T-016..T-018
-  (infra contenedores) → T-019..T-023 (adaptadores + seguridad, requieren Docker) →
-  T-024/T-025 (e2e + gate) → T-026..T-030 (`[doc]`).
+- **[2026-09-13] T-001..T-012 commiteadas (3 commits) y verificadas por el revisor**
+  (2 rondas, 1 rebote menor ya corregido). 35/35 tests en verde. Docker confirmado
+  disponible en el entorno (`docker 29.7.2`, `compose v5.4.0`) — T-016..T-024 son
+  ejecutables de verdad, no solo diseño.
+- **Siguiente paso:** T-013 (contrato OpenAPI) → T-014/T-015 (router `/health`) →
+  T-016..T-018 (infra contenedores) → T-019..T-023 (adaptadores + seguridad, requieren
+  Docker) → T-024/T-025 (e2e + gate) → T-026..T-030 (`[doc]`). Mismo flujo: `hira-infra`
+  implementa por batch → `revisor` verifica → commit → siguiente.
