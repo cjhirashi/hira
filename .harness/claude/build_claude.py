@@ -4,15 +4,19 @@
 Uso:  python .harness/claude/build_claude.py [--check]
 
   (sin args)  regenera:
-      AGENTS.md, CLAUDE.md                        (raíz  = ecosystem.md)
       hira-server/AGENTS.md, hira-server/CLAUDE.md (= ecosystem.md + hira-server.md)
       hira-hub/AGENTS.md,    hira-hub/CLAUDE.md    (= ecosystem.md + hira-hub.md)
       hira-studio/AGENTS.md, hira-studio/CLAUDE.md (= ecosystem.md + hira-studio.md)
   --check     no escribe; sale 1 si algún archivo generado está desactualizado
               (para usar en CI).
 
-CLAUDE.md y AGENTS.md llevan el MISMO contenido. Son artefactos generados: no editarlos a
-mano — editar los overlays en .harness/claude/ y volver a correr este script.
+CLAUDE.md y AGENTS.md de cada producto llevan el MISMO contenido. Son artefactos
+generados: no editarlos a mano — editar los overlays en .harness/claude/ y volver a
+correr este script.
+
+La raíz (AGENTS.md, CLAUDE.md) NO se genera desde aquí (nota de migración 2026-09-04
+en el CLAUDE.md raíz): sigue el stub manual del esquema simplificado (Constitución
+Art. 12, un canon por hecho), no el overlay ecosystem.md.
 """
 from __future__ import annotations
 import sys
@@ -28,7 +32,6 @@ BANNER = (
 
 # destino_dir : [overlays a concatenar, en orden]
 TARGETS = {
-    ".":            ["ecosystem.md"],
     "hira-server":  ["ecosystem.md", "hira-server.md"],
     "hira-hub":     ["ecosystem.md", "hira-hub.md"],
     "hira-studio":  ["ecosystem.md", "hira-studio.md"],
@@ -60,7 +63,7 @@ def main() -> int:
             continue
         content = render(overlays)
         dest_dir = ROOT / dest
-        if dest != "." and not dest_dir.is_dir():
+        if not dest_dir.is_dir():
             # app todavía no existe (F0): saltar en silencio
             continue
         for fname in ("AGENTS.md", "CLAUDE.md"):

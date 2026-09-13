@@ -13,30 +13,32 @@ Stack: FastAPI · PostgreSQL · Redis · Nginx · Docker Compose · GitHub Actio
 
 ## Orden de lectura al iniciar sesión
 
-1. `.harness/coordination/SPRINT.md` (sección HUB, si activa) y `.harness/coordination/hira-hub-sprint-plan.md`.
-2. `.harness/coordination/ROADMAP.md` — track HUB.
-3. `.harness/spec/hira-hub/detailed-design.md` — modelos de BD, contratos, estructura.
-4. `.harness/spec/hira-hub/conceptual-design.md` y `.harness/adr/hira-hub/` — ADRs.
-5. `.harness/spec/hira-hub/validation.md` — criterios (`AC-HUB-*`).
-6. `.harness/spec/hira-hub/validation/vulnerabilities.md` — `VUL-HUB-*`, reglas que no puedes violar.
+1. `.harness/memory/state.md` — próximo paso y correcciones del usuario.
+2. `docs/planning/ROADMAP.md` — track HUB; `docs/planning/hira-hub-sprint-plan.md`.
+3. `docs/hira-hub/spec/detailed-design.md` — modelos de BD, contratos, estructura.
+4. `docs/hira-hub/spec/conceptual-design.md` y `docs/hira-hub/decisions/` — ADRs.
+5. `docs/hira-hub/spec/validation.md` — criterios (`AC-HUB-*`).
+6. `docs/hira-hub/spec/validation/vulnerabilities.md` — `VUL-HUB-*`, reglas que no puedes violar.
 
-## Arquitectura (`HUB-ADR-05`)
+## Arquitectura (`E-ADR-002`, supersede `HUB-ADR-05`)
 
-**No hexagonal.** Un único deployment target. Estructura directa:
+**Hexagonal**, mismo criterio que Server y Studio:
 
 ```
-backend/core/     → config, logger, security, database
-backend/models/   → SQLAlchemy ORM
-backend/schemas/  → Pydantic
-backend/routers/  → endpoints (implementan docs/openapi.yaml)
-backend/services/ → lógica de negocio (puede importar de models/ y core/)
+backend/core/ports/   → interfaces abstractas (LicenseStoragePort, CrashReportPort,
+                         UpdateDistributionPort, NotificationPort, PaymentPort [reservado])
+backend/adapters/     → implementaciones concretas (PostgreSQL, Redis, SMTP/webhook, GHCR/S3)
+backend/services/     → lógica de negocio — solo importa de core/ports/, nunca de adapters/
+backend/routers/      → endpoints (implementan docs/openapi.yaml), inyectan el adapter vía factory
+backend/models/       → SQLAlchemy ORM · backend/schemas/ → Pydantic
 ```
 
 ## Contract-First
 
 `hira-hub/docs/openapi.yaml` es el contrato interno. Hub es el **servidor** de
-`CT-license`, `CT-crash-report`, `CT-updates` (en `.harness/contracts/`) — su
-`openapi.yaml` debe mantenerse coherente con ellos (`.harness/ci/contract_gate.py`).
+`CT-license`, `CT-crash-report`, `CT-updates` (en `docs/contracts/`) — su
+`openapi.yaml` debe mantenerse coherente con ellos (bloque de contrato de
+`.harness/gate/check.sh`, `method.md §6`).
 
 ## Seguridad — reglas críticas
 
@@ -53,7 +55,7 @@ backend/services/ → lógica de negocio (puede importar de models/ y core/)
 
 ## Frontend (Admin / Portal / Marketplace)
 
-Implementa lo de `.harness/spec/hira-hub/ui-ux.md`. **Un seed MD3 + Cyan único para las
+Implementa lo de `docs/hira-hub/spec/ui-ux.md`. **Un seed MD3 + Cyan único para las
 tres capas** — la diferencia es layout y densidad, no colores. No hardcodees hex.
 - Panel Admin: solo Expanded (banner en breakpoints menores), default tema Sistema.
 - Portal / Marketplace: responsive completo, default tema Claro.

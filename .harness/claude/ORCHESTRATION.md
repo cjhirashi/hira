@@ -4,10 +4,10 @@
 
 ## Roles
 
-- **Orquestador** — la sesión principal de Claude Code. Lee `.harness/coordination/SPRINT.md`,
-  descompone en tareas, delega a los especialistas, integra su trabajo, corre
-  `.harness/ci/run_all.sh`, actualiza `registry.yaml`, cierra el sprint con el reporte de
-  sesión.
+- **Orquestador** — la sesión principal de Claude Code. Lee `.harness/memory/state.md` y
+  las features activas en `.harness/specs/`, descompone en tareas (`tasks.md`), delega a
+  los especialistas, integra su trabajo, corre `.harness/gate/check.sh`, actualiza la
+  tabla de cobertura de `tasks.md`, cierra con el Session-End (`method.md §10`).
 - **Especialistas de módulo** — `.claude/agents/`. Cada uno es dueño de un módulo y su
   **rango de anclas** es su límite de alcance. No tocan módulos ajenos; si necesitan un
   cambio fuera de su alcance, lo piden al orquestador.
@@ -25,9 +25,9 @@ licenciamiento, contratos). Ningún agente fija `opus` por defecto.
 | Agente | Dueño de | Anclas de referencia |
 |---|---|---|
 | `hira-datos` | Modelo de datos, migraciones, esquema | `SPEC-SRV-data-model`, `SRV-ADR-004`, `SRV-ADR-019`, `REQ-SRV-candidatos` |
-| `hira-contratos` | `.harness/contracts/` y los `docs/openapi.yaml` de cada app; Contract-First | `CT-license`, `CT-crash-report`, `CT-updates`, `CT-engineering-session`, `SPEC-SRV-api` |
-| `hira-frontend` | Frontend de Server y Hub (MD3 + Cyan), componentes base | `SRV-ADR-UI-01..04`, `spec/hira-server/ui-ux/`, `spec/hira-hub/ui-ux.md` |
-| `hira-qa` | Tests de integración, mapeo test↔`AC-*`, gates de CI | todos los `AC-*`, `.harness/ci/` |
+| `hira-contratos` | `docs/contracts/` y los `docs/openapi.yaml` de cada app; Contract-First | `CT-license`, `CT-crash-report`, `CT-updates`, `CT-engineering-session`, `SPEC-SRV-api` |
+| `hira-frontend` | Frontend de Server y Hub (MD3 + Cyan), componentes base | `SRV-ADR-UI-01..04`, `docs/hira-server/spec/ui-ux/`, `docs/hira-hub/spec/ui-ux.md` |
+| `hira-qa` | Tests de integración, mapeo test↔`AC-*`, gate | todos los `AC-*`, `.harness/gate/` |
 
 ### De módulo — Hira Server
 
@@ -47,14 +47,14 @@ licenciamiento, contratos). Ningún agente fija `opus` por defecto.
 
 | Agente | Dueño de | Anclas |
 |---|---|---|
-| `hub-infra` | Compose, Nginx, `core/`, Walking Skeleton, backup probado | `HUB-ADR-01`, `HUB-ADR-05`, `AC-HUB-H0`, `AC-HUB-H3`, `VUL-HUB-05` |
+| `hub-infra` | Compose, Nginx, `core/`, Walking Skeleton, backup probado | `HUB-ADR-01`, `E-ADR-002`, `AC-HUB-H0`, `AC-HUB-H3`, `VUL-HUB-05` |
 | `hub-licencias` | Emisión/activación/validación/revocación, servidor de `CT-license`, Panel Admin de licencias | `HUB-ADR-02`, `HUB-ADR-03`, `AC-HUB-H1`, `CT-license`, `VUL-HUB-01..03`, `VUL-HUB-06` |
 | `hub-reports` | Crash reports (sanitización, dedup), versiones, servidor de `CT-crash-report`/`CT-updates` | `HUB-ADR-04`, `AC-HUB-H2`, `CT-crash-report`, `CT-updates`, `VUL-HUB-04` |
 
 ### Hira Studio
 
-Sin especialistas hasta cerrar `spec/hira-studio/OPEN-QUESTIONS.md`. Entonces se derivan de
-los módulos de diseño resultantes.
+Sin especialistas todavía — el diseño de plataforma cerró (`docs/hira-studio/spec/OPEN-QUESTIONS.md`,
+`STU-ADR-001..005`) pero falta la spec por módulo. Se derivan cuando exista.
 
 ## Transversales del sistema
 

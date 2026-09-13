@@ -27,7 +27,7 @@ y `.harness/ci/run_all.sh`, ambos retirados en `ADR-001`) — superseded por `or
 
 Sistema de diseño de referencia: `docs/hira-server/spec/ui-ux/`.
 
-## Especialistas de módulo (pre-diseñados, ⚠️ necesitan refresco de rutas)
+## Especialistas de módulo (pre-diseñados)
 
 16 agentes fijados el 2026-09-02 (`.harness/claude/ORCHESTRATION.md` documentaba el
 equipo completo), uno por dominio del ecosistema:
@@ -51,10 +51,8 @@ equipo completo), uno por dominio del ecosistema:
 | `hub-licencias` | Licencias en Hub |
 | `hub-reports` | Crash reports |
 
-**⚠️ Antes de invocar cualquiera de estos 16:** referencian `.harness/coordination/SPRINT.md`,
-`.harness/ci/run_all.sh` y `registry.yaml` — **retirados** en la reestructuración
-(`ADR-001`, `docs/legacy/`). Actualizar sus fuentes (arranque → `.harness/gate/check.sh` +
-`.harness/memory/state.md`; entrega → tabla de cobertura de `tasks.md`, no `registry.yaml`)
-antes de usarlos. No se refrescaron en esta sesión (fuera de alcance).
+Rutas refrescadas (`ADR-004`, 2026-09-13): arranque → `.harness/method.md §2` +
+`.harness/memory/state.md`; entrega → tabla de cobertura de `tasks.md`; contradicción
+de diseño → Directiva de Pausa (`method.md §5`). Listos para invocar.
 
 Se añaden como especialistas nuevos **vía un `ADR-`** si el dominio lo justifica.

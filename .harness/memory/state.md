@@ -1,7 +1,7 @@
 ---
 tipo: memoria
 subtipo: state
-actualizado: 2026-09-04
+actualizado: 2026-09-13
 ---
 
 # Estado del arnés — ecosistema Hira
@@ -71,7 +71,7 @@ actualizado: 2026-09-04
 - **Desviaciones históricas:** `docs/legacy/deviations/LOG.md` (DEV-000, resuelta →
   `E-ADR-001`; sin desviaciones abiertas al momento de la reestructuración).
 
-## Decisiones tomadas (esta sesión)
+## Decisiones tomadas (2026-09-04)
 
 - Adoptar el esquema simplificado del arnés genérico (repo `harness`). `ADR-001`.
 - Todo el corpus de especificación/ADRs/contratos/roadmap (~115 archivos) se relocalizó
@@ -81,26 +81,44 @@ actualizado: 2026-09-04
   gates de CI standalone (`contract_gate.py`, `openapi_lint.py`, `traceability_gate.py`):
   quedan en `docs/legacy/` como referencia; el anclaje simplificado (`covers` +
   `anchor_commit` en el front-matter de cada `spec.md`) los reemplaza.
-- `.harness/claude/` (generador de `AGENTS.md`/`CLAUDE.md` por producto) **se conserva**
-  — es maquinaria del arnés. Pendiente: actualizar sus fuentes a los `docs/` nuevos antes
-  de volver a `build_claude.py`.
+
+## Decisiones tomadas (2026-09-13)
+
+- **`ADR-004`** — refresco de rutas pendiente desde `ADR-001` en `.harness/claude/*.md`
+  (5 overlays), los 16 especialistas de `.claude/agents/`, `README.md` raíz,
+  `docs/contracts/README.md` y los 3 `README.md` de producto. `hira-hub`/`hub-infra`/
+  `ORCHESTRATION.md` corregidos de "`HUB-ADR-05` directa" a **Hexagonal** (`E-ADR-002`,
+  vigente desde 2026-09-04 pero no propagado a esos archivos). `build_claude.py` ya no
+  genera la raíz (dejaba de estar en sincronía con el stub manual del `CLAUDE.md` raíz).
+- **`MODULE.md` retirado** (resolvía un pendiente de `ADR-001`): cada carpeta nueva lleva
+  solo `README.md`; el anclaje vive en `covers`/`tasks.md`, no en un frontmatter aparte.
+- Regenerados `hira-{server,hub,studio}/{AGENTS,CLAUDE}.md` con `build_claude.py`
+  (`--check` → "al día"). Gate verde tras la corrección.
 
 ## Obstáculos y desviaciones abiertas
 
 - **Pendiente de decisión:** si `docs/planning/SPRINT.md` (el sprint SRV-Sprint-1 que
   estaba detallado antes de esta reestructuración) sigue siendo la prioridad, o si el
   operador quiere reconsiderar el orden ahora que el arnés cambió de forma.
-- **`.claude/agents/`:** hay 16 especialistas de módulo pre-diseñados (`hira-*`, `hub-*`)
-  que referencian rutas retiradas (`.harness/ci/run_all.sh`, `registry.yaml`,
-  `.harness/coordination/SPRINT.md`). **No se han refrescado en esta sesión** (fuera de
-  alcance de la reestructuración del arnés) — hacerlo antes de invocarlos.
-- **`.harness/claude/*.md`** (fuentes de los `AGENTS.md`/`CLAUDE.md` por producto) también
-  referencian rutas viejas de `.harness/spec/`, `.harness/adr/` — actualizar antes de
-  correr `build_claude.py` de nuevo.
+- **Fuera de alcance de `ADR-004`:** el corpus de `docs/<producto>/spec/` (~40 archivos)
+  tiene enlaces internos cruzados que siguen citando rutas pre-`ADR-001`
+  (`.harness/spec/`, `.harness/adr/`, `.harness/ci/`, etc.). `ADR-001` ya decidió no
+  reescribir ese corpus — es documentación de producto cerrada, no maquinaria del
+  arnés. Si algún agente sigue uno de esos enlaces y encuentra 404, es una **doc de
+  producto** desactualizada, no un problema del arnés — regla de raíz: no parchear el
+  arnés para tapar esto, es un backlog de higiene documental de producto, separado.
 
 ## Próximo paso concreto
 
 - Antes de tocar nada: `bash .harness/gate/check.sh`.
-- El operador confirma si se retoma `docs/planning/SPRINT.md` o se re-prioriza.
-- Cuando arranque la primera feature real: aplicar la rúbrica (`method.md §2`); Fase 1 =
-  elicitación interactiva con `autor-de-spec`.
+- **[2026-09-13] Primera feature real arrancada:** `SRV-001-walking-skeleton` (Walking
+  Skeleton de Hira Server, ex `SRV-Sprint-1`). Fase 1 (Specify) cerrada — usuario
+  confirmó "así es". `spec.md` en `.harness/specs/SRV-001-walking-skeleton/spec.md`,
+  `estado: in-review`, `aprobaciones.fase_1` firmada. `[NEEDS CLARIFICATION] = 0`.
+- De paso se corrigió drift de documentación: `docs/planning/ROADMAP.md` (ancla de
+  `HUB-H0`) y `docs/hira-studio/spec/OPEN-QUESTIONS.md` (SQ-4) citaban "arquitectura
+  directa / `HUB-ADR-05`" — desactualizado desde `E-ADR-002` (2026-09-04, homogeneiza a
+  Hexagonal). Corregido a citar `E-ADR-002`.
+- **Siguiente paso:** Fase 2 (Plan) de `SRV-001-walking-skeleton` con el agente
+  `arquitecto` → `plan.md` conforme a `SRV-ADR-017` (Hexagonal) → Gate 2 (aprobación
+  humana) → Fase 3 (Tasks) → Fase 4 (Implement, TDD, una tarea a la vez).

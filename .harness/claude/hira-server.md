@@ -17,13 +17,13 @@ React/TypeScript · Docker Compose.
 
 ## Orden de lectura al iniciar sesión
 
-1. `.harness/coordination/SPRINT.md` — sprint activo y tareas.
-2. `.harness/coordination/ROADMAP.md` — track SRV.
-3. `.harness/spec/hira-server/implementation-guide/` — estructura y decisiones de implementación.
-4. `.harness/spec/hira-server/modules/` — modelo de datos, APIs, esquema por módulo.
-5. `.harness/spec/hira-server/architecture/` y `.harness/adr/hira-server/` — el porqué.
-6. `.harness/spec/hira-server/ui-ux/` — antes de tocar frontend.
-7. `.harness/spec/hira-server/validation/` — criterios de aceptación (`AC-SRV-*`) y vulnerabilidades (`VUL-SRV-*`).
+1. `.harness/memory/state.md` — próximo paso y correcciones del usuario.
+2. `docs/planning/ROADMAP.md` — track SRV; `.harness/specs/SRV-*/` — feature activa.
+3. `docs/hira-server/spec/implementation-guide/` — estructura y decisiones de implementación.
+4. `docs/hira-server/spec/modules/` — modelo de datos, APIs, esquema por módulo.
+5. `docs/hira-server/spec/architecture/` y `docs/hira-server/decisions/` — el porqué.
+6. `docs/hira-server/spec/ui-ux/` — antes de tocar frontend.
+7. `docs/hira-server/spec/validation/` — criterios de aceptación (`AC-SRV-*`) y vulnerabilidades (`VUL-SRV-*`).
 
 ## Arquitectura — regla de oro (`SRV-ADR-017`)
 
@@ -47,12 +47,12 @@ visible para el RAG. Nunca escribas un punto de escaneo directo en `points`.
 ## Contract-First
 
 `hira-server/docs/openapi.yaml` es el contrato interno. Los contratos con Hub y Studio
-viven en `.harness/contracts/` — no los dupliques, impórtalos/valídalos.
+viven en `docs/contracts/` — no los dupliques, impórtalos/valídalos.
 
 ## Frontend (`hira-server/frontend/src/`)
 
-Implementa lo de `.harness/spec/hira-server/ui-ux/` — no inventa diseño. Vista no
-especificada → `DEV-###`.
+Implementa lo de `docs/hira-server/spec/ui-ux/` — no inventa diseño. Vista no
+especificada → Directiva de Pausa (`.harness/method.md §5`).
 
 - **Material Design 3 + Cyan.** No hardcodees hex: `var(--md-sys-color-*)`.
 - **Tokens de alarma estables** (no cambian con el tema): `var(--hira-alarm-critical|high|medium|low)`, `var(--hira-status-ok|offline|writing)`.
@@ -76,7 +76,7 @@ especificada → `DEV-###`.
 | Importar infra en `services/` | Viola hexagonal — usar ports + inyección |
 | SQL por concatenación | Inyección — ORM con parámetros |
 | Hardcodear hex en componentes | `var(--md-sys-color-*)` / `var(--hira-alarm-*)` |
-| Implementar vista no especificada en `ui-ux/` | `DEV-###` y esperar |
+| Implementar vista no especificada en `ui-ux/` | Directiva de Pausa (`method.md §5`) y esperar |
 | Escribir puntos de escaneo directo en `points` | Viola `SRV-ADR-012`/`SRV-ADR-019` |
 | Reintroducir `HIRA_DEPLOY_MODE` / SQLite / árbol de rutas "Studio" | Superado por `E-ADR-001` |
 | Implementar lógica de negocio sin Walking Skeleton validado | La infra base es prerrequisito |

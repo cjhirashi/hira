@@ -56,7 +56,7 @@ a SRV. Detalle de tareas por sprint: `coordination/hira-hub-sprint-plan.md`.
 
 | Sprint | Objetivo | Anclas |
 |---|---|---|
-| **HUB-H0** | Walking Skeleton: Compose (FastAPI + PostgreSQL + Redis + Nginx) + `/health` + logger JSON | `AC-HUB-H0`, `HUB-ADR-01`, `HUB-ADR-05` |
+| **HUB-H0** | Walking Skeleton: Compose (FastAPI + PostgreSQL + Redis + Nginx) + `/health` + logger JSON, por puertos/adaptadores | `AC-HUB-H0`, `HUB-ADR-01`, `E-ADR-002` |
 | HUB-H1 | Gestión de licencias: emitir/activar/validar/revocar + servidor de `CT-license` + Panel Admin | `AC-HUB-H1`, `HUB-ADR-02`, `HUB-ADR-03`, `CT-license`, `VUL-HUB-01`, `VUL-HUB-02`, `VUL-HUB-03` |
 | HUB-H2 | Crash reports + versiones: servidor de `CT-crash-report` y `CT-updates` | `AC-HUB-H2`, `HUB-ADR-04`, `CT-crash-report`, `CT-updates`, `VUL-HUB-04` |
 | HUB-H3 | Operación y resiliencia: backup probado, restart policy, UptimeRobot, dashboard | `AC-HUB-H3`, `VUL-HUB-05`, `VUL-HUB-06` |

@@ -11,7 +11,7 @@ opera vive en un Hira Server, al que Studio lo **publica**.
 | Tema | Decisión | ADR |
 |---|---|---|
 | Hosting | Instancia multi-tenant única junto a Hub; aislamiento por `integrator_id` | `STU-ADR-001` |
-| Arquitectura | SPA (React/TS, MD3+Cyan) + BFF FastAPI con PostgreSQL + Redis; **estructura directa** (como `HUB-ADR-05`) | `STU-ADR-001` |
+| Arquitectura | SPA (React/TS, MD3+Cyan) + BFF FastAPI con PostgreSQL + Redis; **Hexagonal** (homogeneizada por `E-ADR-002`, supersede la sección de arquitectura de `STU-ADR-001`) | `STU-ADR-001`, `E-ADR-002` |
 | Identidad | Un `integrator_user` por integrador (store en el BFF); JWT de sesión con `integrator_id` | `STU-ADR-002` |
 | Licencia | Gestionada en Hub. Licencia de integrador (`product: studio`) enlazada al usuario, validada por `CT-license`. Sin licencia válida → **solo lectura** | `STU-ADR-002` |
 | Conexión a Servers | **Emparejamiento por token** generado en el Server → credencial rotable, **cifrada** en Studio (`STUDIO_PAIRING_ENCRYPTION_KEY`) | `STU-ADR-003` |
@@ -21,23 +21,23 @@ opera vive en un Hira Server, al que Studio lo **publica**.
 
 ## Estado de implementación
 
-**Falta la spec por módulo** (`spec/hira-studio/` — auth, servers/pairing, projects,
+**Falta la spec por módulo** (`docs/hira-studio/spec/` — auth, servers/pairing, projects,
 configurator, offline-runner, publish, ai) y los `AC-STU-*` detallados (grupos
-`AC-STU-01..06` ya en el registry). Y falta que SRV exponga `CT-engineering-session`
-**ampliado** (`REQ-CT-engsession-v2`: pair + publish + consultas). Ver
-`.harness/coordination/ROADMAP.md`, track STU.
+`AC-STU-01..06`, ver `tasks.md` de cada feature). Y falta que SRV exponga
+`CT-engineering-session` **ampliado** (`REQ-CT-engsession-v2`: pair + publish +
+consultas). Ver `docs/planning/ROADMAP.md`, track STU.
 
-No arranques `STU-Sprint-1` hasta que exista la spec por módulo. Si un cambio necesita
-tocar el contrato de la sesión de ingeniería y la ampliación aún no está, regístralo como
-`DEV-###`.
+No arranques una feature de Studio hasta que exista la spec por módulo. Si un cambio
+necesita tocar el contrato de la sesión de ingeniería y la ampliación aún no está,
+Directiva de Pausa (`.harness/method.md §5`).
 
 ## Orden de lectura
 
-1. `.harness/adr/ecosystem/E-ADR-001-studio-producto-cloud-independiente.md`
-2. `.harness/spec/hira-studio/context.md` y `architecture.md`
-3. `.harness/adr/hira-studio/STU-ADR-001..005`
-4. `.harness/spec/hira-studio/inherited-from-server.md` — qué diseño se hereda de Server.
-5. `.harness/contracts/engineering-session.openapi.yaml` — `CT-engineering-session` (+ ampliación pendiente).
+1. `docs/decisions/ecosystem/E-ADR-001-studio-producto-cloud-independiente.md`
+2. `docs/hira-studio/spec/context.md` y `architecture.md`
+3. `docs/hira-studio/decisions/STU-ADR-001..005`
+4. `docs/hira-studio/spec/inherited-from-server.md` — qué diseño se hereda de Server.
+5. `docs/contracts/engineering-session.openapi.yaml` — `CT-engineering-session` (+ ampliación pendiente).
 
 ## Contratos que consume
 
