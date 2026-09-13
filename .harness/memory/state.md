@@ -89,6 +89,12 @@ actualizado: 2026-09-13
 ## Próximo paso concreto
 
 - Antes de tocar nada: `bash .harness/gate/check.sh`.
-- **Feature activa: `SRV-Sprint-2` (Auth + RBAC dinámico)** — `SRV-ADR-005`,
-  `AC-SRV-02`, sobre el Walking Skeleton ya `verified`. Fase 1 (Specify) por arrancar
-  — elicitación interactiva con el usuario, `method.md §3`.
+- **Feature activa: `SRV-002-auth-rbac`** (Auth + RBAC MVP, 3 roles fijos —
+  `SRV-ADR-005` fasea el RBAC dinámico completo a v0.2, no en este sprint).
+  **Fase 1 cerrada** (2026-09-13, usuario confirmó "así es"): 14 `RF-`, 1 `RNF-`,
+  decisiones clave en `spec.md §6` (solo backend/contrato sin vista de login,
+  solo Admin modifica roles, sobre RFC 9457, rate limiting propio en
+  `/auth/login` 5/15min además del genérico de `VUL-SRV-003`).
+- **Siguiente paso:** Fase 2 (Plan) con el agente `arquitecto` → `plan.md`
+  conforme a `SRV-ADR-017` (Hexagonal, sobre el Walking Skeleton ya `verified`) →
+  Gate 2 → Fase 3 (Tasks) → Fase 4 (Implement, TDD, con `hira-auth`).
