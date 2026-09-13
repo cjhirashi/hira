@@ -19,7 +19,14 @@ incluye desde este batch aunque `AuthenticationMiddleware` (T-019/T-020) todaví
 exista — es inofensivo hasta entonces y evita reescribir este test cuando el
 middleware entre en vigor y `/auth/logout` empiece a exigirlo (`plan.md §2`: "SÍ
 requiere el middleware").
+
+Desde T-037 (`plan.md §10`, resolución de RNF-001), `lifespan` también arranca
+`run_invalidation_subscriber(get_cache_port())` como tarea de fondo — se
+sustituye `main.get_cache_port` por la misma instancia `_FakeCache` de este
+fixture (ampliada con `publish`/`subscribe` no-op) para que la tarea de fondo
+no dependa de Redis real, consistente con el resto del fixture.
 """
+import asyncio
 from dataclasses import replace
 from unittest.mock import AsyncMock
 
@@ -27,6 +34,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 import core.middleware as middleware_module
+import main as main_module
 from adapters.factory import get_cache_port, get_user_repository_port
 from adapters.mqtt.mosquitto_adapter import MosquittoAdapter
 from core.ports.user_repository_port import UserRecord
@@ -70,6 +78,20 @@ class _FakeCache:
 
     async def delete(self, key: str) -> None:
         self._store.pop(key, None)
+
+    async def publish(self, channel: str, message: str) -> None:
+        pass
+
+    async def subscribe(self, channel: str):
+        # No-op — el `lifespan` real de este test necesita el método (T-037),
+        # pero ningún test de este archivo ejercita la propagación cruzada de
+        # invalidación (eso lo cubre `tests/test_rbac_service.py`).
+        try:
+            while True:
+                await asyncio.sleep(3600)
+                yield "unreachable"  # pragma: no cover
+        except asyncio.CancelledError:
+            raise
 
 
 class _FakeUserRepository:
@@ -126,6 +148,7 @@ def client(monkeypatch):
     # (T-024/T-025) — sin contenedores en este entorno de test.
     monkeypatch.setattr(middleware_module, "get_user_repository_port", lambda: repo)
     monkeypatch.setattr(middleware_module, "get_cache_port", lambda: cache)
+    monkeypatch.setattr(main_module, "get_cache_port", lambda: cache)
 
     with TestClient(app) as test_client:
         yield test_client

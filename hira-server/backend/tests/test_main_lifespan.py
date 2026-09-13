@@ -14,13 +14,22 @@ para no depender de un broker real ni de los 7s de backoff (1s/2s/4s) — el bac
 en sí ya está probado de forma aislada contra un contenedor real en
 `tests/integration/test_adapters.py` (T-021/T-022); lo que se verifica aquí es
 que el proceso real de arranque **invoca** `connect()`, no que el backoff funcione.
+
+Ampliado en T-036/T-037 (`plan.md §10`, resolución de RNF-001): el `lifespan`
+también arranca `services/rbac_service.py::run_invalidation_subscriber` como
+tarea de fondo (`asyncio.create_task`), junto al `connect()` de Mosquitto, y la
+cancela limpio (`task.cancel()` + `await task` sin excepción sin capturar) en el
+*shutdown*. Se usa un doble de `CachePort.subscribe` controlado por el test
+(nunca produce mensajes) para no depender de Redis real.
 """
+import asyncio
 import json
 from unittest.mock import AsyncMock
 
 import pytest
 
 import adapters.factory as factory
+import main as main_module
 from adapters.mqtt.mosquitto_adapter import MosquittoAdapter
 from main import app, lifespan
 
@@ -155,3 +164,50 @@ async def test_lifespan_invokes_mosquitto_connect_and_reflects_success(monkeypat
 
     connect_spy.assert_awaited_once()
     assert notification_port.is_connected is True
+
+
+class _NeverEndingCache:
+    """Doble de `CachePort` cuyo `subscribe` nunca produce mensajes — permite
+    verificar que el `lifespan` arranca la tarea de fondo (registrando el
+    canal) y la cancela limpio en el *shutdown*, sin depender de Redis real
+    (RF-006, `plan.md §2`/§10, T-036)."""
+
+    def __init__(self) -> None:
+        self.subscribed_channels: list[str] = []
+        self.cancelled = False
+
+    async def subscribe(self, channel: str):
+        self.subscribed_channels.append(channel)
+        try:
+            while True:
+                await asyncio.sleep(3600)
+                yield "unreachable"  # pragma: no cover
+        except asyncio.CancelledError:
+            self.cancelled = True
+            raise
+
+
+@pytest.mark.asyncio
+async def test_lifespan_starts_invalidation_subscriber_and_cancels_it_cleanly(
+    monkeypatch,
+):
+    """T-036/T-037 — el `lifespan` arranca `run_invalidation_subscriber` como
+    tarea de fondo al iniciar (junto al `connect()` de Mosquitto) y la cancela
+    limpio (`CancelledError` capturado, sin *warning* de tarea huérfana) al
+    apagar."""
+    _set_env(monkeypatch)
+    monkeypatch.setattr(MosquittoAdapter, "connect", AsyncMock(return_value=None))
+    fake_cache = _NeverEndingCache()
+    monkeypatch.setattr(main_module, "get_cache_port", lambda: fake_cache)
+
+    async with lifespan(app):
+        # Deja correr un tick del loop para que la tarea de fondo arranque y
+        # se registre en el canal simulado.
+        await asyncio.sleep(0)
+        assert fake_cache.subscribed_channels == ["rbac:invalidations"]
+
+    # Tras salir del `async with` (shutdown), la tarea debió cancelarse limpio
+    # — si `lifespan` no la hubiera esperado (`await task`), esta aserción no
+    # reflejaría la cancelación real (una tarea sin `await`ear no garantiza
+    # haber corrido su bloque `except CancelledError` todavía).
+    assert fake_cache.cancelled is True

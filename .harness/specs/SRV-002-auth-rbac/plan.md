@@ -568,4 +568,100 @@ se confirma midiendo de verdad (T-040), no se asume** (§5, §6 paso 22).
   propagación *best-effort* sub-segundo entre procesos (ver matiz de semántica
   en `§2`, bullet de `update_user_role`) — es un cambio a un documento de Fase 1
   ya aprobado (Gate 1), fuera de lo que este plan (Fase 2) puede decidir por su
-  cuenta.
+  cuenta. **Resuelto (2026-09-13, mismo día):** Carlos confirmó — la nota ya
+  está aplicada en `spec.md §4 RF-006` (ver `spec.md §6`, entrada "Nota de
+  RF-006 ya aplicada y confirmada por Carlos"). No queda pendiente.
+
+### T-040 — Re-medición real (2026-09-13) — RESUELTO, RNF-001 en `Pass`
+
+Implementado el diseño completo aprobado arriba (T-032..T-038:
+`CachePort.publish/subscribe` real, `LocalPermissionsCache` con reloj
+inyectable delante de Redis en `resolve_permissions`, suscriptor de
+invalidación arrancado/cancelado limpio en `main.py::lifespan`,
+`AuthenticationMiddleware` migrado a ASGI puro), se re-corrió
+`tests/integration/test_rbac_latency.py` (T-039, ampliado con un espía de
+`CachePort.get` además del ya existente de `UserRepositoryPort`) contra
+Postgres+Redis reales, mismo método exacto que T-028 (100 requests
+concurrentes, `asyncio.gather`, `httpx.AsyncClient`+`ASGITransport`).
+
+**Evidencia de terminal real (2026-09-13), 3 corridas consecutivas con el
+`xfail(strict=True)` todavía en el código (para confirmar antes de retirarlo):**
+
+```
+=== run 1 ===
+Media CON middleware:    0.547 ms
+Media SIN middleware:    0.428 ms
+Overhead del middleware: 0.118 ms (umbral: < 5.0 ms)
+Consultas a UserRepositoryPort durante la medición: 0 (esperado: 0, cache-hit puro)
+Consultas a CachePort.get (Redis) durante la medición: 0 (esperado: 0, 100% en memoria)
+[XPASS(strict)] ...
+
+=== run 2 ===
+Media CON middleware:    0.544 ms
+Media SIN middleware:    0.426 ms
+Overhead del middleware: 0.117 ms (umbral: < 5.0 ms)
+Consultas a UserRepositoryPort durante la medición: 0
+Consultas a CachePort.get (Redis) durante la medición: 0
+[XPASS(strict)] ...
+
+=== run 3 ===
+Media CON middleware:    0.530 ms
+Media SIN middleware:    0.419 ms
+Overhead del middleware: 0.111 ms (umbral: < 5.0 ms)
+Consultas a UserRepositoryPort durante la medición: 0
+Consultas a CachePort.get (Redis) durante la medición: 0
+[XPASS(strict)] ...
+```
+
+Las 3 corridas dieron `XPASS(strict)` — el `xfail(strict=True)` convierte un
+*pass* inesperado en fallo de test **a propósito** (evita que el rediseño se
+declare "resuelto" sin retirar deliberadamente la marca) — confirma que el
+resultado es estable, no un fluke. Se retiró el `xfail(strict=True)` del
+código (T-040) y se corrió una vez más para confirmar el `PASSED` real:
+
+```
+--- RNF-001: latencia de AuthenticationMiddleware (cache-hit) ---
+Requests concurrentes: 100
+Media CON middleware:    0.560 ms
+Media SIN middleware:    0.460 ms
+Overhead del middleware: 0.100 ms (umbral: < 5.0 ms)
+Consultas a UserRepositoryPort durante la medición: 0 (esperado: 0, cache-hit puro)
+Consultas a CachePort.get (Redis) durante la medición: 0 (esperado: 0, 100% en memoria)
+-------------------------------------------------------------------
+PASSED
+```
+
+**Overhead real: ~0.10-0.12ms — más de un orden de magnitud por debajo del
+umbral de 5ms.** Confirma que la solución de raíz que ataca ambas causas a la
+vez (piso de `BaseHTTPMiddleware` + round-trip a Redis por request) elimina
+efectivamente el overhead observado en la Directiva de Pausa original (~54ms):
+0 consultas a Postgres y 0 a Redis durante la medición demuestran que el
+*cache-hit* ahora es 100 % resuelto en memoria del proceso
+(`LocalPermissionsCache`), y el middleware ASGI puro no paga el piso de
+`anyio.create_task_group()`/*memory stream* de `BaseHTTPMiddleware`.
+
+**Verificación de que no hay regresión:** la suite completa de
+`hira-server/backend` (151 tests: unitarios + integración con Postgres/Redis/
+Mosquitto reales) pasa en verde, incluyendo los 11 casos (no 12; recuento
+corregido) de `tests/test_authentication_middleware.py` (T-019) sin ninguna
+aserción relajada tras la migración a ASGI puro (T-038).
+
+**Efecto colateral encontrado y corregido (no un cambio de diseño, higiene de
+tests):** al arrancar `run_invalidation_subscriber` desde `main.py::lifespan`
+(T-037), dos tests preexistentes que ejercitan la app real de `main.py` vía
+`TestClient` (`tests/test_health_router.py`, `tests/test_auth_router.py`)
+empezaron a intentar un `SUBSCRIBE` real contra el host `redis` (solo
+resoluble dentro de la red de docker) al arrancar su `lifespan`. Se sustituyó
+`main.get_cache_port` por un doble sin red en ambos fixtures (mismo patrón ya
+usado para `MosquittoAdapter.connect`) — sin tocar el `Depends(get_cache_port)`
+real que usa `/health` (referencia distinta, importada de `adapters.factory`
+directamente en `routers/monitor.py`). Además, se detectó que el nuevo
+singleton de módulo `services/rbac_service.py::_default_local_cache` (T-035)
+podía "filtrarse" entre tests que reutilizan el mismo `user_id` sin pasar un
+`local_cache` explícito (el caso normal del middleware real) — se añadió
+`tests/conftest.py` con un fixture `autouse` que lo resetea antes de cada
+test. Ninguno de los dos ajustes toca lógica de producción ni contratos.
+
+**Veredicto: RNF-001 → `Pass`.** `VUL-SRV-004` puede cerrarse a 🟢 (condición
+cumplida) en la tarea de cierre correspondiente (`T-031`, fuera del alcance de
+este batch T-032..T-040).

@@ -5,14 +5,39 @@ verifica el shape exacto pactado en `hira-server/docs/openapi.yaml#/paths/~1heal
 `status`, `services.{postgres,redis,mosquitto}`, `version`, `trace_id`, siempre
 HTTP 200 (decisión cerrada en `spec.md §3`/§6 — sin sobre RFC 9457 en este endpoint
 de monitoreo). Debe fallar antes de T-015 (no existe `routers/monitor.py` todavía).
+
+Desde T-037 (`plan.md §10`, resolución de RNF-001), `lifespan` también arranca
+`run_invalidation_subscriber(get_cache_port())` como tarea de fondo — sin
+sustituirla, esa tarea intentaría un `SUBSCRIBE` real contra el host `redis` (solo
+resoluble dentro de la red de docker), lo que rompería el *shutdown* de
+`TestClient` fuera de ese entorno. Se sustituye únicamente `main.get_cache_port`
+(la referencia que usa `lifespan`) por un doble sin red — el `Depends(get_cache_port)`
+de `routers/monitor.py` (importado de `adapters.factory`, una referencia distinta)
+sigue intacto: `/health` continúa ejercitando el `RedisAdapter` real tal como antes.
 """
+import asyncio
 from unittest.mock import AsyncMock
 
 import pytest
 from fastapi.testclient import TestClient
 
+import main as main_module
 from adapters.mqtt.mosquitto_adapter import MosquittoAdapter
 from main import app
+
+
+class _NoNetworkSubscribeCache:
+    """Doble mínimo de `CachePort` — solo `subscribe`, nunca toca la red. Usado
+    exclusivamente para que `main.py::lifespan` no dependa de Redis real en
+    este test (no sustituye el `CachePort` real que usa `/health`)."""
+
+    async def subscribe(self, channel: str):
+        try:
+            while True:
+                await asyncio.sleep(3600)
+                yield "unreachable"  # pragma: no cover
+        except asyncio.CancelledError:
+            raise
 
 REQUIRED_ENV = {
     "DATABASE_URL": "postgresql+asyncpg://hira:hira@postgres:5432/hiradb",
@@ -36,6 +61,7 @@ def client(monkeypatch):
     # real que dispara `TestClient(app)` no intente resolver el host "mosquitto"
     # fuera de la red de docker.
     monkeypatch.setattr(MosquittoAdapter, "connect", AsyncMock(return_value=None))
+    monkeypatch.setattr(main_module, "get_cache_port", lambda: _NoNetworkSubscribeCache())
     with TestClient(app) as test_client:
         yield test_client
 

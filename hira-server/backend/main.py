@@ -34,7 +34,18 @@ autenticación, `CorrelationIdMiddleware` debe ser el añadido en último lugar
 (verificado empíricamente; ver nota de desviación en `tasks.md` T-020 — la
 redacción de `plan.md §2`/§6 describe el resultado deseado, "el trace_id debe
 existir antes", con el orden de líneas de código invertido al que lo logra).
+
+`run_invalidation_subscriber` (T-036/T-037, `plan.md §10`, resolución de
+RNF-001) se arranca aquí como tarea de fondo, junto al `connect()` de
+Mosquitto — mismo patrón de "arranca infraestructura de fondo sin bloquear el
+resto del arranque". A diferencia de `connect()` (que retorna), la suscripción
+es un bucle infinito, por eso es una tarea (`asyncio.create_task`), no un
+`await` directo. En el *shutdown* (después del `yield`), se cancela
+(`task.cancel()`) y se espera su terminación limpia (`await task` dentro de un
+`try/except asyncio.CancelledError`) — sin tareas huérfanas al apagar el
+proceso.
 """
+import asyncio
 import sys
 from contextlib import asynccontextmanager
 
@@ -42,7 +53,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
-from adapters.factory import get_notification_port
+from adapters.factory import get_cache_port, get_notification_port
 from core.config import Settings
 from core.errors import ProblemDetailError
 from core.logger import get_logger
@@ -50,6 +61,7 @@ from core.middleware import AuthenticationMiddleware, CorrelationIdMiddleware
 from routers.auth import router as auth_router
 from routers.monitor import router as monitor_router
 from schemas.errors import ProblemDetail
+from services.rbac_service import run_invalidation_subscriber
 
 _logger = get_logger("main")
 
@@ -57,7 +69,9 @@ _logger = get_logger("main")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """RF-003 — valida `Settings()` al arrancar; aborta sin arranque parcial.
-    RF-006/RF-008 — conecta Mosquitto con backoff; nunca bloquea el arranque."""
+    RF-006/RF-008 — conecta Mosquitto con backoff; nunca bloquea el arranque.
+    RF-006/RNF-001 — arranca el suscriptor de invalidación de `LocalPermissionsCache`
+    como tarea de fondo y lo cancela limpio en el *shutdown*."""
     try:
         Settings()
     except ValidationError as exc:
@@ -78,7 +92,16 @@ async def lifespan(app: FastAPI):
             exc,
         )
 
-    yield
+    subscriber_task = asyncio.create_task(run_invalidation_subscriber(get_cache_port()))
+
+    try:
+        yield
+    finally:
+        subscriber_task.cancel()
+        try:
+            await subscriber_task
+        except asyncio.CancelledError:
+            pass
 
 
 app = FastAPI(title="Hira Server", lifespan=lifespan)

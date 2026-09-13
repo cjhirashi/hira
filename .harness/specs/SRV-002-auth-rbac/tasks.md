@@ -282,47 +282,42 @@ actualizado: 2026-09-13
       nuevo token es utilizable contra `/test-protected`.
 
 ### No funcional — latencia del middleware RBAC
-- [ ] T-028 — Medición de latencia: 100 requests concurrentes contra un endpoint
+- [x] T-028 — Medición de latencia: 100 requests concurrentes contra un endpoint
       protegido con permisos ya cacheados (*cache-hit*), < 5ms agregados por el
       middleware — script documentado, evidencia de terminal pegada (cubre
       RNF-001) [zona: sistema-e2e]
-      **Directiva de Pausa (2026-09-13, `method.md §5`) — RESUELTA en el papel,
-      fusionada con T-040:** `tests/integration/test_rbac_latency.py` existe,
-      corre contra Postgres+Redis reales, y mide con el método exacto que pide
-      la tarea (100 concurrentes, cache-hit puro verificado con un espía que
-      cuenta 0 consultas a `UserRepositoryPort` durante la medición) — pero
-      quedó `xfail(strict=True)`: el overhead medido (~54ms) resultó ser de
-      **dos causas aditivas**, ambas confirmadas de forma independiente por dos
-      rondas de revisor con mediciones reproducidas 3 veces por métodos
-      distintos: (1) el propio `starlette.middleware.base.BaseHTTPMiddleware`
-      (confirmado con un middleware no-op, sin JWT/Redis, en FastAPI y en
-      Starlette puro: ya agrega ~20-36ms a 100 concurrentes por sí solo, escala
-      superlineal con la concurrencia) y (2) el round-trip real a Redis por
-      request en *cache-hit* (~27-30ms a 100 concurrentes, persiste incluso sin
-      ningún middleware — inherente al I/O de red bajo esa concurrencia en ese
-      stack). Ninguna de las dos por sí sola explica el total ni se resuelve
-      optimizando solo la otra. **Carlos aprobó (2026-09-13) la solución de
-      raíz que ataca ambas a la vez:** migrar `AuthenticationMiddleware` a
-      ASGI puro (causa #1) + caché en memoria del proceso con invalidación por
-      pub/sub de Redis en `services/rbac_service.py` (causa #2). Diseño
-      completo: `plan.md`, sección "10. RNF-001 — Directiva de Pausa
-      (histórico) y solución aprobada". Esta tarea **no se marca `[x]`** hasta
-      que **T-040** mida <5ms real con el diseño completo — no se vuelve a
-      ejecutar por separado, queda fusionada con T-040 como su condición de
-      cierre.
+      **Directiva de Pausa (2026-09-13, `method.md §5`) — RESUELTA y VERIFICADA
+      (fusionada con T-040, evidencia real 2026-09-13):** `tests/integration/
+      test_rbac_latency.py` corre contra Postgres+Redis reales con el método
+      exacto que pide la tarea (100 concurrentes, cache-hit puro verificado con
+      espías que cuentan 0 consultas a `UserRepositoryPort` y 0 a
+      `CachePort.get`). Historial: el overhead medido originalmente (~54ms) era
+      de **dos causas aditivas**, confirmadas de forma independiente por dos
+      rondas de revisor: (1) `starlette.middleware.base.BaseHTTPMiddleware`
+      (~20-36ms a 100 concurrentes, escala superlineal) y (2) el round-trip
+      real a Redis por request en *cache-hit* (~27-30ms). Carlos aprobó
+      (2026-09-13) la solución de raíz que ataca ambas a la vez: migrar
+      `AuthenticationMiddleware` a ASGI puro (causa #1, T-038) + caché en
+      memoria del proceso con invalidación por pub/sub de Redis (causa #2,
+      T-032..T-035/T-037). **T-040 re-midió de verdad** con el diseño completo:
+      overhead real de **~0.10-0.12ms** (3 corridas consecutivas: 0.118ms,
+      0.117ms, 0.111ms, y la corrida final tras retirar el `xfail`: 0.100ms),
+      muy por debajo del umbral de 5ms, con 0 consultas a `UserRepositoryPort`
+      y 0 a `CachePort.get` durante la medición. Evidencia completa: `plan.md
+      §10`.
 
 ### RNF-001 — solución de raíz aprobada (2026-09-13, `plan.md §10`)
-- [ ] T-032 — Test ampliar `test_cache_port_contract.py`: contrato ampliado de
+- [x] T-032 — Test ampliar `test_cache_port_contract.py`: contrato ampliado de
       `CachePort` expone `publish(channel, message)`/`subscribe(channel) ->
       AsyncIterator[str]` (con dobles) (debe fallar) (cubre RNF-001)
       [zona: test-puertos]
-- [ ] T-033 — Ampliar `core/ports/cache_port.py` (`publish`/`subscribe`) +
+- [x] T-033 — Ampliar `core/ports/cache_port.py` (`publish`/`subscribe`) +
       `adapters/cache/redis_adapter.py` (implementación real vía
       `client.publish(...)`/`client.pubsub()`) — verificar manualmente contra
       un Redis real (mismo patrón que T-011): un `publish` en un cliente es
       recibido por un `subscribe` en otro cliente del mismo canal (cubre
       RNF-001) [zona: puertos/adaptadores]
-- [ ] T-034 — Test ampliar `test_rbac_service.py`: `LocalPermissionsCache`
+- [x] T-034 — Test ampliar `test_rbac_service.py`: `LocalPermissionsCache`
       (*hit* en memoria no llama a `CachePort.get` ni a `UserRepositoryPort`;
       *miss* local + *hit* Redis repuebla el local sin tocar
       `UserRepositoryPort`; TTL local expira y vuelve a consultar Redis);
@@ -333,42 +328,45 @@ actualizado: 2026-09-13
       cuyo `publish`/`subscribe` está respaldado por un `asyncio.Queue` en
       memoria (debe fallar) (cubre RF-006, RF-007, RNF-001)
       [zona: test-coordinación]
-- [ ] T-035 — Implementar `services/rbac_service.py::LocalPermissionsCache`
+- [x] T-035 — Implementar `services/rbac_service.py::LocalPermissionsCache`
       (`get/set/invalidate`, TTL 30s de red de seguridad) + ampliar
       `resolve_permissions` (cache-first en memoria, luego Redis, luego BD) /
       `invalidate_permissions_cache` (invalida local + Redis + publica) /
       `update_user_role` (sin cambio de orden ya fijado) + nueva
       `run_invalidation_subscriber(cache, local_cache)` (cubre RF-006, RF-007,
       RNF-001) [zona: coordinación]
-- [ ] T-036 — Test ampliar `test_main_lifespan.py`: el `lifespan` arranca
+- [x] T-036 — Test ampliar `test_main_lifespan.py`: el `lifespan` arranca
       `run_invalidation_subscriber(get_cache_port())` como tarea de fondo al
       iniciar (junto al `connect()` de Mosquitto) y la cancela limpio
       (`task.cancel()` + `await task` sin excepción sin capturar) al apagar
       (debe fallar) (cubre RF-006) [zona: test-adaptador-entrada]
-- [ ] T-037 — Registrar la tarea de suscripción en `main.py::lifespan` (cubre
+- [x] T-037 — Registrar la tarea de suscripción en `main.py::lifespan` (cubre
       RF-006) [zona: adaptador-entrada]
-- [ ] T-038 — Migrar `core/middleware.py::AuthenticationMiddleware` de
+- [x] T-038 — Migrar `core/middleware.py::AuthenticationMiddleware` de
       `BaseHTTPMiddleware` a ASGI puro (`__init__(self, app)`, `async def
       __call__(self, scope, receive, send)`) — mismo *allowlist*, mismo
       `request.state.user`, mismo *shape* RFC 9457 en los 401 (construido y
       enviado directo vía `send()`, sin `call_next()`); `tests/
-      test_authentication_middleware.py` (T-019, 12 casos) debe seguir pasando
+      test_authentication_middleware.py` (T-019, 11 casos) debe seguir pasando
       **sin relajar ninguna aserción** — reemplaza la implementación de
       T-019/T-020 (cubre RF-003, RF-007, RNF-001) [zona: coordinación]
-- [ ] T-039 — Ampliar `tests/integration/test_rbac_latency.py`: además de 0
+- [x] T-039 — Ampliar `tests/integration/test_rbac_latency.py`: además de 0
       consultas a `UserRepositoryPort` tras el warm-up, verificar 0 consultas a
       `CachePort.get` durante la medición (el cache-hit ahora es 100 % en
       memoria) — sigue `xfail(strict=True)` hasta T-040 (cubre RNF-001)
       [zona: test-sistema-e2e]
-- [ ] T-040 — **Re-medición real de RNF-001** con el diseño completo (T-033,
+- [x] T-040 — **Re-medición real de RNF-001** con el diseño completo (T-033,
       T-035, T-037, T-038): correr `tests/integration/test_rbac_latency.py`
       contra Postgres+Redis reales, 100 requests concurrentes — **medir de
       verdad, no asumir el resultado** (la Directiva de Pausa original,
-      T-028, fue causada por una suposición sin medir). Si el overhead <5ms:
-      quitar `xfail(strict=True)`, pegar evidencia de terminal real en
-      `plan.md §10`/esta tarea, marcar T-028 `[x]` (fusionada). Si no: **nueva**
-      Directiva de Pausa (`method.md §5`) — no relajar el umbral ni forzar un
-      `Pass` (cubre RNF-001) [zona: sistema-e2e]
+      T-028, fue causada por una suposición sin medir). **RESUELTO
+      (2026-09-13):** overhead real **~0.10-0.12ms** (< umbral de 5ms por más
+      de un orden de magnitud), 0 consultas a `UserRepositoryPort`, 0
+      consultas a `CachePort.get` durante la medición — 3 corridas
+      consecutivas antes de retirar el `xfail` (0.118ms/0.117ms/0.111ms) + 1
+      corrida final ya sin `xfail` (0.100ms, `PASSED` real). `xfail(strict=True)`
+      retirado de `tests/integration/test_rbac_latency.py`; evidencia completa
+      de terminal en `plan.md §10` (cubre RNF-001) [zona: sistema-e2e]
 
 ### Documentación (`plan.md §8` + nota operativa de §3)
 - [ ] T-029 — `hira-server/README.md`: añadir el paso operativo
@@ -401,10 +399,10 @@ actualizado: 2026-09-13
 | RF-012 | T-001, T-002, T-024, T-025, T-026, T-027 | `test_password_hashing.py`, `test_user_repository_adapter.py`, `test_auth_security.py` | Pass |
 | RF-013 | T-003, T-004, T-012, T-013, T-017, T-018, T-027 | `test_jwt_tokens.py`, `test_auth_service.py`, `test_auth_router.py`, `test_auth_security.py` | Pass |
 | RF-014 | T-012, T-013, T-017, T-018, T-027 | `test_auth_service.py`, `test_auth_router.py`, `test_auth_security.py` | Pass |
-| RNF-001 | T-020, T-028, T-032, T-033, T-034, T-035, T-036, T-037, T-038, T-039, T-040 | `test_rbac_latency.py` (medición real, `xfail(strict=True)` hasta T-040), `test_cache_port_contract.py`, `test_rbac_service.py`, `test_main_lifespan.py`, `test_authentication_middleware.py` | **Pendiente — solución de raíz aprobada (`plan.md §10`), falta re-medición real (T-040)** |
+| RNF-001 | T-020, T-028, T-032, T-033, T-034, T-035, T-036, T-037, T-038, T-039, T-040 | `test_rbac_latency.py` (medición real, `xfail` retirado), `test_cache_port_contract.py`, `test_rbac_service.py`, `test_main_lifespan.py`, `test_authentication_middleware.py` | **Pass — resuelto y verificado con evidencia real (2026-09-13): overhead ~0.10-0.12ms, muy por debajo del umbral de 5ms** |
 | doc: hira-server/README.md (paso operativo) | T-029 | — | Pendiente (fuera de alcance de este batch) |
 | doc: auth-rbac-seguridad.md | T-030 | — | Pendiente (fuera de alcance de este batch) |
-| doc: vulnerabilities.md (VUL-SRV-004) | T-031 | — | Pendiente — **no puede cerrarse** mientras RNF-001 siga sin `Pass` (T-031 condicionada ahora a T-040 verificado, ver nota de T-028) |
+| doc: vulnerabilities.md (VUL-SRV-004) | T-031 | — | Pendiente — condición de cierre ya cumplida (RNF-001 en `Pass`), pero **T-031 en sí no se ejecutó en este batch** (fuera de alcance asignado: T-032..T-040) |
 
 > Esta tabla **es** la trazabilidad de la feature (no hay `traceability-matrix.md`).
 > Fila sin test, en `Fail` o `Pendiente` → el gate no abre.
@@ -423,18 +421,23 @@ actualizado: 2026-09-13
 > `plan.md`, sección "Directiva de Pausa — RNF-001 (T-028)".
 >
 > **Checkpoint T-032..T-040 (2026-09-13, mismo día) — Directiva de Pausa
-> RESUELTA en el papel, pendiente de re-medición real:** una ronda de revisión
-> posterior confirmó una **segunda causa aditiva** (round-trip real a Redis por
-> request en *cache-hit*, ~27-30ms a 100 concurrentes, independiente del
-> `BaseHTTPMiddleware`) — ninguna de las dos causas por separado explica el
-> `~54ms` medido ni se resuelve optimizando solo una. Carlos aprobó la solución
+> RESUELTA Y VERIFICADA con evidencia real:** una ronda de revisión posterior
+> confirmó una **segunda causa aditiva** (round-trip real a Redis por request
+> en *cache-hit*, ~27-30ms a 100 concurrentes, independiente del
+> `BaseHTTPMiddleware`) — ninguna de las dos causas por separado explicaba el
+> `~54ms` medido ni se resolvía optimizando solo una. Carlos aprobó la solución
 > de raíz que ataca **ambas a la vez**: caché en memoria del proceso con
 > invalidación por pub/sub de Redis (`services/rbac_service.py::
 > LocalPermissionsCache`, causa #2) + migración de `AuthenticationMiddleware` a
 > ASGI puro (causa #1). Diseño completo: `plan.md`, sección "10. RNF-001 —
-> Directiva de Pausa (histórico) y solución aprobada". `tests/integration/
-> test_rbac_latency.py` sigue `xfail(strict=True)` — **no se marca `Pass` ni se
-> cierra `VUL-SRV-004` (T-031) hasta que T-040 mida <5ms real con el diseño
-> completo** (no se asume el resultado del rediseño sin medirlo — la
-> suposición sin medir fue precisamente el error que originó esta Directiva de
-> Pausa).
+> Directiva de Pausa (histórico) y solución aprobada". **T-040 re-midió de
+> verdad** (100 requests concurrentes, Postgres+Redis reales, mismo método que
+> T-028): overhead real **~0.10-0.12ms** — más de un orden de magnitud por
+> debajo del umbral de 5ms —, 0 consultas a `UserRepositoryPort` y 0 a
+> `CachePort.get` durante la medición. `xfail(strict=True)` de `tests/
+> integration/test_rbac_latency.py` **retirado**; el test pasa de verdad
+> (`PASSED`, no `xfail`/`xpass`). RNF-001 pasa a `Pass` en la tabla de
+> Cobertura. `VUL-SRV-004` (T-031) queda con su condición de cierre cumplida,
+> pero T-031 en sí (actualizar el documento) **no se ejecutó en este batch**
+> (fuera del alcance asignado T-032..T-040) — queda para el batch de cierre
+> (T-029..T-031).
