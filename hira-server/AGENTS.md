@@ -39,14 +39,19 @@ siempre en un Hira Server.
 
 ## Commits
 
+Features nuevas → **Conventional Commits** + sufijo con la ancla:
+
 ```
-[<COMP>-Sprint-N][TIPO][MÓDULO] qué se hizo en imperativo · Anchors: <lista>
+<tipo>(<scope>): qué se hizo en imperativo (RF-NNN)
 ```
 
-`<COMP>` = `SRV` | `HUB` | `STU`.
-TIPO ∈ `CREA` `IMPL` `CONTRACT` `CONFIG` `TEST` `README` `FIX` `REFACTOR` `SECURITY` `SPEC` `ADR`.
-Catálogo de MÓDULO por componente en su sección de abajo.
+`<tipo>` ∈ `feat` `fix` `refactor` `test` `docs` `chore` `security`.
+`<scope>` = componente o módulo tocado — catálogo por componente en su sección de abajo.
 Fin del commit: `Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>`.
+
+> Los commits previos a la reestructuración del arnés (`ADR-001`) usan
+> `[<COMP>-Sprint-N][TIPO][MÓDULO] … · Anchors: <lista>` — convención histórica, **no
+> se retroactiva**.
 
 ## Definition of Done
 
@@ -122,11 +127,11 @@ especificada → Directiva de Pausa (`.harness/method.md §5`).
 - Breakpoints MD3: Compact (sin Configurador ni Monaco) / Medium / Expanded.
 - Componentes base en `components/`: `PointValue`, `AlarmBadge`, `DeviceStatusDot`, `LiveIndicator`, `ConnectionBanner`, `TrendChart` (Plotly), `MonacoEditor`.
 
-## Módulos para el commit (`[<COMP>-Sprint-N][TIPO][MÓDULO]`)
+## Scopes de commit (`<tipo>(<scope>): …`)
 
-`INFRA` `PORTS` `ADAPTERS` `ROUTERS` `SERVICES` `MODELS` `SCHEMAS` `WORKERS` `WEBSOCKET`
-`LOGGER` `AUTH` `RBAC` `BACNET` `MQTT` `MODBUS` `SIMULATORS` `ALARMS` `HISTORICALS`
-`LOGIC` `TESTS` `AI` `RAG` `BACKUP` `LICENSE` `PROJECTS` `FRONTEND` `SVG`
+`infra` `ports` `adapters` `routers` `services` `models` `schemas` `workers` `websocket`
+`logger` `auth` `rbac` `bacnet` `mqtt` `modbus` `simulators` `alarms` `historicals`
+`logic` `tests` `ai` `rag` `backup` `license` `projects` `frontend` `svg`
 
 ## Prohibiciones específicas
 

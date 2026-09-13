@@ -39,14 +39,19 @@ siempre en un Hira Server.
 
 ## Commits
 
+Features nuevas → **Conventional Commits** + sufijo con la ancla:
+
 ```
-[<COMP>-Sprint-N][TIPO][MÓDULO] qué se hizo en imperativo · Anchors: <lista>
+<tipo>(<scope>): qué se hizo en imperativo (RF-NNN)
 ```
 
-`<COMP>` = `SRV` | `HUB` | `STU`.
-TIPO ∈ `CREA` `IMPL` `CONTRACT` `CONFIG` `TEST` `README` `FIX` `REFACTOR` `SECURITY` `SPEC` `ADR`.
-Catálogo de MÓDULO por componente en su sección de abajo.
+`<tipo>` ∈ `feat` `fix` `refactor` `test` `docs` `chore` `security`.
+`<scope>` = componente o módulo tocado — catálogo por componente en su sección de abajo.
 Fin del commit: `Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>`.
+
+> Los commits previos a la reestructuración del arnés (`ADR-001`) usan
+> `[<COMP>-Sprint-N][TIPO][MÓDULO] … · Anchors: <lista>` — convención histórica, **no
+> se retroactiva**.
 
 ## Definition of Done
 

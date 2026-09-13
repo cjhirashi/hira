@@ -62,11 +62,11 @@ especificada → Directiva de Pausa (`.harness/method.md §5`).
 - Breakpoints MD3: Compact (sin Configurador ni Monaco) / Medium / Expanded.
 - Componentes base en `components/`: `PointValue`, `AlarmBadge`, `DeviceStatusDot`, `LiveIndicator`, `ConnectionBanner`, `TrendChart` (Plotly), `MonacoEditor`.
 
-## Módulos para el commit (`[<COMP>-Sprint-N][TIPO][MÓDULO]`)
+## Scopes de commit (`<tipo>(<scope>): …`)
 
-`INFRA` `PORTS` `ADAPTERS` `ROUTERS` `SERVICES` `MODELS` `SCHEMAS` `WORKERS` `WEBSOCKET`
-`LOGGER` `AUTH` `RBAC` `BACNET` `MQTT` `MODBUS` `SIMULATORS` `ALARMS` `HISTORICALS`
-`LOGIC` `TESTS` `AI` `RAG` `BACKUP` `LICENSE` `PROJECTS` `FRONTEND` `SVG`
+`infra` `ports` `adapters` `routers` `services` `models` `schemas` `workers` `websocket`
+`logger` `auth` `rbac` `bacnet` `mqtt` `modbus` `simulators` `alarms` `historicals`
+`logic` `tests` `ai` `rag` `backup` `license` `projects` `frontend` `svg`
 
 ## Prohibiciones específicas
 
