@@ -90,18 +90,14 @@ actualizado: 2026-09-13
 - Antes de tocar nada: `bash .harness/gate/check.sh`.
 - **`SRV-001-walking-skeleton`**: `estado: verified` (Carlos, Gate 4).
 - **`SRV-002-auth-rbac`** (Auth + RBAC MVP, 3 roles fijos): **`estado:
-  implemented`**, 40/40 tareas, ancla en `f8157ed6efb7668b90c3dd4a61a97a2616301cf3`.
-  Incluyó 1 Directiva de Pausa arquitectónica (RNF-001: middleware RBAC
-  <5ms/100 concurrentes, resuelto de raíz con middleware ASGI puro +
-  `LocalPermissionsCache`/pub-sub — de ~54ms a ~0.1ms real, verificado en 5
-  corridas por 2 rondas de revisor) y un nuevo ADR de ecosistema (`E-ADR-003`,
-  convención RFC 9457). Detalle completo: entrada Session-End `[2026-09-13]
-  SRV-002-auth-rbac` en `memory/history.md` y tabla de Cobertura de
-  `tasks.md` — no se repite aquí (`method.md §10`).
-- **Pendiente de tu confirmación:** ¿`SRV-002-auth-rbac` pasa a `estado:
-  verified` (Gate 4, aprobación humana)? El orquestador no se autoaprueba.
-- **Siguiente paso:** elegir la siguiente feature real — `SRV-Sprint-3`
-  (protocolos BACnet/Modbus/MQTT + simuladores, sigue el roadmap sobre
-  Server) o `HUB-H0` (Walking Skeleton de Hira Hub, sin dependencia, puede
-  arrancar en paralelo). Aplicar la rúbrica (`method.md §2`) y Fase 1 con
-  `autor-de-spec` para la que se elija.
+  verified`** (Carlos, Gate 4). 40/40 tareas, ancla en
+  `f8157ed6efb7668b90c3dd4a61a97a2616301cf3`. Incluyó 1 Directiva de Pausa
+  arquitectónica (RNF-001, resuelta de raíz — ~54ms → ~0.1ms real) y un nuevo
+  ADR de ecosistema (`E-ADR-003`, convención RFC 9457). Detalle completo:
+  entrada Session-End `[2026-09-13] SRV-002-auth-rbac` en `memory/history.md`
+  y tabla de Cobertura de `tasks.md` — no se repite aquí (`method.md §10`).
+- **Siguiente paso:** `HUB-H0` — Walking Skeleton de Hira Hub (Compose FastAPI
+  + PostgreSQL + Redis + Nginx, `/health`, logger JSON — mismo tipo de tarea
+  que `SRV-001` pero para Hub, por puertos/adaptadores ya que `E-ADR-002`
+  homogeneizó a Hexagonal). Sin dependencia con `SRV-*`, puede correr en
+  paralelo. Aplicar la rúbrica (`method.md §2`) y Fase 1 con `autor-de-spec`.
