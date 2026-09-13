@@ -8,8 +8,7 @@ entorno requerida, `pydantic.ValidationError` se captura, se loguea en JSON
 `CorrelationIdMiddleware` (RF-005) se registra aquí — todo request lleva un
 `trace_id` propagado o generado (`core/middleware.py`).
 
-Sin routers todavía (`routers/monitor.py::GET /health` llega en T-013..T-015, fuera
-de alcance de este batch).
+`routers/monitor.py::GET /health` se registra aquí (RF-002, T-013..T-015).
 """
 import sys
 from contextlib import asynccontextmanager
@@ -20,6 +19,7 @@ from pydantic import ValidationError
 from core.config import Settings
 from core.logger import get_logger
 from core.middleware import CorrelationIdMiddleware
+from routers.monitor import router as monitor_router
 
 _logger = get_logger("main")
 
@@ -43,3 +43,4 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Hira Server", lifespan=lifespan)
 app.add_middleware(CorrelationIdMiddleware)
+app.include_router(monitor_router)

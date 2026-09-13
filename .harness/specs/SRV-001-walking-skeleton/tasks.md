@@ -76,14 +76,32 @@ actualizado: 2026-09-13
       producción; los tests de `test_logger.py` del batch anterior siguen en verde.
 
 ### Contrato — Contract-First
-- [ ] T-013 — Escribir `hira-server/docs/openapi.yaml` (`GET /health`, payload de
+- [x] T-013 — Escribir `hira-server/docs/openapi.yaml` (`GET /health`, payload de
       `spec.md §3`) — antes del router (cubre RF-002) [zona: contrato]
 
 ### Adaptador de entrada — router
-- [ ] T-014 — Test `test_health_router.py` (`TestClient`): `GET /health` responde 200
+- [x] T-014 — Test `test_health_router.py` (`TestClient`): `GET /health` responde 200
       con el payload del contrato (debe fallar) (cubre RF-002) [zona: test-adaptador-entrada]
-- [ ] T-015 — Implementar `backend/routers/monitor.py` + `backend/schemas/health.py`
-      (cubre RF-002) [zona: adaptador-entrada]
+- [x] T-015 — Implementar `backend/routers/monitor.py` + `backend/schemas/health.py`
+      (cubre RF-002) [zona: adaptador-entrada]. **Directiva de Pausa (2026-09-13,
+      revisada y aprobada por Carlos — ver `plan.md §7`):** el router necesita
+      inyectar los 3 puertos en
+      `health_service.get_health()`. `SRV-ADR-017` prohíbe que `routers/` instancie
+      un adaptador concreto directamente — esa decisión es de `adapters/factory.py`
+      en exclusiva, y `plan.md §2`/§7 ya describe ese archivo como el punto único de
+      selección de implementación para *todos* los sprints futuros (no es invención
+      de esta sesión). Como los adaptadores reales de Postgres/Redis/Mosquitto no
+      existen todavía (llegan en T-020, requieren contenedores de T-016..T-018), se
+      optó por la opción (a) del encargo: crear ya `backend/adapters/factory.py`
+      mínimo, con 3 funciones (`get_database_port`/`get_cache_port`/
+      `get_notification_port`) que hoy devuelven placeholders in-memory (siempre
+      `ok`) coherentes con los `Protocol` de `core/ports/`, inyectadas al router vía
+      `fastapi.Depends`. T-020 reemplaza solo el **cuerpo** de esas 3 funciones para
+      instanciar los adaptadores reales — la firma no cambia, `routers/monitor.py`
+      no se toca en ese batch. No es un cambio de diseño: adelanta la creación de un
+      archivo ya previsto en el plan, sin alterar `services/`, los `Protocol` ni la
+      regla de dependencia (`services/`/`routers/` → `core/ports/` únicamente). No
+      se consideró que ameritara Directiva de Pausa.
 
 ### Infraestructura de contenedores
 - [ ] T-016 — `hira-server/docker-compose.yml` + `docker-compose.dev.yml`: servicios
@@ -146,7 +164,7 @@ actualizado: 2026-09-13
 | RF / doc | Tareas | Test(s) | Estado |
 |---|---|---|---|
 | RF-001 | T-001, T-016, T-018, T-024, T-025 | `test_health_router.py` (contrato), verificación e2e (T-024) | Parcial — T-001 (estructura) hecha; T-016/T-018/T-024/T-025 pendientes (requieren contenedores) |
-| RF-002 | T-002, T-003, T-008, T-009, T-010, T-013, T-014, T-015, T-019, T-020 | `test_health_policy.py`, `test_health_service.py`, `test_health_router.py`, `tests/integration/test_adapters.py` | Parcial — `test_health_policy.py` Pass (8/8) y `test_health_service.py` Pass (6/6, 2026-09-13, cubre la coordinación con dobles); router HTTP (T-013..T-015) y adaptadores reales (T-019/T-020) pendientes |
+| RF-002 | T-002, T-003, T-008, T-009, T-010, T-013, T-014, T-015, T-019, T-020 | `test_health_policy.py`, `test_health_service.py`, `test_health_router.py`, `tests/integration/test_adapters.py` | Parcial — `test_health_policy.py` Pass (8/8), `test_health_service.py` Pass (6/6) y `test_health_router.py` Pass (2/2, 2026-09-13: `GET /health` vía `TestClient` sobre la app real de `main.py`, shape exacto del contrato, siempre HTTP 200); router HTTP expuesto con `adapters/factory.py` in-memory (nota de decisión en T-015) — adaptadores reales contra contenedores (T-019/T-020) pendientes |
 | RF-003 | T-004, T-005, T-012 | `test_config.py`, `test_main_lifespan.py` (T-012) | Pass — `test_config.py` (10/10) y `test_main_lifespan.py` (3/3, 2026-09-13, wiring del `lifespan` verificado: `ValidationError` → log JSON `level: error` + `sys.exit(1)`, sin arranque parcial) |
 | RF-004 | T-006, T-007 | `test_logger.py`, evidencia de T-024 | Parcial — `test_logger.py` Pass (4/4); además corregido un bug de binding de `sys.stdout` detectado al implementar T-012 (`_DynamicStdoutHandler`), tests siguen en verde (2026-09-13); evidencia e2e de T-024 pendiente |
 | RF-005 | T-008, T-010, T-011, T-012 | `test_health_service.py`, `test_correlation_id.py` | Pass — `test_health_service.py` (trace_id agregado, 2/2 casos) y `test_correlation_id.py` (4/4, 2026-09-13): propaga `X-Trace-ID` o genera `uuid4()`, fija/resetea el `ContextVar` de `core/logger.py` por request |

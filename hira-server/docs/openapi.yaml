@@ -1,0 +1,98 @@
+openapi: 3.0.3
+info:
+  title: Hira Server API
+  description: >
+    Contrato interno de `hira-server` (Contract-First, `SRV-ADR-017`). Este sprint
+    (Walking Skeleton, `SRV-001-walking-skeleton`) solo expone `GET /health`.
+  version: "0.1.0"
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      summary: Estado agregado de salud del backend y sus dependencias
+      description: >
+        RF-002 (`.harness/specs/SRV-001-walking-skeleton/spec.md`) — agrega el estado
+        de PostgreSQL, Redis y Mosquitto. Responde **siempre HTTP 200** (decisión
+        cerrada en `spec.md §3`/§6: es un endpoint de monitoreo, no de negocio; un
+        fallo de un servicio secundario no debe sacar al backend completo de un
+        load balancer). El detalle de cada servicio va en el body, nunca en el
+        código de estado HTTP. Sin sobre RFC 9457 para esta frontera.
+      tags:
+        - monitor
+      parameters:
+        - in: header
+          name: X-Trace-ID
+          required: false
+          schema:
+            type: string
+          description: >
+            Correlation ID (RF-005). Si no se envía, el backend genera uno (`uuid4()`)
+            y lo devuelve tanto en este header de respuesta como en `trace_id` del body.
+      responses:
+        "200":
+          description: >
+            Estado agregado (`status`) y el estado individual de cada servicio
+            (`services`). Siempre HTTP 200, incluso si `status` es `degraded`.
+          headers:
+            X-Trace-ID:
+              description: Correlation ID propagado o generado para este request.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+              examples:
+                todo_ok:
+                  summary: Los tres servicios responden
+                  value:
+                    status: ok
+                    services:
+                      postgres: ok
+                      redis: ok
+                      mosquitto: ok
+                    version: "0.1.0"
+                    trace_id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                degradado:
+                  summary: Al menos un servicio falla (RF-007)
+                  value:
+                    status: degraded
+                    services:
+                      postgres: ok
+                      redis: error
+                      mosquitto: ok
+                    version: "0.1.0"
+                    trace_id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+components:
+  schemas:
+    ServiceStatus:
+      type: string
+      enum: [ok, error]
+    HealthResponse:
+      type: object
+      required: [status, services, version, trace_id]
+      additionalProperties: false
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded]
+          description: >
+            "ok" si postgres, redis y mosquitto están todos "ok"; "degraded" si al
+            menos uno falla (RF-002).
+        services:
+          type: object
+          required: [postgres, redis, mosquitto]
+          additionalProperties: false
+          properties:
+            postgres:
+              $ref: "#/components/schemas/ServiceStatus"
+            redis:
+              $ref: "#/components/schemas/ServiceStatus"
+            mosquitto:
+              $ref: "#/components/schemas/ServiceStatus"
+        version:
+          type: string
+          example: "0.1.0"
+        trace_id:
+          type: string
+          description: Correlation ID del request (RF-005).
