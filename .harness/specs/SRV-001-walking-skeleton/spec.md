@@ -2,9 +2,9 @@
 id: SPEC-SRV-001
 tipo: spec
 feature: SRV-001-walking-skeleton
-estado: approved
-anchor_commit: ‹pendiente›
-anchor_mode: advisory
+estado: implemented
+anchor_commit: b4248e749d6a9eceaa68b9f117b79116222c1eb9
+anchor_mode: strict
 covers:
   - hira-server/backend/**
   - hira-server/docs/**
