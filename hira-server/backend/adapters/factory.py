@@ -15,52 +15,30 @@ de SQLAlchemy o un cliente de Redis nuevo por request sería un desperdicio de
 conexiones — se instancian una sola vez por proceso, igual que haría un `lifespan`
 de FastAPI con un pool real.
 
-`get_user_repository_port()` (`SRV-002-auth-rbac`, T-017/T-018, `plan.md §2`):
-nace aquí con un placeholder **in-memory** (`_InMemoryUserRepository`), mismo
-patrón exacto que las 3 funciones de arriba nacieron en T-015 — `routers/auth.py`
-necesita el punto de inyección desde que existe, aunque no hay CRUD de usuarios
-en este sprint (`spec.md §2`: la única vía de creación es el seed de T-026, fuera
-de este alcance) — por eso el placeholder nace **vacío** (sin usuarios
-precargados), a diferencia de los 3 placeholders de T-015 que sí "siempre
-responden ok". `adapters/db/user_repository_adapter.py::PostgreSQLUserRepository`
-(T-024/T-025, fuera de alcance) reemplaza el **cuerpo** de esta función — la
-firma no cambia.
+`get_user_repository_port()` (`SRV-002-auth-rbac`): nació en T-017/T-018 con un
+placeholder in-memory (`_InMemoryUserRepository`, mismo patrón exacto que las 3
+funciones de arriba en T-015) porque `PostgreSQLUserRepository` no existía
+todavía. T-024/T-025 reemplaza el **cuerpo** de esta función para instanciar el
+adaptador real (`adapters/db/user_repository_adapter.py::PostgreSQLUserRepository`)
+— la **firma no cambia**, así que `routers/auth.py`/`core/middleware.py` no se
+tocan en este batch. El placeholder in-memory se retira de este archivo (dead
+code tras el reemplazo — `tests/test_auth_router.py` nunca lo importó, usa su
+propio `_FakeUserRepository` local vía `app.dependency_overrides`/`monkeypatch`).
 """
-from dataclasses import replace
-
 from adapters.cache.redis_adapter import RedisAdapter
 from adapters.db.postgresql_adapter import PostgreSQLAdapter
+from adapters.db.user_repository_adapter import PostgreSQLUserRepository
 from adapters.mqtt.mosquitto_adapter import MosquittoAdapter
 from core.config import Settings
 from core.ports.cache_port import CachePort
 from core.ports.database_port import DatabasePort
 from core.ports.notification_port import NotificationPort
-from core.ports.user_repository_port import UserRecord, UserRepositoryPort
+from core.ports.user_repository_port import UserRepositoryPort
 
 _database_port: DatabasePort | None = None
 _cache_port: CachePort | None = None
 _notification_port: NotificationPort | None = None
 _user_repository_port: UserRepositoryPort | None = None
-
-
-class _InMemoryUserRepository:
-    """Placeholder coherente con `UserRepositoryPort` — vacío por diseño (sin
-    CRUD de usuarios en este sprint, `spec.md §2`). Reemplazado por
-    `PostgreSQLUserRepository` en T-024/T-025."""
-
-    def __init__(self) -> None:
-        self._by_id: dict[str, UserRecord] = {}
-
-    async def get_by_email(self, email: str) -> UserRecord | None:
-        return next((u for u in self._by_id.values() if u.email == email), None)
-
-    async def get_by_id(self, user_id: str) -> UserRecord | None:
-        return self._by_id.get(user_id)
-
-    async def update_role(self, user_id: str, new_role: str) -> None:
-        user = self._by_id.get(user_id)
-        if user is not None:
-            self._by_id[user_id] = replace(user, rol=new_role)
 
 
 def get_database_port() -> DatabasePort:
@@ -99,5 +77,5 @@ def get_user_repository_port() -> UserRepositoryPort:
     (`SRV-002-auth-rbac`, RF-001, RF-002, RF-006, RF-007, RF-012)."""
     global _user_repository_port
     if _user_repository_port is None:
-        _user_repository_port = _InMemoryUserRepository()
+        _user_repository_port = PostgreSQLUserRepository(Settings().database_url)
     return _user_repository_port

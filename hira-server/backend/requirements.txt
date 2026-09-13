@@ -18,3 +18,7 @@ paho-mqtt==2.1.0
 # RF-013). Solo `core/security/*` importa estas librerías.
 bcrypt==4.3.0
 PyJWT==2.10.1
+
+# Migraciones (`SRV-002-auth-rbac`, T-023) — primera tabla de negocio del
+# producto (`users`). Plantilla async, reutiliza `asyncpg` (ya arriba).
+alembic==1.14.0

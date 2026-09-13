@@ -122,7 +122,8 @@ def client(monkeypatch):
     # `/auth/logout` (protegido por el middleware) vea el **mismo** usuario/
     # refresh token que el router acaba de crear vía login, el middleware debe
     # resolver contra las mismas instancias `repo`/`cache` de este fixture, no
-    # contra el `RedisAdapter`/`_InMemoryUserRepository` reales de `factory.py`.
+    # contra el `RedisAdapter`/`PostgreSQLUserRepository` reales de `factory.py`
+    # (T-024/T-025) — sin contenedores en este entorno de test.
     monkeypatch.setattr(middleware_module, "get_user_repository_port", lambda: repo)
     monkeypatch.setattr(middleware_module, "get_cache_port", lambda: cache)
 

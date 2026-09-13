@@ -25,3 +25,11 @@ class Settings(BaseSettings):
     cors_origins: str
     environment: str = "development"
     log_level: str = "INFO"
+
+    # `SRV-002-auth-rbac`, T-026 — únicamente usadas por
+    # `scripts/seed_admin_user.py`; opcionales aquí (default `None`) porque el
+    # resto del backend arranca sin necesitar sembrar un usuario en cada
+    # despliegue (el script ya valida por su cuenta que ambas estén presentes
+    # antes de sembrar).
+    seed_admin_email: str | None = None
+    seed_admin_password: str | None = None
