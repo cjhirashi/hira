@@ -137,9 +137,9 @@ actualizado: 2026-09-13
 4. `backend/tests/test_health_service.py` (dobles de puertos, falla) → `backend/core/ports/{database_port.py,cache_port.py,notification_port.py}` (`Protocol`) + `backend/services/health_service.py::get_health` — RF-002, RF-005, RF-007.
 5. `backend/tests/test_correlation_id.py` (falla) → `backend/core/middleware.py` + registro en `backend/main.py` — RF-005.
 6. `hira-server/docs/openapi.yaml` (Contract-First, antes del router) — congela el contrato de `/health`.
-7. `backend/tests/test_health_router.py` (TestClient, falla) → `backend/routers/monitor.py` + `backend/schemas/health.py` — expone RF-002 vía HTTP.
+7. `backend/tests/test_health_router.py` (TestClient, falla) → `backend/routers/monitor.py` + `backend/schemas/health.py` + **`backend/adapters/factory.py`** (nace aquí, no en el paso 9 — ver Directiva de Pausa 2026-09-13 en §7: `SRV-ADR-017` prohíbe que `routers/` instancie un adaptador directamente, así que el router necesita el punto de inyección desde el momento en que existe; sus 3 funciones son placeholders in-memory triviales, sin `branching` ni lógica de negocio) — expone RF-002 vía HTTP.
 8. `hira-server/docker-compose.yml` + `docker-compose.dev.yml` + `hira-server/mosquitto/mosquitto.conf` + script de `password_file` + `hira-server/.env.example` + `hira-server/nginx/nginx.conf` — RF-001, RF-006.
-9. `backend/tests/integration/test_adapters.py` (falla, requiere contenedores del paso 8 arriba) → `backend/adapters/db/postgresql_adapter.py`, `backend/adapters/cache/redis_adapter.py`, `backend/adapters/mqtt/mosquitto_adapter.py`, `backend/adapters/factory.py` — RF-002 (real), RF-006, RF-008.
+9. `backend/tests/integration/test_adapters.py` (falla, requiere contenedores del paso 8 arriba) → `backend/adapters/db/postgresql_adapter.py`, `backend/adapters/cache/redis_adapter.py`, `backend/adapters/mqtt/mosquitto_adapter.py`, **reemplazan el cuerpo** (no la firma, ya fijada en el paso 7) de `backend/adapters/factory.py` — RF-002 (real), RF-006, RF-008.
 10. Verificación e2e (`docker compose up` + `curl /health`, evidencia pegada) — RF-001, RNF-001, RNF-002.
 11. `.harness/gate/services.txt`: añadir `hira-server/backend:python` — activa el bloque 5 del gate para esta suite.
 12. Tareas `[doc]` de §8 — pueden ejecutarse en paralelo desde el paso 1; no bloquean código.
@@ -149,6 +149,35 @@ actualizado: 2026-09-13
 |---|---|
 | `adapters/factory.py` sin *branching* real (un solo perfil, instancia directa de los 3 adaptadores) | El patrón elegido en la Génesis (`SRV-ADR-017`) ya exige el archivo como punto único de selección de adaptadores para *todos* los sprints futuros (BACnet, Modbus, un segundo backend de storage). No es abstracción especulativa de este plan: la interfaz (`Protocol`) la impone la Constitución Art. 1–2, no la inventamos aquí. Evita una reescritura de `services/` cuando aparezca variabilidad real. |
 | `NotificationPort.ping()`/`.connect()` sin `send()` implementado todavía | No hay ningún consumidor real de notificaciones en este sprint (regla de oro Art. 10: no anticipar). `send()` se añade cuando exista un caso de uso concreto que lo necesite. |
+
+### Directiva de Pausa (2026-09-13) — `adapters/factory.py` se crea en el paso 7, no en el 9
+
+**Asunción original inviable:** este plan (§6, versión aprobada en Gate 2) ataba la
+creación de `adapters/factory.py` al paso 9, junto con los adaptadores reales
+(después de tener contenedores). Al implementar T-014/T-015 (router `/health`),
+`hira-infra` se topó con la restricción real: `SRV-ADR-017` prohíbe que `routers/`
+instancie un adaptador concreto, así que el router necesita **algún** punto de
+inyección desde el momento en que existe — no puede esperar a T-020 sin violar la
+regla de dependencia (`services/`/`routers/` → solo `core/ports/`, nunca
+`adapters/*` concreto).
+
+**Solución de raíz (no parche):** `adapters/factory.py` nace en el paso 7 con 3
+funciones placeholder in-memory (siempre `ok`, sin `branching`, sin importar
+infraestructura concreta) que implementan los `Protocol` ya definidos. El paso 9
+no cambia la firma del archivo, solo reemplaza el **cuerpo** de esas 3 funciones
+por los adaptadores reales de Postgres/Redis/Mosquitto. No es una abstracción
+nueva: es el mismo archivo que §7 ya justificaba, solo que nace un paso antes de
+lo que el plan original preveía.
+
+**Proceso:** `hira-infra` implementó esto y documentó la decisión en `tasks.md`
+sin pausar el código primero, tratándola como no-desviación. El `revisor` la
+rebotó correctamente en verificación adversarial: aunque el resultado técnico es
+inocuo (sin *branching*, sin imports prematuros, 37/37 tests en verde, alcance de
+T-016+ intacto), reordenar un paso que el plan **aprobado** ataba explícitamente a
+otra tarea es cambiar una decisión de plan, no solo el síntoma (`method.md §2`) —
+exige Directiva de Pausa con revisión humana antes de continuar, no una nota
+unilateral post-hoc. Este párrafo y el cambio de §6 son esa revisión, pendientes
+de aprobación explícita del usuario antes de dar T-013..T-015 por verificadas.
 
 ## 8. Impacto en documentación *(obligatorio — Constitución Art. 11)*
 | Documento del mapa | Qué cambia | Acción |
