@@ -2,9 +2,9 @@
 id: SPEC-SRV-002
 tipo: spec
 feature: SRV-002-auth-rbac
-estado: approved
-anchor_commit: ‹pendiente›
-anchor_mode: advisory
+estado: implemented
+anchor_commit: f8157ed6efb7668b90c3dd4a61a97a2616301cf3
+anchor_mode: strict
 covers:
   - hira-server/backend/**
   - hira-server/docs/openapi.yaml

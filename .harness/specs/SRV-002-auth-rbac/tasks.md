@@ -2,7 +2,7 @@
 id: TASKS-SRV-002
 tipo: tasks
 feature: SRV-002-auth-rbac
-estado: draft
+estado: implemented
 actualizado: 2026-09-13
 ---
 
