@@ -9,6 +9,7 @@ pydantic==2.13.4
 pydantic-settings==2.15.0
 
 # Adaptadores reales de PostgreSQL/Redis (T-018/T-019, RF-002) — solo
-# `adapters/*` importará estas librerías (`E-ADR-002`). Se añaden a este
-# archivo cuando ese batch los importe de verdad — no anticipar
-# (Constitución Art. 10).
+# `adapters/*` importa estas librerías (`E-ADR-002`).
+sqlalchemy==2.0.52
+asyncpg==0.31.0
+redis==5.2.1

@@ -20,6 +20,11 @@ cada test cita el ancla que cubre.
   y el wiring de `Settings()` en el `lifespan` de `main.py` (RF-003:
   `ValidationError` → log JSON `level: error` + `sys.exit(1)`, sin arranque
   parcial).
+- `test_cache_adapter_wiring.py` — `RedisAdapter`/`adapters/factory.py::
+  get_cache_port` combinan `redis_url` + `redis_password` reales al construir
+  el cliente (RF-002; mockeado, sin contenedor — corrección post-revisión:
+  antes `redis_password` no tenía consumidor real y `PING` fallaba contra el
+  Redis del compose, que exige `--requirepass`).
 
 `asyncio_mode = auto` (`pytest.ini`) — los tests `async def` no necesitan el
 marcador `@pytest.mark.asyncio` explícito, aunque algunos lo declaran por

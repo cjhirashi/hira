@@ -13,6 +13,5 @@ uso de este sprint los necesita (Art. 10, no anticipar). Se amplían cuando
 `LicenseStoragePort`/`CrashReportPort` (Constitución Art. 2) tengan un caso de
 uso real, en H1/H2.
 
-Implementaciones concretas (`adapters/db/postgres_adapter.py`,
-`adapters/cache/redis_adapter.py`) pendientes de un batch posterior de
-`tasks.md` (T-018/T-019) — fuera de alcance de este batch (T-001..T-012).
+Implementaciones concretas: `adapters/db/postgres_adapter.py::PostgresAdapter`,
+`adapters/cache/redis_adapter.py::RedisAdapter` (T-018/T-019).

@@ -6,12 +6,12 @@ JSON (`level: error`) nombrando el/los campo(s) faltante(s), y el proceso
 aborta con `sys.exit(1)` — nunca arranque parcial.
 
 A diferencia de `hira-server`: sin Mosquitto/`NotificationPort` que conectar
-en el `lifespan` (`HUB-ADR-01`) y sin `adapters/factory.py` todavía — nace en
-un batch posterior (`tasks.md` T-015), junto con `routers/monitor.py::GET
-/health` (RF-002, fuera de alcance de este batch T-001..T-012).
+en el `lifespan` (`HUB-ADR-01`).
 
 `CorrelationIdMiddleware` (RF-005) se registra aquí — todo request lleva un
-`trace_id` propagado o generado (`core/middleware.py`).
+`trace_id` propagado o generado (`core/middleware.py`). `routers/monitor.py`
+expone `GET /health` (RF-002), con los puertos inyectados vía
+`adapters/factory.py` (`E-ADR-002`).
 """
 import sys
 from contextlib import asynccontextmanager
@@ -22,6 +22,7 @@ from pydantic import ValidationError
 from core.config import Settings
 from core.logger import get_logger
 from core.middleware import CorrelationIdMiddleware
+from routers.monitor import router as monitor_router
 
 _logger = get_logger("main")
 
@@ -46,3 +47,4 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Hira Hub", lifespan=lifespan)
 app.add_middleware(CorrelationIdMiddleware)
+app.include_router(monitor_router)

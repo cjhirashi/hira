@@ -1,0 +1,76 @@
+# Compose base — perfil único (cloud single-tenant, `E-ADR-002`).
+# `HUB-001-walking-skeleton` T-016.
+#
+# Servicios: `backend` (FastAPI), `postgres` (`postgres:16-alpine`), `redis`
+# (`redis:7.4-alpine`), `nginx` (`nginx:1.27-alpine`) — 4 servicios, **sin
+# Mosquitto** (`HUB-ADR-01`: Hub no habla protocolos de campo). Cada uno con
+# `HEALTHCHECK` propio; `depends_on: condition: service_healthy` implementa
+# RF-001/RNF-001 (todos `healthy` en < 60s).
+#
+# Uso: `docker compose -f docker-compose.yml up -d` (producción) o combinado
+# con `docker-compose.dev.yml` (hot-reload, puertos expuestos para debug).
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: hira-hub-backend:latest
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    # HEALTHCHECK definido en `backend/Dockerfile` (curl -f http://localhost:8001/health).
+    # Nota (RF-002/plan.md): el compose considera "healthy" con que el proceso
+    # responda — no exige que el JSON del body diga `status: ok`.
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:1.27-alpine
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "80:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

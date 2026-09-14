@@ -93,37 +93,87 @@ actualizado: 2026-09-14
       completa del batch: 32/32 tests pasan (`pytest -v`).
 
 ### Contrato — Contract-First
-- [ ] T-013 — Escribir `hira-hub/docs/openapi.yaml` (`GET /health`, payload de
-      `spec.md §3`) — antes del router (cubre RF-002) [zona: contrato]
+- [x] T-013 — Escribir `hira-hub/docs/openapi.yaml` (`GET /health`, payload de
+      `spec.md §3`) — antes del router (cubre RF-002) [zona: contrato].
+      **Evidencia:** `hira-hub/docs/openapi.yaml` creado, `/health` con
+      `HealthResponse` (`status`, `services.{postgres,redis}`, `version`,
+      `trace_id`), sin sobre RFC 9457.
 
 ### Adaptador de entrada — router
-- [ ] T-014 — Test `test_health_router.py` (`TestClient`): `GET /health`
+- [x] T-014 — Test `test_health_router.py` (`TestClient`): `GET /health`
       responde 200 con el payload del contrato (debe fallar) (cubre RF-002)
-      [zona: test-adaptador-entrada]
-- [ ] T-015 — Implementar `backend/routers/monitor.py` + `backend/schemas/
+      [zona: test-adaptador-entrada]. **Evidencia:** falló con `404 Not
+      Found` (sin `routers/monitor.py` registrado) antes de T-015.
+- [x] T-015 — Implementar `backend/routers/monitor.py` + `backend/schemas/
       health.py` + `backend/adapters/factory.py` (nace aquí con 2 funciones
       placeholder in-memory — aplica de forma proactiva la lección de la
       Directiva de Pausa de `SRV-001`: el router necesita el punto de
       inyección desde que existe) + registro en `main.py` (cubre RF-002)
-      [zona: adaptador-entrada]
+      [zona: adaptador-entrada]. **Evidencia:** 34/34 tests pasan (`pytest -v`).
 
 ### Infraestructura de contenedores
-- [ ] T-016 — `hira-hub/docker-compose.yml` + `docker-compose.dev.yml`:
+- [x] T-016 — `hira-hub/docker-compose.yml` + `docker-compose.dev.yml`:
       servicios `backend`/`postgres`/`redis`/`nginx` (sin Mosquitto) con
       `HEALTHCHECK` propio y `depends_on: condition: service_healthy` (cubre
-      RF-001) [zona: infra]
-- [ ] T-017 — `hira-hub/nginx/nginx.conf` (proxy reverso genérico, sin
+      RF-001) [zona: infra]. **Evidencia:** `backend/Dockerfile` creado
+      (Python 3.12-slim, puerto interno :8001 — `docs/hira-hub/spec/
+      deployment.md` — distinto del :8000 de `hira-server`); `docker compose
+      config` valida sin error; `postgres`+`redis` levantados con `docker
+      compose up -d postgres redis` → ambos `healthy` en <15s (`docker compose
+      ps`).
+- [x] T-017 — `hira-hub/nginx/nginx.conf` (proxy reverso genérico, sin
       dominio/TLS real) + `hira-hub/.env.example` (cubre RF-001, RF-006)
-      [zona: infra]
+      [zona: infra]. **Evidencia:** archivos creados, `docker compose config`
+      los resuelve sin error.
 
 ### Adaptadores concretos — integración contra contenedores reales
-- [ ] T-018 — Test `tests/integration/test_adapters.py` (requiere T-016/T-017
+- [x] T-018 — Test `tests/integration/test_adapters.py` (requiere T-016/T-017
       arriba): `DatabasePort.ping()` y `CachePort.ping()` contra Postgres/
-      Redis reales (debe fallar) (cubre RF-002) [zona: test-adaptadores]
-- [ ] T-019 — Implementar `backend/adapters/db/postgres_adapter.py`
+      Redis reales (debe fallar) (cubre RF-002) [zona: test-adaptadores].
+      **Evidencia:** falló con `ModuleNotFoundError: No module named
+      'adapters.db.postgres_adapter'` / `'adapters.cache.redis_adapter'`
+      (contenedores `postgres`+`redis` ya levantados vía `docker compose up -d
+      postgres redis`, ambos `healthy`) antes de T-019.
+- [x] T-019 — Implementar `backend/adapters/db/postgres_adapter.py`
       (`SELECT 1`) + `backend/adapters/cache/redis_adapter.py` (`PING`) —
       reemplazan el **cuerpo** (no la firma) de `adapters/factory.py` (cubre
-      RF-002) [zona: adaptadores]
+      RF-002) [zona: adaptadores]. **Evidencia:** 2/2 tests de integración
+      pasan contra los contenedores reales (`pytest -m integration`); suite
+      completa del batch (unit + integración): 36/36 tests pasan.
+      **Corrección post-revisión (misma tarea, sin abrir T-nuevo):** el
+      `revisor` encontró, con evidencia real (compose levantado desde
+      `.env.example` documentado), que `redis` del compose exige password
+      (`--requirepass ${REDIS_PASSWORD}`) pero `RedisAdapter`/
+      `adapters/factory.py::get_cache_port()` construían el cliente solo con
+      `Settings().redis_url` — `Settings().redis_password` existía validado
+      pero sin consumidor real, produciendo `AuthenticationError` en cada
+      `PING` y `redis: error` en `/health` contra un Redis sano (falso
+      negativo, viola RF-002). Además, `tests/integration/test_adapters.py`
+      hardcodeaba `TEST_REDIS_URL` **con** password embebida
+      (`redis://:changeme@localhost:6379/0`), distinta de `REDIS_URL` real
+      (sin credenciales) — por eso pasaba en verde sin detectar el bug.
+      **Fix de raíz:** `RedisAdapter.__init__(redis_url, redis_password)`
+      combina ambos campos (`redis.from_url(url, password=password)`);
+      `get_cache_port()` pasa `Settings().redis_url` +
+      `Settings().redis_password`; el test de integración ahora arma
+      `TEST_REDIS_URL`/`TEST_REDIS_PASSWORD` con la misma forma que
+      `.env.example`/`factory.py` reales. Se añadió
+      `tests/test_cache_adapter_wiring.py` (unit, mockeado, sin contenedor)
+      para que una regresión de este wiring se detecte sin Docker.
+      **Re-verificación e2e:** `docker compose -f docker-compose.yml -f
+      docker-compose.dev.yml up -d --build` con `.env` copiado tal cual de
+      `.env.example` (sin editar credenciales a mano) → `postgres`, `redis`,
+      `backend` los 3 `healthy`; `curl :8001/health` →
+      `{"status":"ok","services":{"postgres":"ok","redis":"ok"},"version":
+      "0.1.0","trace_id":"…"}`. Reproducido también el bug original de forma
+      aislada (código previo a este fix + credenciales reales) para
+      confirmar causa raíz: `AuthenticationError: Authentication required.`
+      Suite completa tras el fix: 36/36 unit (`pytest -m "not integration"`)
+      + 2/2 integración (`pytest -m integration`) = 38/38. `nginx` no pudo
+      levantar en este host por el puerto 80 ya ocupado por un servicio
+      **no relacionado** (`caddy_proxy`, otro proyecto) — irrelevante para
+      este fix (`/health` no depende de nginx) y fuera de alcance de esta
+      corrección puntual (pertenece a T-020, no tocado).
 
 ### Sistema — verificación e2e
 - [ ] T-020 — `docker compose -f docker-compose.yml -f docker-compose.dev.yml
@@ -158,7 +208,7 @@ actualizado: 2026-09-14
 | RF / doc | Tareas | Test(s) | Estado |
 |---|---|---|---|
 | RF-001 | T-001, T-016, T-017, T-020, T-021 | `test_health_router.py` (contrato), verificación e2e (T-020) | Pendiente |
-| RF-002 | T-002, T-003, T-008, T-009, T-010, T-013, T-014, T-015, T-018, T-019 | `test_health_policy.py`, `test_health_service.py`, `test_health_router.py`, `tests/integration/test_adapters.py` | Pendiente |
+| RF-002 | T-002, T-003, T-008, T-009, T-010, T-013, T-014, T-015, T-018, T-019 | `test_health_policy.py`, `test_health_service.py`, `test_health_router.py`, `tests/integration/test_adapters.py`, `tests/test_cache_adapter_wiring.py` | Pass |
 | RF-003 | T-004, T-005, T-012 | `test_config.py`, `test_correlation_id.py` (T-012) | Pass |
 | RF-004 | T-006, T-007 | `test_logger.py`, evidencia de T-020 | Pendiente |
 | RF-005 | T-008, T-010, T-011, T-012 | `test_health_service.py`, `test_correlation_id.py` | Pass |
