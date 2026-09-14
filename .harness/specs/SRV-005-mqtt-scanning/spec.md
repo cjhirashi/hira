@@ -2,14 +2,14 @@
 id: SPEC-SRV-005
 tipo: spec
 feature: SRV-005-mqtt-scanning
-estado: in-review
+estado: approved
 anchor_commit: ‹pendiente›
 anchor_mode: advisory
 covers:
   - hira-server/backend/**
 aprobaciones:
   fase_1: { por: "Carlos", fecha: 2026-09-14 }
-  fase_2: pendiente
+  fase_2: { por: "Carlos", fecha: 2026-09-14 }
 actualizado: 2026-09-14
 ---
 
@@ -46,8 +46,14 @@ actualizado: 2026-09-14
   publicados.
 - `devices.address` para MQTT: el patrón de suscripción tal cual (p. ej.
   `"edificio/piso1/#"`). `device_points_candidates`: `object_type` =
-  constante `"mqtt_topic"`; `object_instance` = topic real recibido (p. ej.
-  `"edificio/piso1/ahu1/temp"`); `present_value` = payload del último mensaje.
+  constante `"mqtt_topic"`; el topic real recibido (p. ej.
+  `"edificio/piso1/ahu1/temp"`) identifica al candidato — **resuelto en Fase 2
+  (Gate 2, 2026-09-14, aprobado):** `object_instance` (`INTEGER`, columna
+  compartida con BACnet/Modbus, no se migra) guarda un hash determinista
+  (`crc32`) del topic para poder "actualizar si ya existía"; el topic
+  completo real vive en `object_name` (`String(255)` — límite conocido, no
+  cubierto por ningún RF-, ver `plan.md §2`). `present_value` = payload del
+  último mensaje.
 - Endpoint HTTP protegido por RBAC (mismo criterio: Admin+Operador).
 - Verificación de integración real: contra el Mosquitto real ya autenticado
   del compose de `SRV-001` (no un broker de test aparte).
