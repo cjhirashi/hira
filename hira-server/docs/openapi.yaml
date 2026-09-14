@@ -7,11 +7,15 @@ info:
     `POST /auth/login|refresh|logout` (autenticación JWT + RBAC de 3 roles fijos,
     `SRV-ADR-005`); `SRV-003-bacnet-adapter` añade `POST /devices/scan/bacnet`,
     `GET /devices`, `GET /devices/{id}/candidates` (escaneo BACnet/IP Who-Is/
-    I-Am y persistencia de candidatos crudos, `SRV-ADR-012`). El sobre de error
-    de los endpoints de negocio sigue RFC 9457 (`ProblemDetail`, `E-ADR-003`) —
-    `GET /health` es la única excepción (endpoint de monitoreo, siempre HTTP
-    200, ver su descripción).
-  version: "0.3.0"
+    I-Am y persistencia de candidatos crudos, `SRV-ADR-012`). `SRV-004-modbus-
+    adapter` añade `POST /devices/scan/modbus` (sondeo de rangos de registros
+    Modbus TCP — coils, discrete inputs, holding registers, input registers —
+    y persistencia de candidatos, mismo modelo `devices`/
+    `device_points_candidates`, sin descubrimiento nativo a diferencia de
+    BACnet). El sobre de error de los endpoints de negocio sigue RFC 9457
+    (`ProblemDetail`, `E-ADR-003`) — `GET /health` es la única excepción
+    (endpoint de monitoreo, siempre HTTP 200, ver su descripción).
+  version: "0.4.0"
 paths:
   /auth/login:
     post:
@@ -158,6 +162,73 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/DeviceOut"
+        "403":
+          description: Rol Visor invocando el escaneo (RF-003).
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+              examples:
+                insufficient_role:
+                  value:
+                    type: "https://hira.dev/errors/insufficient-role"
+                    title: "Rol insuficiente"
+                    status: 403
+                    detail: "Se requiere uno de los roles: admin, operador."
+  /devices/scan/modbus:
+    post:
+      operationId: scanModbusDevices
+      summary: Sondea un rango de registros Modbus TCP y persiste candidatos
+      description: >
+        RF-001, RF-002, RF-004, RF-005, RF-007 (`.harness/specs/
+        SRV-004-modbus-adapter/spec.md`). A diferencia de BACnet, Modbus no
+        tiene descubrimiento nativo — el llamador indica `host`/`port`/
+        `unit_id` y, por cada uno de los 4 tipos de registro (`coils`,
+        `discrete_inputs`, `holding_registers`, `input_registers`), un rango
+        opcional `{start, count}`; un tipo sin rango no se escanea. Lee cada
+        dirección del rango (timeout de 1 segundo por dirección, RF-008) y
+        persiste/actualiza el dispositivo en `devices`
+        (`protocol='modbus'`, dirección `"<host>:<port>:<unit_id>"`) y sus
+        puntos crudos en `device_points_candidates` — solo si al menos una
+        dirección respondió con éxito; nunca promueve un candidato a una
+        tabla de puntos operables (`SRV-ADR-012`). Una dirección sin
+        respuesta se registra (log) y no aborta el resto del rango (RF-005).
+        Ningún rango puede exceder 125 direcciones (RF-004) — de lo
+        contrario responde 400 sin ejecutar ninguna lectura. Sin ninguna
+        dirección exitosa, responde 200 con una lista vacía (RF-007, no es
+        un error). Requiere rol Admin u Operador (RF-003).
+      tags:
+        - devices
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScanModbusRequest"
+      responses:
+        "200":
+          description: >
+            Candidatos nuevos/actualizados de este escaneo (puede ser `[]`
+            si ninguna dirección respondió, RF-007).
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DeviceCandidateOut"
+        "400":
+          description: Algún rango solicitado excede 125 direcciones (RF-004).
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+              examples:
+                modbus_range_too_large:
+                  value:
+                    type: "https://hira.dev/errors/modbus-range-too-large"
+                    title: "Rango de registros demasiado grande"
+                    status: 400
+                    detail: "El rango solicitado para 'holding_register' tiene 200 direcciones; el máximo permitido por tipo de registro es 125."
         "403":
           description: Rol Visor invocando el escaneo (RF-003).
           content:
@@ -434,6 +505,53 @@ components:
         updated_at:
           type: string
           format: date-time
+    ModbusRegisterRange:
+      type: object
+      description: >
+        Rango de direcciones a sondear para un tipo de registro Modbus
+        (`SRV-004-modbus-adapter`, `plan.md §4`).
+      required: [start, count]
+      additionalProperties: false
+      properties:
+        start:
+          type: integer
+          minimum: 0
+        count:
+          type: integer
+          minimum: 1
+          maximum: 125
+          description: Máximo 125 direcciones por tipo de registro (RF-004).
+    ScanModbusRequest:
+      type: object
+      description: >
+        Body de `POST /devices/scan/modbus` (`SRV-004-modbus-adapter`,
+        `plan.md §4`) — un tipo de registro sin rango no se escanea.
+      required: [host, port, unit_id]
+      additionalProperties: false
+      properties:
+        host:
+          type: string
+          minLength: 1
+        port:
+          type: integer
+          minimum: 1
+          maximum: 65535
+        unit_id:
+          type: integer
+          minimum: 0
+          maximum: 255
+        coils:
+          $ref: "#/components/schemas/ModbusRegisterRange"
+          nullable: true
+        discrete_inputs:
+          $ref: "#/components/schemas/ModbusRegisterRange"
+          nullable: true
+        holding_registers:
+          $ref: "#/components/schemas/ModbusRegisterRange"
+          nullable: true
+        input_registers:
+          $ref: "#/components/schemas/ModbusRegisterRange"
+          nullable: true
     ProblemDetail:
       type: object
       description: >
@@ -447,8 +565,11 @@ components:
         `AuthenticationMiddleware`/`require_role`/`require_project_scope`. Catálogo
         añadido por `SRV-003-bacnet-adapter` (`plan.md §4`): `device-not-found`
         (404, `GET /devices/{id}/candidates` con un `id` inexistente) —
-        `insufficient-role` (403) se reutiliza tal cual en los 3 endpoints
-        nuevos de `devices`, sin redefinirse.
+        `insufficient-role` (403) se reutiliza tal cual en los endpoints
+        nuevos de `devices`, sin redefinirse. Catálogo añadido por
+        `SRV-004-modbus-adapter` (`plan.md §4`): `modbus-range-too-large`
+        (400, `POST /devices/scan/modbus` con un rango que excede 125
+        direcciones).
       required: [type, title, status, detail]
       additionalProperties: false
       properties:

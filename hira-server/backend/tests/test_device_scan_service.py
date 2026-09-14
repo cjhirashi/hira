@@ -1,10 +1,11 @@
-"""`services/device_scan_service.py::scan_bacnet` — coordinación, sin I/O real
-(`SRV-003-bacnet-adapter`, `plan.md §2`, RF-001, RF-002, RF-006, RF-007,
-RF-008, RNF-001).
+"""`services/device_scan_service.py::scan_bacnet`/`scan_modbus` — coordinación,
+sin I/O real (`SRV-003-bacnet-adapter`/`SRV-004-modbus-adapter`, `plan.md §2`).
 
-Dobles (`Protocol` fakes) de `BacnetTransportPort`/`DeviceRepositoryPort` —
-sin BAC0/Postgres reales (`plan.md §5`: "unit + dobles"). Debe fallar antes de
-T-006 (`services/device_scan_service.py` no existe todavía).
+Dobles (`Protocol` fakes) de `BacnetTransportPort`/`ModbusTransportPort`/
+`DeviceRepositoryPort` — sin BAC0/pymodbus/Postgres reales (`plan.md §5`:
+"unit + dobles"). Los casos de `scan_modbus` (RF-001, RF-002, RF-004, RF-005,
+RF-006, RF-007, RNF-001) deben fallar antes de T-005 (`services/
+device_scan_service.py::scan_modbus` no existe todavía).
 """
 import asyncio
 import time
@@ -15,12 +16,19 @@ from uuid import uuid4
 import pytest
 
 from core.bacnet_address import format_device_address
+from core.errors import ProblemDetailError
+from core.modbus_address import format_modbus_address
 from core.ports.bacnet_transport_port import (
     BacnetDeviceAnnouncement,
     BacnetObjectReading,
     BacnetReadTimeoutError,
 )
 from core.ports.device_repository_port import DeviceCandidateRecord, DeviceRecord
+from core.ports.modbus_transport_port import (
+    ModbusReadFailure,
+    ModbusRegisterReading,
+    ModbusRegisterType,
+)
 
 
 class _FakeBacnetTransport:
@@ -138,6 +146,77 @@ class _FakeDeviceRepository:
         self, device_id: str
     ) -> list[DeviceCandidateRecord]:
         return list(self.candidates_by_device.get(device_id, []))
+
+
+class _FakeModbusTransport:
+    """`ModbusTransportPort` in-memory — controla los resultados de
+    `read_range` por `(register_type, start, count)`, registra cada llamada
+    para verificar que RF-004 rechaza **antes** de invocar `transport`."""
+
+    def __init__(
+        self,
+        results_by_range: dict[
+            tuple[ModbusRegisterType, int, int],
+            list[ModbusRegisterReading | ModbusReadFailure],
+        ]
+        | None = None,
+    ) -> None:
+        self._results_by_range = results_by_range or {}
+        self.read_range_calls: list[dict] = []
+
+    async def read_range(
+        self,
+        *,
+        host: str,
+        port: int,
+        unit_id: int,
+        register_type: ModbusRegisterType,
+        start: int,
+        count: int,
+        timeout_seconds: float,
+    ) -> list[ModbusRegisterReading | ModbusReadFailure]:
+        self.read_range_calls.append(
+            {
+                "host": host,
+                "port": port,
+                "unit_id": unit_id,
+                "register_type": register_type,
+                "start": start,
+                "count": count,
+                "timeout_seconds": timeout_seconds,
+            }
+        )
+        return self._results_by_range.get((register_type, start, count), [])
+
+
+class _AlwaysFailsModbusTransport:
+    """`ModbusTransportPort` que falla el test si `read_range` se invoca —
+    usado para verificar que RF-004 rechaza antes de cualquier lectura."""
+
+    async def read_range(self, **kwargs) -> list:
+        raise AssertionError(
+            "read_range no debía invocarse: el rango excede el límite (RF-004)"
+        )
+
+
+class _AlwaysFailsModbusDeviceRepository:
+    """`DeviceRepositoryPort` que falla el test si se invoca — usado para
+    verificar que RF-004/RF-007 no tocan el repositorio."""
+
+    async def upsert_device(self, **kwargs):
+        raise AssertionError("upsert_device no debía invocarse")
+
+    async def list_devices(self):
+        raise AssertionError("list_devices no debía invocarse")
+
+    async def get_device(self, device_id: str):
+        raise AssertionError("get_device no debía invocarse")
+
+    async def upsert_candidate(self, **kwargs):
+        raise AssertionError("upsert_candidate no debía invocarse")
+
+    async def list_candidates_for_device(self, device_id: str):
+        raise AssertionError("list_candidates_for_device no debía invocarse")
 
 
 @pytest.mark.asyncio
@@ -313,8 +392,217 @@ async def test_scan_bacnet_segundo_escaneo_actualiza_no_duplica():
 def test_scan_bacnet_nunca_importa_un_puerto_de_puntos_operables():
     """RF-007 — el sistema nunca promueve un candidato a una tabla de puntos
     operables (`SRV-ADR-012`): verificado por inspección de imports del
-    módulo, no existe ningún `PointsRepositoryPort` referenciado."""
+    módulo, no existe ningún `PointsRepositoryPort` referenciado. Cubre tanto
+    `scan_bacnet` como `scan_modbus`, mismo módulo (`SRV-006`, RF-006)."""
     import services.device_scan_service as module
 
     source_names = dir(module)
     assert not any("points" in name.lower() for name in source_names)
+
+
+# ── scan_modbus (SRV-004-modbus-adapter) ────────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_scan_modbus_camino_feliz_dos_tipos_persiste_device_y_candidatos():
+    """RF-001, RF-002 — 2 tipos de registro con valores → 1 `upsert_device`
+    (la primera vez que algo responde) + N `upsert_candidate`, retorna N
+    candidatos."""
+    from services.device_scan_service import scan_modbus
+
+    results_by_range = {
+        (ModbusRegisterType.HOLDING_REGISTER, 0, 2): [
+            ModbusRegisterReading(
+                register_type=ModbusRegisterType.HOLDING_REGISTER, address=0, value=100
+            ),
+            ModbusRegisterReading(
+                register_type=ModbusRegisterType.HOLDING_REGISTER, address=1, value=200
+            ),
+        ],
+        (ModbusRegisterType.COIL, 0, 1): [
+            ModbusRegisterReading(
+                register_type=ModbusRegisterType.COIL, address=0, value=True
+            ),
+        ],
+    }
+    transport = _FakeModbusTransport(results_by_range)
+    repo = _FakeDeviceRepository()
+
+    result = await scan_modbus(
+        host="192.168.1.50",
+        port=502,
+        unit_id=1,
+        ranges={
+            ModbusRegisterType.HOLDING_REGISTER: (0, 2),
+            ModbusRegisterType.COIL: (0, 1),
+        },
+        transport=transport,
+        device_repo=repo,
+    )
+
+    assert len(result) == 3
+    assert len(repo.upsert_device_calls) == 1
+    assert repo.upsert_device_calls[0]["protocol"] == "modbus"
+    assert repo.upsert_device_calls[0]["address"] == format_modbus_address(
+        "192.168.1.50", 502, 1
+    )
+    assert len(repo.upsert_candidate_calls) == 3
+    object_types = {call["object_type"] for call in repo.upsert_candidate_calls}
+    assert object_types == {"holding_register", "coil"}
+
+
+@pytest.mark.asyncio
+async def test_scan_modbus_rango_mayor_a_125_rechaza_antes_de_leer_nada():
+    """RF-004 — un rango > 125 direcciones se rechaza con `ProblemDetailError`
+    (400, slug `modbus-range-too-large`) **antes** de invocar `transport`/
+    `device_repo` (dobles que fallan el test si se llaman)."""
+    from services.device_scan_service import scan_modbus
+
+    transport = _AlwaysFailsModbusTransport()
+    repo = _AlwaysFailsModbusDeviceRepository()
+
+    with pytest.raises(ProblemDetailError) as exc_info:
+        await scan_modbus(
+            host="192.168.1.50",
+            port=502,
+            unit_id=1,
+            ranges={ModbusRegisterType.HOLDING_REGISTER: (0, 126)},
+            transport=transport,
+            device_repo=repo,
+        )
+
+    assert exc_info.value.status == 400
+    assert exc_info.value.type_ == "https://hira.dev/errors/modbus-range-too-large"
+
+
+@pytest.mark.asyncio
+async def test_scan_modbus_rango_de_125_exacto_no_rechaza():
+    """RF-004 — el límite es inclusivo: 125 direcciones exactas no rechaza."""
+    from services.device_scan_service import scan_modbus
+
+    transport = _FakeModbusTransport(
+        {(ModbusRegisterType.HOLDING_REGISTER, 0, 125): []}
+    )
+    repo = _FakeDeviceRepository()
+
+    result = await scan_modbus(
+        host="192.168.1.50",
+        port=502,
+        unit_id=1,
+        ranges={ModbusRegisterType.HOLDING_REGISTER: (0, 125)},
+        transport=transport,
+        device_repo=repo,
+    )
+
+    assert result == []
+    assert len(transport.read_range_calls) == 1
+
+
+@pytest.mark.asyncio
+async def test_scan_modbus_una_direccion_que_falla_no_aborta_las_demas():
+    """RF-005 — una mezcla de `ModbusRegisterReading`/`ModbusReadFailure` en
+    la misma lista: las direcciones fallidas se omiten (logueadas), las
+    exitosas se persisten igual, sin abortar el resto del rango."""
+    from services.device_scan_service import scan_modbus
+
+    results_by_range = {
+        (ModbusRegisterType.HOLDING_REGISTER, 0, 3): [
+            ModbusRegisterReading(
+                register_type=ModbusRegisterType.HOLDING_REGISTER, address=0, value=10
+            ),
+            ModbusReadFailure(
+                register_type=ModbusRegisterType.HOLDING_REGISTER,
+                address=1,
+                reason="timeout",
+            ),
+            ModbusRegisterReading(
+                register_type=ModbusRegisterType.HOLDING_REGISTER, address=2, value=30
+            ),
+        ],
+    }
+    transport = _FakeModbusTransport(results_by_range)
+    repo = _FakeDeviceRepository()
+
+    result = await scan_modbus(
+        host="192.168.1.50",
+        port=502,
+        unit_id=1,
+        ranges={ModbusRegisterType.HOLDING_REGISTER: (0, 3)},
+        transport=transport,
+        device_repo=repo,
+    )
+
+    assert len(result) == 2
+    assert len(repo.upsert_candidate_calls) == 2
+    persisted_instances = {
+        call["object_instance"] for call in repo.upsert_candidate_calls
+    }
+    assert persisted_instances == {0, 2}
+    assert len(repo.upsert_device_calls) == 1
+
+
+@pytest.mark.asyncio
+async def test_scan_modbus_sin_ninguna_respuesta_exitosa_no_crea_device():
+    """RF-007 — sin ninguna dirección exitosa (todas `ModbusReadFailure`),
+    `[]` sin invocar `upsert_device`/`upsert_candidate` (200, no es error)."""
+    from services.device_scan_service import scan_modbus
+
+    results_by_range = {
+        (ModbusRegisterType.HOLDING_REGISTER, 0, 2): [
+            ModbusReadFailure(
+                register_type=ModbusRegisterType.HOLDING_REGISTER,
+                address=0,
+                reason="timeout",
+            ),
+            ModbusReadFailure(
+                register_type=ModbusRegisterType.HOLDING_REGISTER,
+                address=1,
+                reason="timeout",
+            ),
+        ],
+    }
+    transport = _FakeModbusTransport(results_by_range)
+    repo = _FakeDeviceRepository()
+
+    result = await scan_modbus(
+        host="192.168.1.50",
+        port=502,
+        unit_id=1,
+        ranges={ModbusRegisterType.HOLDING_REGISTER: (0, 2)},
+        transport=transport,
+        device_repo=repo,
+    )
+
+    assert result == []
+    assert repo.upsert_device_calls == []
+    assert repo.upsert_candidate_calls == []
+
+
+@pytest.mark.asyncio
+async def test_scan_modbus_segundo_escaneo_actualiza_no_duplica():
+    """RF-002 — un segundo escaneo del mismo dispositivo actualiza (mismo
+    `(protocol, address)`), no duplica."""
+    from services.device_scan_service import scan_modbus
+
+    results_by_range = {
+        (ModbusRegisterType.HOLDING_REGISTER, 0, 1): [
+            ModbusRegisterReading(
+                register_type=ModbusRegisterType.HOLDING_REGISTER, address=0, value=1
+            ),
+        ],
+    }
+    transport = _FakeModbusTransport(results_by_range)
+    repo = _FakeDeviceRepository()
+    kwargs = dict(
+        host="192.168.1.50",
+        port=502,
+        unit_id=1,
+        ranges={ModbusRegisterType.HOLDING_REGISTER: (0, 1)},
+        transport=transport,
+        device_repo=repo,
+    )
+
+    await scan_modbus(**kwargs)
+    await scan_modbus(**kwargs)
+
+    assert len(repo.devices_by_key) == 1

@@ -1,22 +1,25 @@
-"""`routers/devices.py` — `POST /devices/scan/bacnet`, `GET /devices`,
-`GET /devices/{id}/candidates` (adaptador de entrada HTTP,
-`SRV-003-bacnet-adapter`).
+"""`routers/devices.py` — `POST /devices/scan/bacnet`, `POST /devices/scan/
+modbus`, `GET /devices`, `GET /devices/{id}/candidates` (adaptador de entrada
+HTTP, `SRV-003-bacnet-adapter`/`SRV-004-modbus-adapter`).
 
 Contrato: `hira-server/docs/openapi.yaml#/paths/~1devices~1scan~1bacnet`
-(+ `~1devices`, `~1devices~1{id}~1candidates`) — verifica el *shape* exacto de
-200/403/404, incluyendo el sobre RFC 9457 en los errores.
+(+ `~1devices~1scan~1modbus`, `~1devices`, `~1devices~1{id}~1candidates`) —
+verifica el *shape* exacto de 200/400/403/404, incluyendo el sobre RFC 9457
+en los errores.
 
 Golpea la app real de `main.py` vía `TestClient` (mismo patrón que
 `test_auth_router.py`), sustituyendo `UserRepositoryPort`/`CachePort` por
 dobles in-memory vía `app.dependency_overrides` — un login real emite el JWT
-que autentica cada llamada (los 3 endpoints están fuera de `PUBLIC_ALLOWLIST`,
-`core/middleware.py`). `BacnetTransportPort`/`DeviceRepositoryPort` (nuevos de
-esta feature, `adapters/factory.py::get_bacnet_transport_port/
-get_device_repository_port`) también se sustituyen por dobles in-memory
-propios de este archivo, controlando exactamente qué devuelve el escaneo.
+que autentica cada llamada (los endpoints están fuera de `PUBLIC_ALLOWLIST`,
+`core/middleware.py`). `BacnetTransportPort`/`ModbusTransportPort`/
+`DeviceRepositoryPort` (`adapters/factory.py::get_bacnet_transport_port/
+get_modbus_transport_port/get_device_repository_port`) también se sustituyen
+por dobles in-memory propios de este archivo, controlando exactamente qué
+devuelve el escaneo.
 
-Debe fallar antes de T-009 (no existen `routers/devices.py` ni
-`adapters/factory.py::get_bacnet_transport_port`/`get_device_repository_port`).
+Los casos de `POST /devices/scan/modbus` (`SRV-004-modbus-adapter`) deben
+fallar antes de T-008 (no existen el endpoint en `routers/devices.py` ni
+`adapters/factory.py::get_modbus_transport_port`).
 """
 import asyncio
 from dataclasses import dataclass, field
@@ -36,6 +39,11 @@ from core.ports.bacnet_transport_port import (
     BacnetObjectReading,
 )
 from core.ports.device_repository_port import DeviceCandidateRecord, DeviceRecord
+from core.ports.modbus_transport_port import (
+    ModbusReadFailure,
+    ModbusRegisterReading,
+    ModbusRegisterType,
+)
 from core.ports.user_repository_port import UserRecord
 from core.security.passwords import hash_password
 from main import app
@@ -209,15 +217,44 @@ class _FakeDeviceRepository:
         return list(self.candidates_by_device.get(device_id, []))
 
 
+class _FakeModbusTransport:
+    """`ModbusTransportPort` in-memory — controla los resultados de
+    `read_range` por `(register_type, start, count)` para cada test."""
+
+    def __init__(
+        self,
+        results_by_range: dict[
+            tuple[ModbusRegisterType, int, int],
+            list[ModbusRegisterReading | ModbusReadFailure],
+        ]
+        | None = None,
+    ) -> None:
+        self._results_by_range = results_by_range or {}
+
+    async def read_range(
+        self,
+        *,
+        host: str,
+        port: int,
+        unit_id: int,
+        register_type: ModbusRegisterType,
+        start: int,
+        count: int,
+        timeout_seconds: float,
+    ) -> list[ModbusRegisterReading | ModbusReadFailure]:
+        return self._results_by_range.get((register_type, start, count), [])
+
+
 @pytest.fixture
 def make_client(monkeypatch):
     """Factory de `TestClient` parametrizable por usuario/dobles de puertos
-    BACnet — cada test elige su rol y su transporte/repositorio."""
+    BACnet/Modbus — cada test elige su rol y su transporte/repositorio."""
 
     def _make(
         *,
         user: UserRecord,
         transport: _FakeBacnetTransport | None = None,
+        modbus_transport: _FakeModbusTransport | None = None,
         device_repo: _FakeDeviceRepository | None = None,
     ) -> TestClient:
         for key, value in REQUIRED_ENV.items():
@@ -227,16 +264,19 @@ def make_client(monkeypatch):
         user_repo = _FakeUserRepository([user])
         cache = _FakeCache()
         transport = transport or _FakeBacnetTransport()
+        modbus_transport = modbus_transport or _FakeModbusTransport()
         device_repo = device_repo or _FakeDeviceRepository()
 
         from adapters.factory import (
             get_bacnet_transport_port,
             get_device_repository_port,
+            get_modbus_transport_port,
         )
 
         app.dependency_overrides[get_user_repository_port] = lambda: user_repo
         app.dependency_overrides[get_cache_port] = lambda: cache
         app.dependency_overrides[get_bacnet_transport_port] = lambda: transport
+        app.dependency_overrides[get_modbus_transport_port] = lambda: modbus_transport
         app.dependency_overrides[get_device_repository_port] = lambda: device_repo
         monkeypatch.setattr(middleware_module, "get_user_repository_port", lambda: user_repo)
         monkeypatch.setattr(middleware_module, "get_cache_port", lambda: cache)
@@ -404,3 +444,134 @@ def test_list_candidates_visor_403(make_client):
 
     assert response.status_code == 403
     assert response.json()["type"] == "https://hira.dev/errors/insufficient-role"
+
+
+# ── POST /devices/scan/modbus (SRV-004-modbus-adapter) ──────────────────────
+
+
+def test_scan_modbus_admin_200_lista_candidatos_del_escaneo(make_client):
+    """RF-001, RF-002 — Admin dispara el escaneo, 200 con los candidatos
+    nuevos (contrato exacto de `openapi.yaml`)."""
+    modbus_transport = _FakeModbusTransport(
+        {
+            (ModbusRegisterType.HOLDING_REGISTER, 0, 2): [
+                ModbusRegisterReading(
+                    register_type=ModbusRegisterType.HOLDING_REGISTER,
+                    address=0,
+                    value=42,
+                ),
+                ModbusRegisterReading(
+                    register_type=ModbusRegisterType.HOLDING_REGISTER,
+                    address=1,
+                    value=43,
+                ),
+            ]
+        }
+    )
+    client = make_client(user=_make_user(rol="admin"), modbus_transport=modbus_transport)
+
+    response = client.post(
+        "/devices/scan/modbus",
+        json={
+            "host": "192.168.1.50",
+            "port": 502,
+            "unit_id": 1,
+            "holding_registers": {"start": 0, "count": 2},
+        },
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert isinstance(body, list)
+    assert len(body) == 2
+    candidate = body[0]
+    assert set(candidate.keys()) == {
+        "id",
+        "object_type",
+        "object_instance",
+        "object_name",
+        "present_value",
+        "units",
+        "discovered_at",
+        "updated_at",
+    }
+    assert candidate["object_type"] == "holding_register"
+
+
+def test_scan_modbus_sin_ninguna_respuesta_200_lista_vacia(make_client):
+    """RF-007 — sin ninguna dirección exitosa, 200 con lista vacía (no es error)."""
+    client = make_client(user=_make_user(rol="operador"))
+
+    response = client.post(
+        "/devices/scan/modbus",
+        json={
+            "host": "192.168.1.50",
+            "port": 502,
+            "unit_id": 1,
+            "coils": {"start": 0, "count": 1},
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json() == []
+
+
+def test_scan_modbus_visor_403_rfc9457(make_client):
+    """RF-003 — Visor no puede disparar el escaneo."""
+    client = make_client(user=_make_user(rol="visor"))
+
+    response = client.post(
+        "/devices/scan/modbus",
+        json={"host": "192.168.1.50", "port": 502, "unit_id": 1},
+    )
+
+    assert response.status_code == 403
+    assert response.headers["content-type"] == "application/problem+json"
+    body = response.json()
+    assert body["type"] == "https://hira.dev/errors/insufficient-role"
+    assert set(body.keys()) == {"type", "title", "status", "detail"}
+
+
+def test_scan_modbus_rango_mayor_a_125_400_rfc9457(make_client):
+    """RF-004 — rango > 125 direcciones responde 400 con el sobre RFC 9457 y
+    el slug `modbus-range-too-large`.
+
+    `ModbusRangeIn.count` **no** lleva `Field(le=125)`: si lo llevara,
+    Pydantic/FastAPI interceptaría la solicitud con un 422 genérico (sin
+    sobre RFC 9457) **antes** de que `scan_modbus` pudiera ejecutar la
+    validación de negocio — RF-004 exige explícitamente 400, no 422. El
+    `maximum: 125` de `openapi.yaml#/ModbusRegisterRange` es documentación
+    del contrato para clientes/tooling; la validación real y única que
+    determina la respuesta HTTP es la de `services/device_scan_service.py::
+    scan_modbus` (`plan.md §4`: "no se depende únicamente del schema")."""
+    client = make_client(user=_make_user(rol="admin"))
+
+    response = client.post(
+        "/devices/scan/modbus",
+        json={
+            "host": "192.168.1.50",
+            "port": 502,
+            "unit_id": 1,
+            "holding_registers": {"start": 0, "count": 126},
+        },
+    )
+
+    assert response.status_code == 400
+    assert response.headers["content-type"] == "application/problem+json"
+    body = response.json()
+    assert body["type"] == "https://hira.dev/errors/modbus-range-too-large"
+    assert set(body.keys()) == {"type", "title", "status", "detail"}
+
+
+def test_scan_modbus_body_invalido_422(make_client):
+    """Defensa en profundidad de forma (`ModbusRangeIn`/schema): un `port`
+    fuera de rango es rechazado por FastAPI/Pydantic antes de llegar al
+    servicio."""
+    client = make_client(user=_make_user(rol="admin"))
+
+    response = client.post(
+        "/devices/scan/modbus",
+        json={"host": "192.168.1.50", "port": 70000, "unit_id": 1},
+    )
+
+    assert response.status_code == 422

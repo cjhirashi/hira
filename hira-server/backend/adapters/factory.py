@@ -36,6 +36,15 @@ BAC0Adapter` real; T-015/T-016 reemplaza el **cuerpo** de
 PostgreSQLDeviceRepository` real — ambos placeholders retirados (dead code tras
 el reemplazo, ningún test los importaba directamente). Ninguna firma cambió,
 `routers/devices.py` no se toca en estos batches.
+
+`get_modbus_transport_port()` (`SRV-004-modbus-adapter`, `tasks.md` T-008,
+`plan.md §2`/§6 paso 5): nace aquí con un placeholder in-memory trivial
+(`_PlaceholderModbusTransport`, `read_range` siempre retorna `count`
+`ModbusReadFailure` — sin `pymodbus` real, sin importarlo) — mismo patrón
+exacto que `get_bacnet_transport_port()` en su batch de nacimiento. Un batch
+posterior (T-010, fuera de alcance de esta sesión) reemplaza el **cuerpo**
+con `adapters/modbus/pymodbus_adapter.py::PymodbusAdapter` real — la
+**firma no cambia**, `routers/devices.py` no se tocará en ese batch.
 """
 from adapters.bacnet.bac0_adapter import BAC0Adapter
 from adapters.cache.redis_adapter import RedisAdapter
@@ -48,6 +57,12 @@ from core.ports.bacnet_transport_port import BacnetTransportPort
 from core.ports.cache_port import CachePort
 from core.ports.database_port import DatabasePort
 from core.ports.device_repository_port import DeviceRepositoryPort
+from core.ports.modbus_transport_port import (
+    ModbusReadFailure,
+    ModbusRegisterReading,
+    ModbusRegisterType,
+    ModbusTransportPort,
+)
 from core.ports.notification_port import NotificationPort
 from core.ports.user_repository_port import UserRepositoryPort
 
@@ -57,6 +72,35 @@ _notification_port: NotificationPort | None = None
 _user_repository_port: UserRepositoryPort | None = None
 _bacnet_transport_port: BacnetTransportPort | None = None
 _device_repository_port: DeviceRepositoryPort | None = None
+_modbus_transport_port: ModbusTransportPort | None = None
+
+
+class _PlaceholderModbusTransport:
+    """`ModbusTransportPort` in-memory trivial (`SRV-004-modbus-adapter`,
+    T-008) — sin `pymodbus` real. `read_range` siempre retorna `count`
+    `ModbusReadFailure` (ninguna dirección responde); reemplazado por
+    `adapters/modbus/pymodbus_adapter.py::PymodbusAdapter` en un batch
+    posterior (T-010), fuera de alcance aquí."""
+
+    async def read_range(
+        self,
+        *,
+        host: str,
+        port: int,
+        unit_id: int,
+        register_type: ModbusRegisterType,
+        start: int,
+        count: int,
+        timeout_seconds: float,
+    ) -> list[ModbusRegisterReading | ModbusReadFailure]:
+        return [
+            ModbusReadFailure(
+                register_type=register_type,
+                address=start + offset,
+                reason="PymodbusAdapter real aún no implementado (placeholder in-memory, T-008)",
+            )
+            for offset in range(count)
+        ]
 
 
 def get_database_port() -> DatabasePort:
@@ -120,3 +164,15 @@ def get_device_repository_port() -> DeviceRepositoryPort:
     if _device_repository_port is None:
         _device_repository_port = PostgreSQLDeviceRepository(Settings().database_url)
     return _device_repository_port
+
+
+def get_modbus_transport_port() -> ModbusTransportPort:
+    """Único punto de selección de la implementación de `ModbusTransportPort`
+    (`SRV-004-modbus-adapter`, RF-001, RF-002, RF-005, RF-008). Nace con
+    `_PlaceholderModbusTransport` (sin `pymodbus` real, T-008); T-010
+    (fuera de alcance de esta sesión) reemplaza el cuerpo con
+    `PymodbusAdapter` real."""
+    global _modbus_transport_port
+    if _modbus_transport_port is None:
+        _modbus_transport_port = _PlaceholderModbusTransport()
+    return _modbus_transport_port
