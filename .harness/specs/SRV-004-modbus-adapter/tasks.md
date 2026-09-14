@@ -86,48 +86,59 @@ actualizado: 2026-09-14
       > 422) con el sobre RFC 9457 exacto.
 
 ### Adaptador Modbus real — integración sin hardware
-- [ ] T-009 — Test `tests/integration/test_pymodbus_adapter.py` (requiere un
+- [x] T-009 — Test `tests/integration/test_pymodbus_adapter.py` (requiere un
       servidor `pymodbus` TCP real en el propio test, con registros de
       prueba cargados) (debe fallar) (cubre RF-001, RF-002, RF-005, RF-008)
       [zona: test-adaptadores]
-- [ ] T-010 — Implementar `adapters/modbus/pymodbus_adapter.py::
+
+      > Verificado con ejecución real que `pymodbus==3.15.0` (última en
+      > PyPI al momento de esta tarea) sigue exigiendo la API nueva
+      > (`pymodbus.simulator.simdata.SimData`/`simdevice.SimDevice`) — la
+      > API "clásica" (`ModbusServerContext`/`ModbusDeviceContext`) sigue
+      > rota en esta versión (confirma `plan.md §5`). `retries=0` medido de
+      > nuevo: timeout real ≈1.002s (spike aislado) / ≈1.103s (evidencia de
+      > terminal del test real, incluye overhead de logging/asserts).
+- [x] T-010 — Implementar `adapters/modbus/pymodbus_adapter.py::
       PymodbusAdapter` + `pymodbus==3.15.0` en `requirements.txt` — reemplaza
       el **cuerpo** (no la firma) de `adapters/factory.py::
       get_modbus_transport_port()` (cubre RF-001, RF-002, RF-005, RF-008)
       [zona: adaptadores]
 
 ### Sistema — verificación e2e
-- [ ] T-011 — Ampliar `tests/integration/test_devices_scan_e2e.py`
+- [x] T-011 — Ampliar `tests/integration/test_devices_scan_e2e.py`
       (contenedores reales + servidor `pymodbus` real): recorrido completo
       `POST /devices/scan/modbus` → `GET /devices` → `GET /devices/{id}/
       candidates`, RNF-001 medido con evidencia real (debe fallar antes de
       T-010, pasa después) (cubre RF-001, RF-002, RF-003, RF-004, RF-005,
       RF-007, RNF-001) [zona: sistema-e2e]
 
+      > Evidencia real de tiempo (RNF-001): escaneo completo vía HTTP (3
+      > holding registers reales, Postgres real) tardó 0.193s.
+
 ### Documentación (`plan.md §8`) — puede correr en paralelo desde T-001
-- [ ] T-012 — Actualizar `docs/hira-server/spec/modules/dispositivos-
+- [x] T-012 — Actualizar `docs/hira-server/spec/modules/dispositivos-
       protocolos-puntos.md`: ampliar la nota de estado de implementación ya
       existente de `SRV-003` para incluir Modbus TCP (sondeo de rangos +
       candidatos) [doc]
 
 ### Higiene de repo
-- [ ] T-013 — `hira-server/backend/adapters/modbus/README.md` (nuevo) +
+- [x] T-013 — `hira-server/backend/adapters/modbus/README.md` (nuevo) +
       ampliar `adapters/README.md` (añade la función nueva de `factory.py`
       a su historial) [zona: infra]
 
 ## Cobertura (el gate exige 100 %; `Estado` lo rellena el gate)
 | RF / doc | Tareas | Test(s) | Estado |
 |---|---|---|---|
-| RF-001 | T-004, T-005, T-007, T-008, T-009, T-010, T-011 | `test_device_scan_service.py`, `test_devices_router.py`, `test_pymodbus_adapter.py`, `test_devices_scan_e2e.py` | Pendiente |
-| RF-002 | T-001, T-002, T-004, T-005, T-009, T-010, T-011 | `test_modbus_address.py`, `test_device_scan_service.py`, `test_pymodbus_adapter.py`, `test_devices_scan_e2e.py` | Pendiente |
-| RF-003 | T-007, T-008, T-011 | `test_devices_router.py`, `test_devices_scan_e2e.py` | Pendiente |
-| RF-004 | T-004, T-005, T-006, T-007, T-008, T-011 | `test_device_scan_service.py`, `test_devices_router.py`, `test_devices_scan_e2e.py` | Pendiente |
-| RF-005 | T-004, T-005, T-009, T-010, T-011 | `test_device_scan_service.py`, `test_pymodbus_adapter.py`, `test_devices_scan_e2e.py` | Pendiente |
+| RF-001 | T-004, T-005, T-007, T-008, T-009, T-010, T-011 | `test_device_scan_service.py`, `test_devices_router.py`, `test_pymodbus_adapter.py`, `test_devices_scan_e2e.py` | Pass |
+| RF-002 | T-001, T-002, T-004, T-005, T-009, T-010, T-011 | `test_modbus_address.py`, `test_device_scan_service.py`, `test_pymodbus_adapter.py`, `test_devices_scan_e2e.py` | Pass |
+| RF-003 | T-007, T-008, T-011 | `test_devices_router.py`, `test_devices_scan_e2e.py` | Pass |
+| RF-004 | T-004, T-005, T-006, T-007, T-008, T-011 | `test_device_scan_service.py`, `test_devices_router.py`, `test_devices_scan_e2e.py` | Pass |
+| RF-005 | T-004, T-005, T-009, T-010, T-011 | `test_device_scan_service.py`, `test_pymodbus_adapter.py`, `test_devices_scan_e2e.py` | Pass |
 | RF-006 | T-004, T-005 | `test_device_scan_service.py` (ausencia de escritura a tabla de puntos operables) | Pass |
-| RF-007 | T-004, T-005, T-006, T-007, T-008, T-011 | `test_device_scan_service.py`, `test_devices_router.py`, `test_devices_scan_e2e.py` | Pendiente |
-| RF-008 | T-009, T-010 | `test_pymodbus_adapter.py` | Pendiente |
-| RNF-001 | T-004, T-005, T-011 | `test_device_scan_service.py`, `test_devices_scan_e2e.py` | Pendiente |
-| doc: dispositivos-protocolos-puntos.md | T-012 | — | Pendiente |
+| RF-007 | T-004, T-005, T-006, T-007, T-008, T-011 | `test_device_scan_service.py`, `test_devices_router.py`, `test_devices_scan_e2e.py` | Pass |
+| RF-008 | T-009, T-010 | `test_pymodbus_adapter.py` | Pass |
+| RNF-001 | T-004, T-005, T-011 | `test_device_scan_service.py`, `test_devices_scan_e2e.py` | Pass |
+| doc: dispositivos-protocolos-puntos.md | T-012 | — | Hecho |
 
 > Esta tabla **es** la trazabilidad de la feature (no hay `traceability-matrix.md`).
 > Fila sin test, en `Fail` o `Pendiente` → el gate no abre.

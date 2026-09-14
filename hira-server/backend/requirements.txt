@@ -29,3 +29,9 @@ alembic==1.14.0
 # (0.0.106 al momento de fijar esta versión) — sin pinearla aparte salvo que
 # un futuro conflicto lo exija (`plan.md §2`, Registro de decisiones).
 BAC0==2026.7.25
+
+# Adaptador Modbus TCP real (`SRV-004-modbus-adapter`, T-009/T-010, `plan.md
+# §2`) — solo `adapters/modbus/pymodbus_adapter.py` importa `pymodbus`
+# (`SRV-ADR-017`). Última versión disponible en PyPI al fijarla, verificada
+# con ejecución real (`SimDevice`/`SimData`, ver `plan.md §5`).
+pymodbus==3.15.0

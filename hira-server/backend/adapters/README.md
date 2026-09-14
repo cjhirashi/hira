@@ -38,3 +38,15 @@ bac0_adapter.py::BAC0Adapter` real (`_PlaceholderBacnetTransport` retirado).
 `adapters/db/device_repository_adapter.py::PostgreSQLDeviceRepository`
 (T-015/T-016, fuera de alcance de este batch) reemplaza el cuerpo de
 `get_device_repository_port()` — ninguna firma cambia.
+
+- `modbus/` — `pymodbus_adapter.py::PymodbusAdapter` implementa
+  `ModbusTransportPort` (`pymodbus` real, ver su propio README).
+
+`get_modbus_transport_port()` (`SRV-004-modbus-adapter`) es una 7ª función de
+`factory.py`, mismo patrón: nació (T-008) con `_PlaceholderModbusTransport`
+(`read_range` siempre retorna `count` `ModbusReadFailure`, sin `pymodbus`
+real). T-009/T-010 reemplazó el cuerpo con `adapters/modbus/
+pymodbus_adapter.py::PymodbusAdapter` real (`_PlaceholderModbusTransport`
+retirado, dead code tras el reemplazo — ningún test la importaba
+directamente) — ninguna firma cambia, `routers/devices.py` no se tocó en
+este batch.

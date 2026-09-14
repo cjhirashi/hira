@@ -1,6 +1,14 @@
 """E2E real — `POST /devices/scan/bacnet` → `GET /devices` → `GET /devices/
 {id}/candidates` (`SRV-003-bacnet-adapter`, T-017, `plan.md §5`/§6 paso 12).
 
+Ampliado en `SRV-004-modbus-adapter` (T-011, `plan.md §5`/§6 paso 7) con el
+caso análogo para `POST /devices/scan/modbus` — mismo recorrido completo
+(`POST /devices/scan/modbus` → `GET /devices` → `GET /devices/{id}/
+candidates`), con un servidor Modbus TCP real (`pymodbus.server.
+ModbusTcpServer` + `pymodbus.simulator.SimDevice`/`SimData`, mismo servidor
+de `tests/integration/test_pymodbus_adapter.py`) en vez de `BAC0.lite()`. El
+caso de BACnet de arriba **no se toca**.
+
 Recorrido completo con infraestructura real: una instancia real de
 `BAC0.lite()` actúa de "dispositivo" (2 objetos BACnet reales, igual que
 `tests/integration/test_bac0_adapter.py`); la app real de `main.py` usa un
@@ -45,6 +53,7 @@ responda (ya cubierto por RF-008 en `tests/test_device_scan_service.py`/
 `tests/test_devices_router.py`).
 """
 import asyncio
+import logging
 import os
 import time
 from unittest.mock import AsyncMock
@@ -53,6 +62,9 @@ import httpx
 import pytest
 from bacpypes3.local.analog import AnalogValueObject
 from bacpypes3.local.binary import BinaryValueObject
+from pymodbus.server import ModbusTcpServer
+from pymodbus.simulator.simdata import DataType, SimData
+from pymodbus.simulator.simdevice import SimDevice
 
 import core.middleware as middleware_module
 import main as main_module
@@ -62,13 +74,19 @@ from adapters.factory import (
     get_bacnet_transport_port,
     get_cache_port,
     get_device_repository_port,
+    get_modbus_transport_port,
     get_user_repository_port,
 )
+from adapters.modbus.pymodbus_adapter import PymodbusAdapter
 from adapters.mqtt.mosquitto_adapter import MosquittoAdapter
 from core.ports.user_repository_port import UserRecord
 from core.security.passwords import hash_password
 from main import app
 from models.device_model import device_points_candidates_table, devices_table
+
+# Silencia el tráfico TCP crudo (`>>>>> send/recv`) que `pymodbus` emite en
+# `INFO` — mismo criterio que `tests/integration/test_pymodbus_adapter.py`.
+logging.getLogger("pymodbus").setLevel(logging.WARNING)
 
 pytestmark = pytest.mark.integration
 
@@ -278,4 +296,194 @@ async def test_scan_bacnet_e2e_real_bac0_and_postgres(monkeypatch):
         await bacnet_adapter.disconnect()
         await device.disconnect()
         await device_repo.close()
+        await _reset_device_tables()
+
+
+async def _make_simulated_modbus_device(port: int, unit_id: int = 1) -> ModbusTcpServer:
+    """Servidor Modbus TCP real (`pymodbus`) — infraestructura de test, mismo
+    criterio que `tests/integration/test_pymodbus_adapter.py`. 3 holding
+    registers con valores conocidos, suficiente para verificar el recorrido
+    e2e (RF-001, RF-002) sin repetir la cobertura ya exhaustiva de los 4
+    tipos de registro que hace el test de adaptador."""
+    holding_registers = [SimData(address=0, count=3, values=42, datatype=DataType.UINT16)]
+    # `SimDevice` exige al menos un `SimData` por bloque — los 3 bloques no
+    # ejercitados por este test se cargan lejos (`address=900`) del rango
+    # `0-1` que usa el caso RF-007 ("ninguna dirección respondió"), para que
+    # ese caso siga siendo un fallo real, no un acierto accidental.
+    far_away = [SimData(address=900, count=1, values=0, datatype=DataType.BITS)]
+    far_away_registers = [SimData(address=900, count=1, values=0, datatype=DataType.UINT16)]
+    device = SimDevice(
+        id=unit_id,
+        simdata=(far_away, far_away, holding_registers, far_away_registers),
+    )
+    server = ModbusTcpServer(context=device, address=("127.0.0.1", port))
+    server._test_task = asyncio.create_task(server.serve_forever())  # noqa: SLF001
+    await asyncio.sleep(0.3)
+    return server
+
+
+async def _shutdown_modbus_server(server: ModbusTcpServer) -> None:
+    await server.shutdown()
+    await asyncio.wait_for(server._test_task, timeout=3.0)  # noqa: SLF001
+
+
+@pytest.mark.asyncio
+async def test_scan_modbus_e2e_real_pymodbus_and_postgres(monkeypatch):
+    """RF-001, RF-002, RF-003, RF-004, RF-005, RF-007, RNF-001 — recorrido
+    completo `POST /devices/scan/modbus` → `GET /devices` → `GET /devices/
+    {id}/candidates` con `PymodbusAdapter`/`PostgreSQLDeviceRepository`
+    reales (servidor `pymodbus` real de arriba, Postgres real)."""
+    await _reset_device_tables()
+
+    modbus_port = 15600
+    server = await _make_simulated_modbus_device(modbus_port)
+    modbus_adapter = PymodbusAdapter()
+    device_repo = PostgreSQLDeviceRepository(DATABASE_URL)
+
+    for key, value in REQUIRED_ENV.items():
+        monkeypatch.setenv(key, value)
+    monkeypatch.setattr(MosquittoAdapter, "connect", AsyncMock(return_value=None))
+
+    user = UserRecord(
+        id="user-1",
+        email="admin@hira.dev",
+        password_hash=hash_password("Correcto123!"),
+        rol="admin",
+        scope="global",
+        project_id=None,
+        activo=True,
+    )
+    user_repo = _FakeUserRepository([user])
+    cache = _FakeCache()
+
+    app.dependency_overrides[get_user_repository_port] = lambda: user_repo
+    app.dependency_overrides[get_cache_port] = lambda: cache
+    app.dependency_overrides[get_modbus_transport_port] = lambda: modbus_adapter
+    app.dependency_overrides[get_device_repository_port] = lambda: device_repo
+    monkeypatch.setattr(middleware_module, "get_user_repository_port", lambda: user_repo)
+    monkeypatch.setattr(middleware_module, "get_cache_port", lambda: cache)
+    monkeypatch.setattr(main_module, "get_cache_port", lambda: cache)
+
+    try:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(
+            transport=transport, base_url="http://testserver"
+        ) as client:
+            login_response = await client.post(
+                "/auth/login",
+                json={"email": user.email, "password": "Correcto123!"},
+            )
+            assert login_response.status_code == 200
+            access_token = login_response.json()["access_token"]
+            client.headers.update({"Authorization": f"Bearer {access_token}"})
+
+            # RF-004 — rango > 125 rechazado con 400 antes de leer nada.
+            too_large_response = await client.post(
+                "/devices/scan/modbus",
+                json={
+                    "host": "127.0.0.1",
+                    "port": modbus_port,
+                    "unit_id": 1,
+                    "holding_registers": {"start": 0, "count": 126},
+                },
+            )
+            assert too_large_response.status_code == 400
+            assert (
+                too_large_response.json()["type"]
+                == "https://hira.dev/errors/modbus-range-too-large"
+            )
+
+            start = time.monotonic()
+            scan_response = await client.post(
+                "/devices/scan/modbus",
+                json={
+                    "host": "127.0.0.1",
+                    "port": modbus_port,
+                    "unit_id": 1,
+                    "holding_registers": {"start": 0, "count": 3},
+                },
+            )
+            elapsed = time.monotonic() - start
+
+            assert scan_response.status_code == 200
+            scanned_candidates = scan_response.json()
+            assert len(scanned_candidates) == 3
+            for candidate in scanned_candidates:
+                assert candidate["object_type"] == "holding_register"
+                assert candidate["present_value"] == "42"
+
+            # RNF-001 — 3 lecturas reales sobre localhost, muy por debajo de
+            # cualquier ventana de timeout (1s/dirección, RF-008) — todas
+            # respondieron, no hubo timeouts que sumar.
+            print(
+                f"\nRNF-001 evidencia real: escaneo Modbus (3 holding "
+                f"registers reales) tardó {elapsed:.3f}s"
+            )
+            assert elapsed < 1.0, f"escaneo tardó {elapsed:.2f}s (RNF-001)"
+
+            # `DeviceCandidateOut` (RF-007, `plan.md` Registro de decisiones)
+            # no expone `device_id` — se resuelve vía `GET /devices`, mismo
+            # criterio que cualquier cliente real del endpoint.
+            devices_response = await client.get("/devices")
+            assert devices_response.status_code == 200
+            listed = devices_response.json()
+            modbus_devices = [d for d in listed if d["protocol"] == "modbus"]
+            assert len(modbus_devices) == 1
+            assert modbus_devices[0]["address"] == f"127.0.0.1:{modbus_port}:1"
+            device_id = modbus_devices[0]["id"]
+
+            candidates_response = await client.get(f"/devices/{device_id}/candidates")
+            assert candidates_response.status_code == 200
+            candidates = candidates_response.json()
+            assert len(candidates) == 3
+            assert {c["object_instance"] for c in candidates} == {0, 1, 2}
+
+            # RF-007 — rango sin ninguna dirección cargada → 200 con lista
+            # vacía (no es un error), sin crear un segundo dispositivo.
+            empty_scan_response = await client.post(
+                "/devices/scan/modbus",
+                json={
+                    "host": "127.0.0.1",
+                    "port": modbus_port,
+                    "unit_id": 1,
+                    "coils": {"start": 0, "count": 2},
+                },
+            )
+            assert empty_scan_response.status_code == 200
+            assert empty_scan_response.json() == []
+
+            # RF-003 — Visor recibe 403 (segundo usuario in-memory, rol Visor).
+            viewer = UserRecord(
+                id="user-2",
+                email="visor@hira.dev",
+                password_hash=hash_password("Correcto123!"),
+                rol="visor",
+                scope="global",
+                project_id=None,
+                activo=True,
+            )
+            user_repo._by_email[viewer.email] = viewer  # noqa: SLF001 — doble de test
+            user_repo._by_id[viewer.id] = viewer  # noqa: SLF001
+            viewer_login_response = await client.post(
+                "/auth/login",
+                json={"email": viewer.email, "password": "Correcto123!"},
+            )
+            assert viewer_login_response.status_code == 200
+            viewer_token = viewer_login_response.json()["access_token"]
+
+            viewer_scan_response = await client.post(
+                "/devices/scan/modbus",
+                headers={"Authorization": f"Bearer {viewer_token}"},
+                json={
+                    "host": "127.0.0.1",
+                    "port": modbus_port,
+                    "unit_id": 1,
+                    "holding_registers": {"start": 0, "count": 1},
+                },
+            )
+            assert viewer_scan_response.status_code == 403
+    finally:
+        app.dependency_overrides.clear()
+        await device_repo.close()
+        await _shutdown_modbus_server(server)
         await _reset_device_tables()
