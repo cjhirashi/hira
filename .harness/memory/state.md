@@ -104,13 +104,12 @@ actualizado: 2026-09-13
   Sprint 3/4 de `ROADMAP.md` — ver detalle en `SRV-003-bacnet-adapter/spec.md
   §6`). `ROADMAP.md` cita `VUL-SRV-001` como ancla de este sprint — ya
   resuelto en `SRV-001`, referencia obsoleta, no bloquea.
-- **`SRV-003-bacnet-adapter`** (primera de las 4, BACnet): `estado:
-  implemented`, 19/19 tareas, ancla en `ad10ac91880083f3a5cb793f8f4de98ec2ac3827`.
-  Escaneo Who-Is/I-Am + candidatos crudos, verificado con 2 instancias BAC0
-  reales por UDP (sin hardware) + Postgres real. 1 rebote (protocolo de
-  cierre, no técnico). Detalle en su entrada Session-End de `memory/history.md`.
-- **Pendiente de tu confirmación:** ¿`SRV-003-bacnet-adapter` pasa a `estado:
-  verified` (Gate 4)? El orquestador no se autoaprueba.
-- **Siguiente paso:** Modbus, MQTT-scanning, o Simuladores (las otras 3 del
-  grupo) — o retomar otro track (`HUB-H1`, gestión de licencias). A decidir
-  con el usuario.
+- **`SRV-003-bacnet-adapter`** (primera de las 4, BACnet): `estado: verified`
+  (Carlos, Gate 4). 19/19 tareas, ancla en
+  `ad10ac91880083f3a5cb793f8f4de98ec2ac3827`. Escaneo Who-Is/I-Am + candidatos
+  crudos, verificado con 2 instancias BAC0 reales por UDP (sin hardware) +
+  Postgres real. Detalle en su entrada Session-End de `memory/history.md`.
+- **Siguiente paso:** `SRV-004-modbus-adapter` (segunda del grupo de
+  protocolos) — escaneo de rangos de registros configurables vía `pymodbus`,
+  mismo patrón que BACnet (candidatos crudos, sin asociación explícita, sin
+  lock todavía). Aplicar `method.md §2` y Fase 1 con `autor-de-spec`.

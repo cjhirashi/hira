@@ -2,7 +2,7 @@
 id: TASKS-SRV-003
 tipo: tasks
 feature: SRV-003-bacnet-adapter
-estado: implemented
+estado: verified
 actualizado: 2026-09-14
 ---
 

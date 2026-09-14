@@ -2,7 +2,7 @@
 id: SPEC-SRV-003
 tipo: spec
 feature: SRV-003-bacnet-adapter
-estado: implemented
+estado: verified
 anchor_commit: ad10ac91880083f3a5cb793f8f4de98ec2ac3827
 anchor_mode: strict
 covers:
