@@ -2,9 +2,9 @@
 id: SPEC-SRV-004
 tipo: spec
 feature: SRV-004-modbus-adapter
-estado: approved
-anchor_commit: ‹pendiente›
-anchor_mode: advisory
+estado: implemented
+anchor_commit: 089b1e0d59d455a0dd71ab769b6c1fd9a682ed2b
+anchor_mode: strict
 covers:
   - hira-server/backend/**
   - hira-server/docs/openapi.yaml

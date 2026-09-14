@@ -2,7 +2,7 @@
 id: PLAN-SRV-004
 tipo: plan
 feature: SRV-004-modbus-adapter
-estado: approved
+estado: implemented
 aprobaciones:
   fase_2: { por: "Carlos", fecha: 2026-09-14 }
 actualizado: 2026-09-14

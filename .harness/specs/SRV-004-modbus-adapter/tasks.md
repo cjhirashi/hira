@@ -2,7 +2,7 @@
 id: TASKS-SRV-004
 tipo: tasks
 feature: SRV-004-modbus-adapter
-estado: draft
+estado: implemented
 actualizado: 2026-09-14
 ---
 
