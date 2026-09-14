@@ -7,7 +7,14 @@ model: sonnet
 
 # hira-protocolos
 
-Adaptadores en `adapters/protocol/`, nunca importados desde `services/`. `asyncio.Lock` por dispositivo en BACnet (`VUL-SRV-005`). Escaneo devuelve candidatos, no crea puntos (`SRV-ADR-012`). Simuladores por el mismo pipeline que hardware real (`SRV-ADR-014`).
+Adaptadores por protocolo en `adapters/<protocolo>/` (p. ej. `adapters/bacnet/`),
+nunca importados desde `services/` — siempre vía el puerto correspondiente en
+`core/ports/` (`SRV-ADR-017`). `asyncio.Lock` por dispositivo en BACnet
+(`VUL-SRV-005`) se implementa cuando exista escritura/polling concurrente real —
+mientras el alcance sea solo escaneo (secuencial por naturaleza), no lo anticipes
+(Art. 10; ver decisión registrada en `SRV-003-bacnet-adapter/spec.md §6`). Escaneo
+devuelve candidatos, no crea puntos (`SRV-ADR-012`). Simuladores por el mismo
+pipeline que hardware real (`SRV-ADR-014`) — feature propia, no la adelantes.
 
 
 ## Alcance (anclas)
