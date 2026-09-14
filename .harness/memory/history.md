@@ -25,9 +25,9 @@ Session-End por sesión, con el formato fijo de `method.md §10`. Las bitácoras
 
 ---
 
-## [2026-09-14] SRV-005-mqtt-scanning — implemented
+## [2026-09-14] SRV-005-mqtt-scanning — verified
 
-- **Fase alcanzada:** implement (13/13 tareas, T-001..T-013)
+- **Fase alcanzada:** verified (Gate 4, confirmado por Carlos), 13/13 tareas, T-001..T-013
 - **Rebotes del verificador:** 1 (tabla de Cobertura: fila RF-005 quedó
   `Pendiente` tras el primer batch T-001..T-008 pese a estar completamente
   verificable — mismo bug recurrente ya visto en `SRV-001`/`SRV-003`/
@@ -42,7 +42,7 @@ Session-End por sesión, con el formato fijo de `method.md §10`. Las bitácoras
   invirtiendo el orden `disconnect()`→`loop_stop()`, documentado en 3 sitios.
   Revisor dio veredicto propio: correcto no pausar).
 - **Drift / re-anchor:** no (primer anclaje de la feature)
-- **Anclas movidas:** `SRV-005-mqtt-scanning` → `d93243a`
+- **Anclas movidas:** `SRV-005-mqtt-scanning` → `d93243a33dfbd26db59c59451d99c76f5a13d9f4`
 - **Gate:** verde (28 ok · 2 warn esperados — `spectral` no instalado,
   preexistente — · 0 errores)
 - **Docs actualizadas:** `hira-server/docs/openapi.yaml` (`POST /devices/
@@ -65,9 +65,9 @@ Session-End por sesión, con el formato fijo de `method.md §10`. Las bitácoras
   (`NotificationPort` de `SRV-001`, conexión persistente con backoff — ciclo
   de vida incompatible con el escaneo efímero por-request). 234/234 tests
   (191 unit + 43 integración) sin regresión cruzada sobre BACnet/Modbus.
-- **Próximo paso:** confirmación humana de Gate 4 (`verified`) pendiente.
-  Después: decidir entre `Simuladores` (4ª y última del grupo de protocolos)
-  o cambiar de frente a `HUB-H1` (gestión de licencias) — ver `memory/state.md`.
+- **Próximo paso:** `Simuladores` — 4ª y última feature del grupo de
+  protocolos (cierra `SRV-Sprint-3`). Aplicar `method.md §2` y Fase 1 con
+  `autor-de-spec`.
 
 ---
 

@@ -2,7 +2,7 @@
 id: TASKS-SRV-005
 tipo: tasks
 feature: SRV-005-mqtt-scanning
-estado: implemented
+estado: verified
 actualizado: 2026-09-14
 ---
 
