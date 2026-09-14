@@ -30,3 +30,14 @@ y `core/errors.py` — nunca de `adapters/` directamente ni de FastAPI (regla de
   actualiza el rol y **luego** invalida el cache, en ese orden fijo (RF-006). Sin
   router HTTP en este sprint (`spec.md §2`) — invocable por un futuro endpoint/CLI
   de administración.
+- `device_scan_service.py::scan_bacnet(transport, device_repo)`
+  (`SRV-003-bacnet-adapter`, RF-001, RF-002, RF-006, RF-007, RF-008, RNF-001) —
+  Who-Is (`WHOIS_TIMEOUT_SECONDS=3.0`, RF-001); sin ningún I-Am, retorna `[]`
+  sin tocar el repositorio (RF-008). Por cada I-Am, lee objetos en paralelo
+  (`asyncio.gather`, RNF-001) con `READ_TIMEOUT_SECONDS=2.0` (RF-010); un
+  dispositivo que no responde a la lectura (`BacnetReadTimeoutError`) se loguea
+  y no aborta el resto del escaneo (RF-006) — queda persistido con
+  `last_seen_at` actualizado, sin candidatos nuevos en ese escaneo. Persiste
+  dispositivo+candidatos vía `DeviceRepositoryPort` (RF-002). Nunca escribe en
+  una tabla de puntos operables (RF-007, `SRV-ADR-012`) — no importa ningún
+  `PointsRepositoryPort`, que no existe todavía.

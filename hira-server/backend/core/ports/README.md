@@ -26,3 +26,22 @@ Implementaciones concretas (`adapters/db/postgresql_adapter.py`,
 `adapters/db/user_repository_adapter.py`) pendientes de batches posteriores de
 `tasks.md` (T-019/T-020, T-022 para el Walking Skeleton; T-024/T-025 para
 `UserRepositoryPort`).
+
+Puertos de `SRV-003-bacnet-adapter`:
+
+- `bacnet_transport_port.py` — `BacnetTransportPort` (`who_is`,
+  `read_device_objects`) + `BacnetDeviceAnnouncement`/`BacnetObjectReading`
+  (dataclasses) + `BacnetReadTimeoutError`. Transporte BACnet/IP — ningún tipo
+  de `BAC0`/`bacpypes3` cruza a `services/` (`plan.md §2`, Registro de
+  decisiones). Sin test propio.
+- `device_repository_port.py` — `DeviceRepositoryPort` (`upsert_device`,
+  `list_devices`, `get_device`, `upsert_candidate`,
+  `list_candidates_for_device`) + `DeviceRecord`/`DeviceCandidateRecord`
+  (dataclasses). Repositorio de dominio de dispositivos/candidatos, distinto de
+  `DatabasePort` y de `UserRepositoryPort` — mismo criterio ya registrado en
+  `SRV-002-auth-rbac/plan.md`. Sin test propio.
+
+Implementaciones concretas de `SRV-003-bacnet-adapter`
+(`adapters/bacnet/bac0_adapter.py::BAC0Adapter`, `adapters/db/
+device_repository_adapter.py::PostgreSQLDeviceRepository`) fuera de alcance de
+este batch (T-013..T-016 de `tasks.md`).

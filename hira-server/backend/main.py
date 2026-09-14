@@ -25,6 +25,10 @@ T-017/T-018) se registra aquí, junto con el exception handler de
 `core.errors.ProblemDetailError` → `schemas.errors.ProblemDetail` (RFC 9457,
 `media_type="application/problem+json"`, `plan.md §2`/§4).
 
+`routers/devices.py::POST /devices/scan/bacnet|GET /devices|GET /devices/{id}/
+candidates` (`SRV-003-bacnet-adapter`, T-009) se registra aquí — sin tarea de
+fondo nueva ni cambios al `lifespan` (el escaneo es síncrono a la petición).
+
 `AuthenticationMiddleware` (T-019/T-020, RF-003/RF-007) se registra **antes** que
 `CorrelationIdMiddleware` en el código de abajo — a propósito, no es un desliz:
 Starlette envuelve el middleware añadido **último** como el más externo (se
@@ -59,6 +63,7 @@ from core.errors import ProblemDetailError
 from core.logger import get_logger
 from core.middleware import AuthenticationMiddleware, CorrelationIdMiddleware
 from routers.auth import router as auth_router
+from routers.devices import router as devices_router
 from routers.monitor import router as monitor_router
 from schemas.errors import ProblemDetail
 from services.rbac_service import run_invalidation_subscriber
@@ -112,6 +117,7 @@ app.add_middleware(AuthenticationMiddleware)
 app.add_middleware(CorrelationIdMiddleware)
 app.include_router(monitor_router)
 app.include_router(auth_router)
+app.include_router(devices_router)
 
 
 @app.exception_handler(ProblemDetailError)

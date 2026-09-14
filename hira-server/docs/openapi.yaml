@@ -5,10 +5,13 @@ info:
     Contrato interno de `hira-server` (Contract-First, `SRV-ADR-017`). Desde
     `SRV-001-walking-skeleton` expone `GET /health`; `SRV-002-auth-rbac` añade
     `POST /auth/login|refresh|logout` (autenticación JWT + RBAC de 3 roles fijos,
-    `SRV-ADR-005`). El sobre de error de los endpoints de negocio sigue RFC 9457
-    (`ProblemDetail`, `E-ADR-003`) — `GET /health` es la única excepción (endpoint
-    de monitoreo, siempre HTTP 200, ver su descripción).
-  version: "0.2.0"
+    `SRV-ADR-005`); `SRV-003-bacnet-adapter` añade `POST /devices/scan/bacnet`,
+    `GET /devices`, `GET /devices/{id}/candidates` (escaneo BACnet/IP Who-Is/
+    I-Am y persistencia de candidatos crudos, `SRV-ADR-012`). El sobre de error
+    de los endpoints de negocio sigue RFC 9457 (`ProblemDetail`, `E-ADR-003`) —
+    `GET /health` es la única excepción (endpoint de monitoreo, siempre HTTP
+    200, ver su descripción).
+  version: "0.3.0"
 paths:
   /auth/login:
     post:
@@ -127,6 +130,120 @@ paths:
       responses:
         "204":
           description: Refresh token revocado (o ya no vigente) — sin contenido.
+  /devices/scan/bacnet:
+    post:
+      operationId: scanBacnetDevices
+      summary: Escanea la red BACnet/IP (Who-Is/I-Am) y persiste candidatos
+      description: >
+        RF-001, RF-002, RF-006, RF-008 (`.harness/specs/SRV-003-bacnet-adapter/
+        spec.md`). Emite un Who-Is broadcast y espera respuestas I-Am durante 3
+        segundos; por cada dispositivo que responde, lee su lista de objetos
+        (timeout de 2 segundos) y persiste/actualiza el dispositivo en
+        `devices` y sus puntos crudos en `device_points_candidates` — nunca
+        promueve un candidato a una tabla de puntos operables (`SRV-ADR-012`).
+        Un dispositivo que no responde a la lectura de objetos se registra
+        (log) y no aborta el resto del escaneo (RF-006). Sin ningún I-Am,
+        responde 200 con una lista vacía (RF-008, no es un error). Requiere rol
+        Admin u Operador (RF-003).
+      tags:
+        - devices
+      responses:
+        "200":
+          description: >
+            Dispositivos tocados por este escaneo (puede ser `[]` si nadie
+            respondió, RF-008).
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DeviceOut"
+        "403":
+          description: Rol Visor invocando el escaneo (RF-003).
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+              examples:
+                insufficient_role:
+                  value:
+                    type: "https://hira.dev/errors/insufficient-role"
+                    title: "Rol insuficiente"
+                    status: 403
+                    detail: "Se requiere uno de los roles: admin, operador."
+  /devices:
+    get:
+      operationId: listDevices
+      summary: Lista los dispositivos persistidos
+      description: >
+        RF-004. Lista todos los dispositivos ya descubiertos (por cualquier
+        protocolo, solo `bacnet` con datos reales en esta feature), con su
+        protocolo, dirección, `is_simulator` y `last_seen_at`. Requiere rol
+        Admin u Operador (RF-003).
+      tags:
+        - devices
+      responses:
+        "200":
+          description: Dispositivos persistidos (puede ser `[]`).
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DeviceOut"
+        "403":
+          description: Rol Visor invocando el listado (RF-003).
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+  /devices/{id}/candidates:
+    get:
+      operationId: listDeviceCandidates
+      summary: Lista los puntos crudos candidatos de un dispositivo
+      description: >
+        RF-005. Lista los puntos crudos descubiertos (`device_points_candidates`)
+        de un dispositivo — nunca puntos operables asociados (`SRV-ADR-012`,
+        feature de asociación explícita posterior). Requiere rol Admin u
+        Operador (RF-003).
+      tags:
+        - devices
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Identificador del dispositivo.
+      responses:
+        "200":
+          description: Candidatos del dispositivo (puede ser `[]`).
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DeviceCandidateOut"
+        "403":
+          description: Rol Visor invocando el listado (RF-003).
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "404":
+          description: El `id` de dispositivo no existe (RF-009).
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+              examples:
+                device_not_found:
+                  value:
+                    type: "https://hira.dev/errors/device-not-found"
+                    title: "Dispositivo no encontrado"
+                    status: 404
+                    detail: "No existe un dispositivo con ese id."
   /health:
     get:
       operationId: getHealth
@@ -260,19 +377,78 @@ components:
       properties:
         refresh_token:
           type: string
+    DeviceOut:
+      type: object
+      description: >
+        Dispositivo persistido (`SRV-003-bacnet-adapter`, `plan.md §4`).
+      required: [id, name, protocol, address, is_simulator, last_seen_at]
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        protocol:
+          type: string
+          enum: [bacnet, modbus, mqtt]
+        address:
+          type: string
+          description: >
+            `"<instance_number>@<network_address>"` (`core/bacnet_address.py`).
+        is_simulator:
+          type: boolean
+        last_seen_at:
+          type: string
+          format: date-time
+          nullable: true
+    DeviceCandidateOut:
+      type: object
+      description: >
+        Punto crudo candidato de un dispositivo (`SRV-003-bacnet-adapter`,
+        `plan.md §4`) — nunca un punto operable asociado (`SRV-ADR-012`).
+      required:
+        [id, object_type, object_instance, object_name, present_value, units, discovered_at, updated_at]
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          format: uuid
+        object_type:
+          type: string
+          example: analogInput
+        object_instance:
+          type: integer
+        object_name:
+          type: string
+          nullable: true
+        present_value:
+          type: string
+          nullable: true
+        units:
+          type: string
+          nullable: true
+        discovered_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
     ProblemDetail:
       type: object
       description: >
         Sobre de error RFC 9457 (`E-ADR-003`, convención `type: https://hira.dev/
-        errors/<slug>`). Catálogo de slugs de esta feature (`plan.md §4`):
+        errors/<slug>`). Catálogo de slugs de `SRV-002-auth-rbac` (`plan.md §4`):
         `invalid-credentials` (401), `rate-limited` (429), `token-missing` (401),
         `token-invalid` (401), `token-expired` (401), `token-revoked` (401),
         `insufficient-role` (403), `project-scope-denied` (403). Los últimos 4
         (`token-missing`, `insufficient-role`, `project-scope-denied` y el uso de
         `token-invalid` en rutas protegidas genéricas) los emite
-        `AuthenticationMiddleware`/`require_role`/`require_project_scope` —
-        batches posteriores de `tasks.md`, sin endpoint propio en este contrato
-        todavía.
+        `AuthenticationMiddleware`/`require_role`/`require_project_scope`. Catálogo
+        añadido por `SRV-003-bacnet-adapter` (`plan.md §4`): `device-not-found`
+        (404, `GET /devices/{id}/candidates` con un `id` inexistente) —
+        `insufficient-role` (403) se reutiliza tal cual en los 3 endpoints
+        nuevos de `devices`, sin redefinirse.
       required: [type, title, status, detail]
       additionalProperties: false
       properties:

@@ -23,3 +23,13 @@ de despliegue, sin `HIRA_DEPLOY_MODE` (`E-ADR-001`).
 Los tres adaptadores concretos de arriba están verificados con
 `tests/integration/test_adapters.py` y `tests/integration/test_mqtt_security.py`
 contra los contenedores reales del compose (`tasks.md` T-019..T-023).
+
+`get_bacnet_transport_port()`/`get_device_repository_port()`
+(`SRV-003-bacnet-adapter`, T-008/T-009) son una 5ª y 6ª función de `factory.py`,
+mismo patrón: nacen con `_PlaceholderBacnetTransport` (`who_is` siempre `[]`,
+sin BAC0 real) y `_InMemoryDeviceRepository` (CRUD in-memory completo del
+contrato de `DeviceRepositoryPort`, único por `(protocol, address)`/
+`(device_id, object_type, object_instance)`) — `adapters/bacnet/
+bac0_adapter.py::BAC0Adapter` (T-013/T-014, fuera de alcance de este batch) y
+`adapters/db/device_repository_adapter.py::PostgreSQLDeviceRepository`
+(T-015/T-016, fuera de alcance) reemplazan sus cuerpos sin cambiar la firma.

@@ -13,3 +13,7 @@ Modelos Pydantic de request/response.
   `AccessTokenResponse` (`SRV-002-auth-rbac`, T-017/T-018), traducción exacta de
   `hira-server/docs/openapi.yaml#/components/schemas` para
   `POST /auth/login|refresh|logout`.
+- `devices.py` — `DeviceOut`, `DeviceCandidateOut` (`SRV-003-bacnet-adapter`,
+  T-008/T-009), traducción exacta de
+  `hira-server/docs/openapi.yaml#/components/schemas` para
+  `POST /devices/scan/bacnet|GET /devices|GET /devices/{id}/candidates`.
