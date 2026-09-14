@@ -105,15 +105,10 @@ actualizado: 2026-09-13
   §6`). `ROADMAP.md` cita `VUL-SRV-001` como ancla de este sprint — ya
   resuelto en `SRV-001`, referencia obsoleta, no bloquea.
 - **`SRV-003-bacnet-adapter`** (BACnet) y **`SRV-004-modbus-adapter`** (Modbus)
-  — `estado: implemented`, ambas sobre el mismo modelo `devices`/
+  — ambas `estado: verified` (Carlos, Gate 4), sobre el mismo modelo `devices`/
   `device_points_candidates` (`SRV-003` lo creó, `SRV-004` lo reutiliza sin
-  migración nueva). `SRV-004`: 13/13 tareas, ancla en
-  `089b1e0d59d455a0dd71ab769b6c1fd9a682ed2b`, 0 rebotes del revisor, verificado
-  contra servidor Modbus TCP real + Postgres/Redis/Mosquitto completos (sin
-  regresión). Detalle en sus entradas Session-End de `memory/history.md`.
-- **Pendiente de tu confirmación:** ¿`SRV-004-modbus-adapter` pasa a `estado:
-  verified` (Gate 4)? El orquestador no se autoaprueba. (`SRV-003` ya está
-  `verified`.)
-- **Siguiente paso:** MQTT-scanning o Simuladores (las otras 2 del grupo de
-  protocolos), o retomar otro track (`HUB-H1`, gestión de licencias). A decidir
-  con el usuario.
+  migración nueva). Detalle en sus entradas Session-End de `memory/history.md`.
+- **Siguiente paso:** `SRV-005-mqtt-scanning` (tercera del grupo de
+  protocolos) — suscripción wildcard, detección de topics nuevos como
+  candidatos, mismo patrón ya `verified` 2 veces (BACnet/Modbus). Aplicar
+  `method.md §2` y Fase 1 con `autor-de-spec`.

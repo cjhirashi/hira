@@ -2,7 +2,7 @@
 id: SPEC-SRV-004
 tipo: spec
 feature: SRV-004-modbus-adapter
-estado: implemented
+estado: verified
 anchor_commit: 089b1e0d59d455a0dd71ab769b6c1fd9a682ed2b
 anchor_mode: strict
 covers:
