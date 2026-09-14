@@ -1,4 +1,5 @@
-"""`core/bacnet_address.py` — núcleo puro, sin I/O (`SRV-003-bacnet-adapter`).
+"""`core/bacnet_address.py` — núcleo puro, sin I/O (`SRV-003-bacnet-adapter`,
+ampliado en `SRV-006-simuladores`).
 
 Contrato exacto ya fijado en `plan.md §2` (no es una decisión abierta de este
 batch): `format_device_address(instance_number, network_address) -> str`
@@ -6,11 +7,20 @@ construye `"<instance_number>@<network_address>"`; `parse_device_address(address
 -> tuple[int, str]` es su inverso exacto. Ambas validan (RF-002): rechazan
 `instance_number < 0` y `network_address` vacío/sólo espacios.
 
-Debe fallar antes de T-002 (`core/bacnet_address.py` no existe todavía).
+`format_simulator_device_address(device_instance) -> str` (`SRV-006`,
+`plan.md §2`/Registro de decisiones) retorna `str(device_instance)` —
+identidad restart-safe de un simulador BACnet, **distinta** del formato
+`"<instance>@<network>"` de dispositivos reales — valida `0 <= device_instance
+<= 4194303` (RF-001, RF-007). Debe fallar antes de T-002 (`core/
+bacnet_address.py::format_simulator_device_address` no existe todavía).
 """
 import pytest
 
-from core.bacnet_address import format_device_address, parse_device_address
+from core.bacnet_address import (
+    format_device_address,
+    format_simulator_device_address,
+    parse_device_address,
+)
 
 
 def test_format_device_address_construye_instance_arroba_network():
@@ -72,3 +82,35 @@ def test_parse_rechaza_network_address_vacio_tras_arroba():
 def test_parse_rechaza_instance_number_negativo():
     with pytest.raises(ValueError):
         parse_device_address("-1@192.168.1.50:47808")
+
+
+# ── format_simulator_device_address (SRV-006-simuladores) ───────────────────
+
+
+def test_format_simulator_device_address_retorna_str_del_instance_exacto():
+    """RF-001, RF-007 — identidad restart-safe: `str(device_instance)`, sin
+    `@`, distinta del formato de dispositivos reales."""
+    assert format_simulator_device_address(999123) == "999123"
+
+
+def test_format_simulator_device_address_no_incluye_separador_arroba():
+    address = format_simulator_device_address(1234)
+    assert "@" not in address
+
+
+def test_format_simulator_device_address_acepta_limite_inferior_cero():
+    assert format_simulator_device_address(0) == "0"
+
+
+def test_format_simulator_device_address_acepta_limite_superior_4194303():
+    assert format_simulator_device_address(4194303) == "4194303"
+
+
+def test_format_simulator_device_address_rechaza_negativo():
+    with pytest.raises(ValueError):
+        format_simulator_device_address(-1)
+
+
+def test_format_simulator_device_address_rechaza_mayor_a_4194303():
+    with pytest.raises(ValueError):
+        format_simulator_device_address(4194304)

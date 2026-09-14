@@ -17,38 +17,38 @@ actualizado: 2026-09-14
 ## Tareas
 
 ### Núcleo — identidad restart-safe del simulador BACnet
-- [ ] T-001 — Ampliar `tests/test_bacnet_address.py`: `format_simulator_device_address`
+- [x] T-001 — Ampliar `tests/test_bacnet_address.py`: `format_simulator_device_address`
       determinista (`str(device_instance)` exacto), rechaza `< 0` y
       `> 4194303` (debe fallar) (cubre RF-001, RF-007) [zona: test-núcleo]
-- [ ] T-002 — Implementar `core/bacnet_address.py::format_simulator_device_address`
+- [x] T-002 — Implementar `core/bacnet_address.py::format_simulator_device_address`
       (cubre RF-001, RF-007) [zona: núcleo]
 
 ### Estado en memoria — registro de simuladores en ejecución
-- [ ] T-003 — Test `tests/test_simulator_registry_service.py`:
+- [x] T-003 — Test `tests/test_simulator_registry_service.py`:
       `register`/`get`/`is_running`/`unregister`/`list_running` sobre el
       `dict`; el `Lock` serializa 2 corutinas reales con `asyncio.gather`
       (sin mocks); una instancia nueva siempre nace vacía (equivalente
       verificable de RF-013) (debe fallar) (cubre RF-010, RF-013)
       [zona: test-coordinación]
-- [ ] T-004 — Implementar `services/simulator_registry_service.py`
+- [x] T-004 — Implementar `services/simulator_registry_service.py`
       (`RunningSimulator`, `SimulatorRegistryService`,
       `get_simulator_registry`) (cubre RF-010, RF-013) [zona: coordinación]
 
 ### Puertos
-- [ ] T-005 — Implementar `core/ports/bacnet_simulator_port.py`
+- [x] T-005 — Implementar `core/ports/bacnet_simulator_port.py`
       (`BacnetSimulatorPort`, `BacnetSimulatedObjectSpec`),
       `core/ports/modbus_simulator_port.py` (`ModbusSimulatorPort`,
       `ModbusSimulatedRegisterSpec`), `core/ports/mqtt_publisher_port.py`
       (`MqttPublisherPort`, `MqttInvalidPublishError`) — `Protocol`, sin
       test propio [zona: puertos]
-- [ ] T-006 — Ampliar `core/ports/device_repository_port.py`:
+- [x] T-006 — Ampliar `core/ports/device_repository_port.py`:
       `get_device_by_address(protocol, address) -> DeviceRecord | None`
       añadido al `Protocol`; docstring de `upsert_device` ampliado con la
       garantía de RF-008 — sin test propio, es una interfaz (cubre RF-006,
       RF-007, RF-008) [zona: puertos]
 
 ### Coordinación — servicio de simuladores (arranque BACnet)
-- [ ] T-007 — Test `tests/test_simulator_service.py` (camino BACnet):
+- [x] T-007 — Test `tests/test_simulator_service.py` (camino BACnet):
       arranca, persiste device+candidatos, registra; RF-006 (dispositivo
       real → 409 antes de `transport.start`; ya corriendo → 409 antes de
       `transport.start`); RF-007 (reanudación: `existing.id` reutilizado,
@@ -56,34 +56,34 @@ actualizado: 2026-09-14
       defensiva (`upsert_device` lanza → `transport.stop(token)` invocado
       antes de propagar) (debe fallar) (cubre RF-001, RF-006, RF-007,
       RNF-001) [zona: test-coordinación]
-- [ ] T-008 — Implementar `services/simulator_service.py::start_bacnet_simulator`
+- [x] T-008 — Implementar `services/simulator_service.py::start_bacnet_simulator`
       (cubre RF-001, RF-006, RF-007, RNF-001) [zona: coordinación]
 
 ### Coordinación — servicio de simuladores (arranque Modbus)
-- [ ] T-009 — Ampliar `tests/test_simulator_service.py` (camino Modbus):
+- [x] T-009 — Ampliar `tests/test_simulator_service.py` (camino Modbus):
       mismos casos que T-007 sobre `start_modbus_simulator` (debe fallar)
       (cubre RF-002, RF-006, RF-007, RNF-001) [zona: test-coordinación]
-- [ ] T-010 — Implementar `services/simulator_service.py::start_modbus_simulator`
+- [x] T-010 — Implementar `services/simulator_service.py::start_modbus_simulator`
       (cubre RF-002, RF-006, RF-007, RNF-001) [zona: coordinación]
 
 ### Coordinación — servicio de simuladores (arranque MQTT + validaciones)
-- [ ] T-011 — Ampliar `tests/test_simulator_service.py` (camino MQTT):
+- [x] T-011 — Ampliar `tests/test_simulator_service.py` (camino MQTT):
       mismos casos que T-007/T-009 sobre `start_mqtt_simulator`; RF-014
       (doble de `transport.start` lanza `MqttInvalidPublishError` → 400,
       sin `upsert_device` invocado); RF-015 (`interval_seconds<=0` → 400,
       sin invocar `transport`/`device_repo`) (debe fallar) (cubre RF-003,
       RF-006, RF-007, RF-014, RF-015, RNF-001) [zona: test-coordinación]
-- [ ] T-012 — Implementar `services/simulator_service.py::start_mqtt_simulator`
+- [x] T-012 — Implementar `services/simulator_service.py::start_mqtt_simulator`
       (cubre RF-003, RF-006, RF-007, RF-014, RF-015, RNF-001)
       [zona: coordinación]
 
 ### Coordinación — detener simulador
-- [ ] T-013 — Ampliar `tests/test_simulator_service.py` (`stop_simulator`):
+- [x] T-013 — Ampliar `tests/test_simulator_service.py` (`stop_simulator`):
       `device_id` en el registro → despacha al puerto correcto y
       desregistra, sin tocar `devices`/candidatos (inspección: no importa
       ningún método de borrado); `device_id` ausente → 404 (debe fallar)
       (cubre RF-009, RF-011, RF-012) [zona: test-coordinación]
-- [ ] T-014 — Implementar `services/simulator_service.py::stop_simulator`
+- [x] T-014 — Implementar `services/simulator_service.py::stop_simulator`
       (cubre RF-009, RF-011, RF-012) [zona: coordinación]
 
 ### Contrato — Contract-First

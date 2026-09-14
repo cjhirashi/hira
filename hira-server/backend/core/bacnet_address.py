@@ -10,9 +10,20 @@ device_scan_service.py` construye la dirección con `format_device_address`
 antes de persistir (RF-002); `parse_device_address` es su inverso exacto, para
 cuando un consumidor futuro necesite descomponerla sin volver a tocar el
 escaneo.
+
+`format_simulator_device_address` (`SRV-006-simuladores`, `plan.md §2`/
+Registro de decisiones) es una **ampliación**, no un reemplazo: identidad
+restart-safe de un simulador BACnet (`str(device_instance)`, sin `@`) —
+distinta del formato de dispositivos reales de arriba. Ver el razonamiento
+completo en `.harness/specs/SRV-006-simuladores/plan.md §2`, Registro de
+decisiones: la identidad debe ser calculable solo a partir del cuerpo del
+request (RF-007), sin depender del puerto UDP efímero que ocupa cada
+instancia simulada.
 """
 
 _SEPARATOR = "@"
+_MIN_SIMULATOR_DEVICE_INSTANCE = 0
+_MAX_SIMULATOR_DEVICE_INSTANCE = 4194303
 
 
 def format_device_address(instance_number: int, network_address: str) -> str:
@@ -55,3 +66,24 @@ def parse_device_address(address: str) -> tuple[int, str]:
     if not network_address or not network_address.strip():
         raise ValueError("network_address no puede estar vacío")
     return instance_number, network_address
+
+
+def format_simulator_device_address(device_instance: int) -> str:
+    """Identidad restart-safe de un simulador BACnet (`SRV-006-simuladores`,
+    RF-001, RF-007): retorna `str(device_instance)`, sin `@` — distinta del
+    formato `"<instance>@<network>"` de dispositivos reales (`SRV-003`).
+
+    Lanza `ValueError` si `device_instance` está fuera de
+    `[0, 4194303]` (rango real de *instance number* BACnet).
+    """
+    if not (
+        _MIN_SIMULATOR_DEVICE_INSTANCE
+        <= device_instance
+        <= _MAX_SIMULATOR_DEVICE_INSTANCE
+    ):
+        raise ValueError(
+            "device_instance debe estar entre "
+            f"{_MIN_SIMULATOR_DEVICE_INSTANCE} y "
+            f"{_MAX_SIMULATOR_DEVICE_INSTANCE}, recibido: {device_instance!r}"
+        )
+    return str(device_instance)
