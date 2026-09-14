@@ -49,13 +49,18 @@ Igual que Hira Server — mismo stack, mismas reglas:
 | H0-02 | INFRA | `.env.example` con todas las variables requeridas |
 | H0-03 | LOGGER | `core/logger.py` — JSON estructurado, mismo estándar que Server |
 | H0-04 | INFRA | `core/config.py` con Pydantic Settings |
-| H0-05 | DB | `core/database.py` — conexión async PostgreSQL |
-| H0-06 | ROUTERS | `routers/monitor.py` — `/health` verificando postgres y redis |
+| H0-05 | PORTS | `core/ports/{database_port.py,cache_port.py}` (`Protocol`, Hexagonal — `E-ADR-002`) |
+| H0-05b | ADAPTERS | `adapters/{db/postgres_adapter.py,cache/redis_adapter.py}` + `adapters/factory.py` (punto único de selección de implementación) |
+| H0-06 | ROUTERS | `routers/monitor.py` — `/health` verificando postgres y redis vía los puertos de arriba |
 | H0-07 | CONTRACT | `docs/openapi.yaml` — solo `/health` |
-| H0-08 | INFRA | Nginx configurado para hub.hira.cjhirashi.com (HTTP → Sprint H1 agrega HTTPS) |
+| H0-08 | INFRA | `nginx.conf` genérico/local como proxy reverso hacia `backend` (sin dominio/TLS real — el dominio `hub.hira.cjhirashi.com` y HTTPS/Let's Encrypt llegan en el sprint de despliegue, `docs/hira-hub/spec/deployment.md`) |
 | H0-09 | README | READMEs en todas las carpetas creadas |
 
 **Gate:** `docker compose up -d` → `curl /health` → `{"status": "ok"}`
+
+> `core/database.py` (conexión monolítica) **no** existe en el walking skeleton —
+> su lógica de conexión vive en `adapters/db/postgres_adapter.py` desde H0-05b
+> (`E-ADR-002`, `HUB-001-walking-skeleton` T-024).
 
 ---
 

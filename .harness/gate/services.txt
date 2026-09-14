@@ -1,8 +1,9 @@
 # Servicios con suite de tests (python|node|mcp) para el bloque 5 del gate.
 #
 # hira-server/backend:python — SRV-001-walking-skeleton (T-025), 43/43 tests.
+# hira-hub/backend:python — HUB-001-walking-skeleton (T-021), 38/38 tests.
 #
 # Pendientes (fase de diseño, sin código todavía):
 # hira-studio:python       # BFF (la SPA se declara aparte si tiene su propia suite, :node)
-# hira-hub:python
 hira-server/backend:python
+hira-hub/backend:python

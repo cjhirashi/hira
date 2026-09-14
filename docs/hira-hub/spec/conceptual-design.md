@@ -106,6 +106,13 @@ flowchart TB
 
 ### -5 — Arquitectura directa (no Hexagonal)
 
+> **Superseded por [E-ADR-002](../../decisions/ecosystem/E-ADR-002-arquitectura-hexagonal-para-los-3-productos.md).**
+> Hub adopta Arquitectura Hexagonal — decisión del propietario del ecosistema, prioriza
+> consistencia entre los 3 productos sobre la simplicidad de un solo deployment target.
+> Esta sección se conserva como registro histórico del criterio original
+> (`HUB-001-walking-skeleton` T-022; ver también `docs/hira-hub/decisions/
+> HUB-ADR-05-arquitectura-directa.md`, con la misma nota).
+
 - **Contexto:** La 02.2 - Metodología General de Proyectos exige documentar explícitamente la decisión de arquitectura del backend — ya sea Hexagonal o alternativa con justificación
 - **Decisión:** Hub usa arquitectura **directa** (no hexagonal). Estructura: `core/` + `models/` + `schemas/` + `routers/` + `services/`. No hay puertos ni adaptadores
 - **Por qué no Hexagonal:** Hub tiene un único deployment target: VPS en producción. No hay variantes de despliegue (no existe versión embedded, edge, multi-cloud). La complejidad de la capa de puertos/adaptadores no agrega valor — agrega superficie de mantenimiento para un solo operador sin beneficio práctico

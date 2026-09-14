@@ -176,50 +176,85 @@ actualizado: 2026-09-14
       corrección puntual (pertenece a T-020, no tocado).
 
 ### Sistema — verificación e2e
-- [ ] T-020 — `docker compose -f docker-compose.yml -f docker-compose.dev.yml
+- [x] T-020 — `docker compose -f docker-compose.yml -f docker-compose.dev.yml
       up` → todos los contenedores `healthy` en < 60s; `curl :8000/health` (o
       vía nginx) → 200 con los dos servicios `ok`; logs del backend en JSON —
       evidencia de terminal pegada (cubre RF-001, RF-006, RNF-001, RNF-002,
-      RF-004) [zona: sistema-e2e]
+      RF-004) [zona: sistema-e2e]. **Evidencia real (2026-09-14, `.env`
+      copiado tal cual de `.env.example`, limpiado al cerrar):**
+      `docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+      --build` → `postgres`/`redis`/`backend` alcanzan `healthy` en ~18-19s
+      (`docker compose ps`, muy por debajo de 60s, RNF-001/RF-001). `nginx`
+      chocó con el puerto 80 de esta máquina compartida (`caddy_proxy`, otro
+      proyecto — colisión de host, no del compose, mismo hallazgo que
+      T-016..T-019 y `SRV-001`): `Bind for 0.0.0.0:80 failed: port is already
+      allocated`. `curl -i :8001/health` (directo) → `200
+      {"status":"ok","services":{"postgres":"ok","redis":"ok"},"version":
+      "0.1.0","trace_id":"858bbba1-..."}` — repetido con `-H "X-Trace-ID:
+      test-trace-123"` → el header se propaga tal cual en la respuesta y en
+      el body (RF-005). Nginx verificado aparte con un contenedor
+      `nginx:1.27-alpine` descartable unido a la red `hira-hub_default` en el
+      puerto libre `18081`, montando el `nginx.conf` real (sin editar):
+      `curl -i :18081/health` → 200 con el mismo payload, confirmando
+      `location / { proxy_pass http://backend:8001; }` end-to-end (RF-006).
+      Logs del backend (`docker compose logs backend`): camino feliz solo
+      logs de `uvicorn` (texto plano, librería de terceros, fuera de RF-004
+      que aplica al código propio); para evidenciar RF-004 con log real se
+      detuvo `redis` (`docker compose stop redis`): `GET /health` → `200
+      {"status":"degraded","services":{"postgres":"ok","redis":"error"},...}`
+      y los logs mostraron una línea JSON válida:
+      `{"timestamp": "2026-09-14T01:39:57.432700+00:00", "level": "ERROR",
+      "service": "hira-hub", "module": "services.health_service", "trace_id":
+      "15cd809d-...", "message": "chequeo de salud falló para redis"}` —
+      verificada además con `json.loads` (los 6 campos exigidos por RF-004
+      presentes). `redis` reiniciado (`docker compose start redis`) → `/health`
+      volvió a `ok` en <3s. Contenedor de verificación de nginx, contenedores
+      del compose (`down -v`) y `.env` limpiados al cerrar.
 
 ### Arnés
-- [ ] T-021 — Declarar `hira-hub/backend:python` en `.harness/gate/
+- [x] T-021 — Declarar `hira-hub/backend:python` en `.harness/gate/
       services.txt` para activar el bloque 5 del gate (cubre RF-001)
-      [zona: arnés]
+      [zona: arnés]. **Evidencia:** declarado junto a
+      `hira-server/backend:python`; `bash .harness/gate/check.sh --full` pasó
+      el bloque 5 de "SKIP" (sin venv) a `✅ hira-hub/backend · tests` — corre
+      la suite real desde `hira-hub/backend/.venv` (ya existente). Verificado
+      además en detalle (`pytest -v -m "not integration"` dentro del `.venv`):
+      36 passed, 2 deselected (los 2 de integración, requieren contenedores
+      reales — mismo criterio que `hira-server`) en 2.67s.
 
 ### Documentación (`plan.md §8`) — pueden correr en paralelo desde T-002
-- [ ] T-022 — Corregir `docs/hira-hub/spec/conceptual-design.md`: añadir la
+- [x] T-022 — Corregir `docs/hira-hub/spec/conceptual-design.md`: añadir la
       nota de *superseded por `E-ADR-002`* a la sección embebida "ADR-5 —
       Arquitectura directa", sin reescribir el resto del contenido histórico
       [doc]
-- [ ] T-023 — Corregir `docs/hira-hub/spec/detailed-design.md`: árbol de
+- [x] T-023 — Corregir `docs/hira-hub/spec/detailed-design.md`: árbol de
       carpetas — agregar `core/ports/{database_port.py,cache_port.py}` y
       `adapters/{db/postgres_adapter.py,cache/redis_adapter.py,factory.py}`;
       retirar `core/database.py` monolítico [doc]
-- [ ] T-024 — Corregir `docs/hira-hub/spec/dev-guide.md`: tabla del Sprint H0
+- [x] T-024 — Corregir `docs/hira-hub/spec/dev-guide.md`: tabla del Sprint H0
       con los archivos reales de puertos/adaptadores/`factory.py`; aclarar
       que el `nginx.conf` de H0 es genérico/local (dominio real en el sprint
       de despliegue) [doc]
-- [ ] T-025 — Corregir `docs/hira-hub/spec/validation.md`: checklist H0 —
+- [x] T-025 — Corregir `docs/hira-hub/spec/validation.md`: checklist H0 —
       "Nginx sirve correctamente como proxy reverso local (dominio real fuera
       de alcance)"; añadir `trace_id` a los campos de log obligatorios [doc]
 
 ## Cobertura (el gate exige 100 %; `Estado` lo rellena el gate)
 | RF / doc | Tareas | Test(s) | Estado |
 |---|---|---|---|
-| RF-001 | T-001, T-016, T-017, T-020, T-021 | `test_health_router.py` (contrato), verificación e2e (T-020) | Pendiente |
+| RF-001 | T-001, T-016, T-017, T-020, T-021 | `test_health_router.py` (contrato), verificación e2e (T-020: `postgres`/`redis`/`backend` `healthy` en ~18-19s) | Pass |
 | RF-002 | T-002, T-003, T-008, T-009, T-010, T-013, T-014, T-015, T-018, T-019 | `test_health_policy.py`, `test_health_service.py`, `test_health_router.py`, `tests/integration/test_adapters.py`, `tests/test_cache_adapter_wiring.py` | Pass |
 | RF-003 | T-004, T-005, T-012 | `test_config.py`, `test_correlation_id.py` (T-012) | Pass |
-| RF-004 | T-006, T-007 | `test_logger.py`, evidencia de T-020 | Pendiente |
-| RF-005 | T-008, T-010, T-011, T-012 | `test_health_service.py`, `test_correlation_id.py` | Pass |
-| RF-006 | T-017, T-020 | verificación e2e (T-020) | Pendiente |
+| RF-004 | T-006, T-007, T-020 | `test_logger.py`, evidencia de T-020 (log JSON real con 6 campos al detener `redis`, verificado con `json.loads`) | Pass |
+| RF-005 | T-008, T-010, T-011, T-012, T-020 | `test_health_service.py`, `test_correlation_id.py`, evidencia de T-020 (`X-Trace-ID` propagado y generado) | Pass |
+| RF-006 | T-017, T-020 | verificación e2e (T-020: nginx standalone en `:18081` proxy end-to-end, puerto 80 del host ocupado por `caddy_proxy` ajeno) | Pass |
 | RF-007 | T-008, T-010 | `test_health_service.py` | Pass |
-| RNF-001 | T-016, T-020 | verificación e2e (T-020) | Pendiente |
+| RNF-001 | T-016, T-020 | verificación e2e (T-020: ~18-19s, < 60s) | Pass |
 | RNF-002 | T-008, T-010 | `test_health_service.py` | Pass |
-| doc: conceptual-design.md | T-022 | — | Pendiente |
-| doc: detailed-design.md | T-023 | — | Pendiente |
-| doc: dev-guide.md | T-024 | — | Pendiente |
-| doc: validation.md | T-025 | — | Pendiente |
+| doc: conceptual-design.md | T-022 | — | hecho |
+| doc: detailed-design.md | T-023 | — | hecho |
+| doc: dev-guide.md | T-024 | — | hecho |
+| doc: validation.md | T-025 | — | hecho |
 
 > Esta tabla **es** la trazabilidad de la feature (no hay `traceability-matrix.md`).
 > Fila sin test, en `Fail` o `Pendiente` → el gate no abre.

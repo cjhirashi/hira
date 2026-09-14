@@ -45,7 +45,17 @@ hira-hub/
 │   │   ├── config.py          # Variables de entorno con pydantic-settings
 │   │   ├── security.py        # Hash de license keys, JWT para Panel Admin
 │   │   ├── logger.py          # JSON structurado — mismo estándar que Hira Server
-│   │   └── database.py        # Conexión async PostgreSQL
+│   │   └── ports/             # Interfaces abstractas (`Protocol`) — Hexagonal, `E-ADR-002`
+│   │       ├── database_port.py   # supersede la conexión monolítica `database.py`
+│   │       └── cache_port.py
+│   ├── adapters/               # Implementaciones concretas — Hexagonal, `E-ADR-002`
+│   │   ├── db/
+│   │   │   └── postgres_adapter.py    # implementa `DatabasePort` — conexión async PostgreSQL
+│   │   ├── cache/
+│   │   │   └── redis_adapter.py       # implementa `CachePort`
+│   │   └── factory.py          # selecciona la implementación concreta de cada puerto;
+│   │                            # punto único cuando lleguen H1/H2/H3 (licencias, crash
+│   │                            # reports, updates)
 │   ├── models/
 │   │   ├── licenses.py        # LicenseKey, LicenseActivation
 │   │   ├── crash_reports.py   # CrashReport

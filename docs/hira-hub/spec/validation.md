@@ -21,8 +21,8 @@ relacionado_con: 7.1 - ÍNDICE - Hira
 - [ ] `docker compose up -d` levanta todos los contenedores sin errores
 - [ ] `GET /health` responde 200 con `{"status": "ok", "services": {"postgres": "ok", "redis": "ok"}}`
 - [ ] Los logs del backend son JSON estructurado (no texto plano)
-- [ ] Los logs incluyen los campos: `timestamp`, `level`, `service`, `module`, `message`
-- [ ] Nginx sirve correctamente en el dominio configurado
+- [ ] Los logs incluyen los campos: `timestamp`, `level`, `service`, `module`, `trace_id`, `message`
+- [ ] Nginx sirve correctamente como proxy reverso local (dominio real fuera de alcance, ver `deployment.md`)
 
 ---
 
