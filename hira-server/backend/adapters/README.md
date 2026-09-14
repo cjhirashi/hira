@@ -50,3 +50,18 @@ pymodbus_adapter.py::PymodbusAdapter` real (`_PlaceholderModbusTransport`
 retirado, dead code tras el reemplazo — ningún test la importaba
 directamente) — ninguna firma cambia, `routers/devices.py` no se tocó en
 este batch.
+
+- `mqtt/mqtt_scan_adapter.py::MqttScanAdapter` implementa
+  `MqttScanTransportPort` (`paho-mqtt` real, archivo **separado** de
+  `mosquitto_adapter.py` — ver su propio README).
+
+`get_mqtt_scan_transport_port()` (`SRV-005-mqtt-scanning`) es una 8ª función
+de `factory.py`, mismo patrón: nació (T-008) con `_PlaceholderMqttScanTransport`
+(`listen()` siempre retorna `[]`, sin `paho-mqtt` real). T-010 reemplazó el
+cuerpo con `adapters/mqtt/mqtt_scan_adapter.py::MqttScanAdapter` real
+(`_PlaceholderMqttScanTransport` retirado, dead code tras el reemplazo —
+ningún test lo importaba directamente) — ninguna firma cambia,
+`routers/devices.py` no se tocó en este batch. Función **independiente** de
+`get_notification_port()` (`MosquittoAdapter`): mismo broker físico, puertos
+de dominio distintos con ciclos de vida de conexión incompatibles
+(`SRV-005-mqtt-scanning/plan.md §1`, Registro de decisiones).

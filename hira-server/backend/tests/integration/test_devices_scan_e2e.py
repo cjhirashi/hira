@@ -9,6 +9,15 @@ ModbusTcpServer` + `pymodbus.simulator.SimDevice`/`SimData`, mismo servidor
 de `tests/integration/test_pymodbus_adapter.py`) en vez de `BAC0.lite()`. El
 caso de BACnet de arriba **no se toca**.
 
+Ampliado en `SRV-005-mqtt-scanning` (T-011, `plan.md §5`/§6 paso 7) con el
+caso análogo para `POST /devices/scan/mqtt` — mismo recorrido completo
+(`POST /devices/scan/mqtt` → `GET /devices` → `GET /devices/{id}/
+candidates`), contra el **Mosquitto real** del compose de
+`SRV-001-walking-skeleton` (no un broker de test aparte, `spec.md §2`) con un
+segundo cliente `paho-mqtt` real como publisher de prueba (mismo criterio que
+`tests/integration/test_mqtt_scan_adapter.py`). Los casos de BACnet/Modbus de
+arriba **no se tocan**.
+
 Recorrido completo con infraestructura real: una instancia real de
 `BAC0.lite()` actúa de "dispositivo" (2 objetos BACnet reales, igual que
 `tests/integration/test_bac0_adapter.py`); la app real de `main.py` usa un
@@ -40,9 +49,14 @@ Postgres, que es lo que este test mide.
 Requiere, antes de correr esta suite (`pytest -m integration`):
 
     cd hira-server
-    docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d postgres
+    docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d postgres mosquitto
     cd backend && DATABASE_URL=postgresql+asyncpg://hira:changeme@localhost:5432/hiradb \
         alembic upgrade head   # aplica 0001 y 0002
+
+El caso MQTT usa las credenciales reales de `MQTT_USER`/`MQTT_PASSWORD` del
+entorno (mismas que `.env`/`Settings`, capturadas **antes** de que
+`REQUIRED_ENV` las sobreescriba con valores ficticios para el resto de la
+suite — `MosquittoAdapter.connect()` sigue mockeado, ver arriba).
 
 RNF-001 se mide con evidencia real de tiempo (ver aserción al final) — con
 Who-Is unicast dirigido, el escaneo resuelve tan pronto llega el I-Am (no
@@ -55,10 +69,13 @@ responda (ya cubierto por RF-008 en `tests/test_device_scan_service.py`/
 import asyncio
 import logging
 import os
+import threading
 import time
+import uuid
 from unittest.mock import AsyncMock
 
 import httpx
+import paho.mqtt.client as mqtt
 import pytest
 from bacpypes3.local.analog import AnalogValueObject
 from bacpypes3.local.binary import BinaryValueObject
@@ -75,10 +92,12 @@ from adapters.factory import (
     get_cache_port,
     get_device_repository_port,
     get_modbus_transport_port,
+    get_mqtt_scan_transport_port,
     get_user_repository_port,
 )
 from adapters.modbus.pymodbus_adapter import PymodbusAdapter
 from adapters.mqtt.mosquitto_adapter import MosquittoAdapter
+from adapters.mqtt.mqtt_scan_adapter import MqttScanAdapter
 from core.ports.user_repository_port import UserRecord
 from core.security.passwords import hash_password
 from main import app
@@ -87,6 +106,15 @@ from models.device_model import device_points_candidates_table, devices_table
 # Silencia el tráfico TCP crudo (`>>>>> send/recv`) que `pymodbus` emite en
 # `INFO` — mismo criterio que `tests/integration/test_pymodbus_adapter.py`.
 logging.getLogger("pymodbus").setLevel(logging.WARNING)
+
+# Credenciales reales del Mosquitto del compose — capturadas al importar el
+# módulo, **antes** de que `REQUIRED_ENV`/`monkeypatch.setenv` las
+# sobreescriba con los valores ficticios usados por el resto de la suite
+# (ver docstring del módulo).
+_REAL_MQTT_HOST = os.environ.get("TEST_MQTT_HOST", "localhost")
+_REAL_MQTT_PORT = int(os.environ.get("TEST_MQTT_PORT", "1883"))
+_REAL_MQTT_USER = os.environ.get("MQTT_USER", "hira")
+_REAL_MQTT_PASSWORD = os.environ.get("MQTT_PASSWORD", "changeme")
 
 pytestmark = pytest.mark.integration
 
@@ -486,4 +514,184 @@ async def test_scan_modbus_e2e_real_pymodbus_and_postgres(monkeypatch):
         app.dependency_overrides.clear()
         await device_repo.close()
         await _shutdown_modbus_server(server)
+        await _reset_device_tables()
+
+
+def _publish_real_mqtt_message(topic: str, payload: str) -> None:
+    """Publisher `paho-mqtt` real, de un solo mensaje — infraestructura de
+    test (`spec.md §2`), no el adaptador bajo prueba. Bloquea hasta que el
+    broker confirma la publicación (QoS 1)."""
+    connack_event = threading.Event()
+    client = mqtt.Client(
+        client_id=f"test-e2e-publisher-{uuid.uuid4().hex[:8]}",
+        callback_api_version=mqtt.CallbackAPIVersion.VERSION2,
+    )
+    client.username_pw_set(_REAL_MQTT_USER, _REAL_MQTT_PASSWORD)
+
+    def _on_connect(client, userdata, flags, reason_code, properties):
+        connack_event.set()
+
+    client.on_connect = _on_connect
+    client.connect(_REAL_MQTT_HOST, _REAL_MQTT_PORT, keepalive=10)
+    client.loop_start()
+    try:
+        assert connack_event.wait(timeout=5.0), "publisher de prueba sin CONNACK real"
+        info = client.publish(topic, payload, qos=1)
+        info.wait_for_publish(timeout=5.0)
+    finally:
+        client.disconnect()
+        client.loop_stop()
+
+
+@pytest.mark.asyncio
+async def test_scan_mqtt_e2e_real_paho_mqtt_and_postgres(monkeypatch):
+    """RF-001, RF-002, RF-003, RF-004, RF-006, RNF-001 — recorrido completo
+    `POST /devices/scan/mqtt` → `GET /devices` → `GET /devices/{id}/
+    candidates` con `MqttScanAdapter`/`PostgreSQLDeviceRepository` reales
+    (Mosquitto real del compose de `SRV-001`, publisher `paho-mqtt` real)."""
+    await _reset_device_tables()
+
+    mqtt_adapter = MqttScanAdapter(
+        host=_REAL_MQTT_HOST,
+        port=_REAL_MQTT_PORT,
+        user=_REAL_MQTT_USER,
+        password=_REAL_MQTT_PASSWORD,
+    )
+    device_repo = PostgreSQLDeviceRepository(DATABASE_URL)
+
+    for key, value in REQUIRED_ENV.items():
+        monkeypatch.setenv(key, value)
+    monkeypatch.setattr(MosquittoAdapter, "connect", AsyncMock(return_value=None))
+
+    user = UserRecord(
+        id="user-1",
+        email="admin@hira.dev",
+        password_hash=hash_password("Correcto123!"),
+        rol="admin",
+        scope="global",
+        project_id=None,
+        activo=True,
+    )
+    user_repo = _FakeUserRepository([user])
+    cache = _FakeCache()
+
+    app.dependency_overrides[get_user_repository_port] = lambda: user_repo
+    app.dependency_overrides[get_cache_port] = lambda: cache
+    app.dependency_overrides[get_mqtt_scan_transport_port] = lambda: mqtt_adapter
+    app.dependency_overrides[get_device_repository_port] = lambda: device_repo
+    monkeypatch.setattr(middleware_module, "get_user_repository_port", lambda: user_repo)
+    monkeypatch.setattr(middleware_module, "get_cache_port", lambda: cache)
+    monkeypatch.setattr(main_module, "get_cache_port", lambda: cache)
+
+    try:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(
+            transport=transport, base_url="http://testserver"
+        ) as client:
+            login_response = await client.post(
+                "/auth/login",
+                json={"email": user.email, "password": "Correcto123!"},
+            )
+            assert login_response.status_code == 200
+            access_token = login_response.json()["access_token"]
+            client.headers.update({"Authorization": f"Bearer {access_token}"})
+
+            # RF-004 — patrón sintácticamente inválido rechazado con 400
+            # antes de crear ningún device.
+            invalid_response = await client.post(
+                "/devices/scan/mqtt", json={"topic_pattern": "edificio/#/piso1"}
+            )
+            assert invalid_response.status_code == 400
+            assert (
+                invalid_response.json()["type"]
+                == "https://hira.dev/errors/mqtt-invalid-topic-pattern"
+            )
+
+            # RF-006 — ningún publisher activo durante la ventana → 200 con
+            # lista vacía, sin crear device.
+            empty_pattern = f"hira/e2e/{uuid.uuid4().hex[:8]}/#"
+            empty_response = await client.post(
+                "/devices/scan/mqtt", json={"topic_pattern": empty_pattern}
+            )
+            assert empty_response.status_code == 200
+            assert empty_response.json() == []
+
+            # RF-001, RF-002, RNF-001 — patrón real, publisher real durante
+            # la ventana.
+            topic_pattern = f"hira/e2e/{uuid.uuid4().hex[:8]}/#"
+
+            def _publish_during_window() -> None:
+                time.sleep(1.0)
+                _publish_real_mqtt_message(f"{topic_pattern[:-1]}ahu1/temp", "21.5")
+                time.sleep(0.5)
+                _publish_real_mqtt_message(
+                    f"{topic_pattern[:-1]}ahu2/humidity", "55"
+                )
+
+            publisher_thread = threading.Thread(target=_publish_during_window)
+            publisher_thread.start()
+
+            start = time.monotonic()
+            scan_response = await client.post(
+                "/devices/scan/mqtt", json={"topic_pattern": topic_pattern}
+            )
+            elapsed = time.monotonic() - start
+            publisher_thread.join(timeout=5.0)
+
+            print(
+                f"\nRNF-001 evidencia real: POST /devices/scan/mqtt "
+                f"(ventana 3s + publisher real) tardó {elapsed:.3f}s"
+            )
+            assert elapsed < 4.0, f"escaneo tardó {elapsed:.2f}s (RNF-001)"
+
+            assert scan_response.status_code == 200
+            scanned_candidates = scan_response.json()
+            assert len(scanned_candidates) == 2
+            for candidate in scanned_candidates:
+                assert candidate["object_type"] == "mqtt_topic"
+
+            devices_response = await client.get("/devices")
+            assert devices_response.status_code == 200
+            listed = devices_response.json()
+            mqtt_devices = [d for d in listed if d["protocol"] == "mqtt"]
+            assert len(mqtt_devices) == 1
+            assert mqtt_devices[0]["address"] == topic_pattern
+            device_id = mqtt_devices[0]["id"]
+
+            candidates_response = await client.get(f"/devices/{device_id}/candidates")
+            assert candidates_response.status_code == 200
+            candidates = candidates_response.json()
+            assert len(candidates) == 2
+            by_name = {c["object_name"]: c for c in candidates}
+            assert by_name[f"{topic_pattern[:-1]}ahu1/temp"]["present_value"] == "21.5"
+            assert by_name[f"{topic_pattern[:-1]}ahu2/humidity"]["present_value"] == "55"
+
+            # RF-003 — Visor recibe 403 (segundo usuario in-memory, rol Visor).
+            viewer = UserRecord(
+                id="user-2",
+                email="visor@hira.dev",
+                password_hash=hash_password("Correcto123!"),
+                rol="visor",
+                scope="global",
+                project_id=None,
+                activo=True,
+            )
+            user_repo._by_email[viewer.email] = viewer  # noqa: SLF001 — doble de test
+            user_repo._by_id[viewer.id] = viewer  # noqa: SLF001
+            viewer_login_response = await client.post(
+                "/auth/login",
+                json={"email": viewer.email, "password": "Correcto123!"},
+            )
+            assert viewer_login_response.status_code == 200
+            viewer_token = viewer_login_response.json()["access_token"]
+
+            viewer_scan_response = await client.post(
+                "/devices/scan/mqtt",
+                headers={"Authorization": f"Bearer {viewer_token}"},
+                json={"topic_pattern": f"hira/e2e/{uuid.uuid4().hex[:8]}/#"},
+            )
+            assert viewer_scan_response.status_code == 403
+    finally:
+        app.dependency_overrides.clear()
+        await device_repo.close()
         await _reset_device_tables()

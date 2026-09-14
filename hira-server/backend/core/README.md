@@ -27,3 +27,11 @@ Núcleo transversal del backend — no depende de infraestructura concreta.
   batches posteriores.
 - `security/` — núcleo de autenticación/RBAC de 3 roles fijos
   (`SRV-002-auth-rbac`), ver `core/security/README.md`. Sin I/O.
+- `mqtt_topic_key.py` — `topic_instance_key(topic: str) -> int`
+  (`SRV-005-mqtt-scanning`, RF-002). Única regla de negocio pura de la
+  feature: `zlib.crc32(topic.encode("utf-8")) & 0x7FFFFFFF`, determinista,
+  resuelve el conflicto entre `object_instance` (`INTEGER`, columna
+  compartida con BACnet/Modbus, `SRV-003`, no se toca) y el identificador
+  natural de un topic MQTT (texto) — ver `plan.md` Registro de decisiones.
+  Lanza `ValueError` con topic vacío. Sin I/O, sin mocks
+  (`tests/test_mqtt_topic_key.py`).

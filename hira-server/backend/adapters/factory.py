@@ -48,13 +48,15 @@ el reemplazo — ningún test la importaba directamente) — la **firma no
 cambia**, `routers/devices.py` no se toca en este batch.
 
 `get_mqtt_scan_transport_port()` (`SRV-005-mqtt-scanning`, `tasks.md` T-008,
-`plan.md §2`/§6 paso 5): nace con un placeholder in-memory trivial
+`plan.md §2`/§6 paso 5): nació con un placeholder in-memory trivial
 (`_PlaceholderMqttScanTransport`, `listen()` siempre retorna `[]` — sin
 `paho-mqtt` real, sin importarlo) — mismo patrón exacto que
 `get_bacnet_transport_port()`/`get_modbus_transport_port()` en su batch de
-nacimiento. T-010 (fuera de alcance aquí) reemplazará el **cuerpo** con
-`adapters/mqtt/mqtt_scan_adapter.py::MqttScanAdapter` real — la **firma no
-cambia**, `routers/devices.py` no se toca en ese batch. Es una función
+nacimiento. T-010 reemplaza el **cuerpo** con
+`adapters/mqtt/mqtt_scan_adapter.py::MqttScanAdapter` real
+(`_PlaceholderMqttScanTransport` retirado, dead code tras el reemplazo —
+ningún test lo importaba directamente) — la **firma no cambia**,
+`routers/devices.py` no se toca en este batch. Es una función
 **independiente** de `get_notification_port()` (`MosquittoAdapter`): ambas
 usan `paho-mqtt` contra el mismo broker físico, pero implementan puertos de
 dominio distintos con ciclos de vida de conexión incompatibles
@@ -67,13 +69,14 @@ from adapters.db.postgresql_adapter import PostgreSQLAdapter
 from adapters.db.user_repository_adapter import PostgreSQLUserRepository
 from adapters.modbus.pymodbus_adapter import PymodbusAdapter
 from adapters.mqtt.mosquitto_adapter import MosquittoAdapter
+from adapters.mqtt.mqtt_scan_adapter import MqttScanAdapter
 from core.config import Settings
 from core.ports.bacnet_transport_port import BacnetTransportPort
 from core.ports.cache_port import CachePort
 from core.ports.database_port import DatabasePort
 from core.ports.device_repository_port import DeviceRepositoryPort
 from core.ports.modbus_transport_port import ModbusTransportPort
-from core.ports.mqtt_scan_transport_port import MqttScanTransportPort, MqttTopicMessage
+from core.ports.mqtt_scan_transport_port import MqttScanTransportPort
 from core.ports.notification_port import NotificationPort
 from core.ports.user_repository_port import UserRepositoryPort
 
@@ -85,20 +88,6 @@ _bacnet_transport_port: BacnetTransportPort | None = None
 _device_repository_port: DeviceRepositoryPort | None = None
 _modbus_transport_port: ModbusTransportPort | None = None
 _mqtt_scan_transport_port: MqttScanTransportPort | None = None
-
-
-class _PlaceholderMqttScanTransport:
-    """`MqttScanTransportPort` placeholder — sin `paho-mqtt` real (mismo
-    patrón que `_PlaceholderModbusTransport` en su batch de nacimiento,
-    `SRV-004-modbus-adapter`). `listen()` siempre retorna `[]` (RF-006 —
-    ningún mensaje capturado). Reemplazado por `adapters/mqtt/
-    mqtt_scan_adapter.py::MqttScanAdapter` real en T-010 (fuera de alcance
-    aquí)."""
-
-    async def listen(
-        self, topic_pattern: str, window_seconds: float
-    ) -> list[MqttTopicMessage]:
-        return []
 
 
 def get_database_port() -> DatabasePort:
@@ -181,10 +170,18 @@ def get_modbus_transport_port() -> ModbusTransportPort:
 def get_mqtt_scan_transport_port() -> MqttScanTransportPort:
     """Único punto de selección de la implementación de
     `MqttScanTransportPort` (`SRV-005-mqtt-scanning`, RF-001, RF-002, RF-004,
-    RF-006). Nace con `_PlaceholderMqttScanTransport` (sin `paho-mqtt` real,
-    T-008); T-010 (fuera de alcance aquí) reemplaza el cuerpo con
-    `adapters/mqtt/mqtt_scan_adapter.py::MqttScanAdapter` real."""
+    RF-006). Nació con `_PlaceholderMqttScanTransport` (sin `paho-mqtt` real,
+    T-008); T-010 reemplaza el cuerpo con `adapters/mqtt/
+    mqtt_scan_adapter.py::MqttScanAdapter` real — mismas credenciales
+    (`mqtt_user`/`mqtt_password`) que `get_notification_port()`, pero función
+    **independiente** (ciclo de vida de conexión distinto, `plan.md §1`)."""
     global _mqtt_scan_transport_port
     if _mqtt_scan_transport_port is None:
-        _mqtt_scan_transport_port = _PlaceholderMqttScanTransport()
+        settings = Settings()
+        _mqtt_scan_transport_port = MqttScanAdapter(
+            host=settings.mqtt_broker_host,
+            port=1883,
+            user=settings.mqtt_user,
+            password=settings.mqtt_password,
+        )
     return _mqtt_scan_transport_port

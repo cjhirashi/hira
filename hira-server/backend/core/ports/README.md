@@ -45,3 +45,18 @@ Implementaciones concretas de `SRV-003-bacnet-adapter`
 (`adapters/bacnet/bac0_adapter.py::BAC0Adapter`, `adapters/db/
 device_repository_adapter.py::PostgreSQLDeviceRepository`) fuera de alcance de
 este batch (T-013..T-016 de `tasks.md`).
+
+Puerto de `SRV-005-mqtt-scanning`:
+
+- `mqtt_scan_transport_port.py` — `MqttScanTransportPort` (un único método,
+  `listen(topic_pattern, window_seconds) -> list[MqttTopicMessage]` — MQTT es
+  push-based, sin operación de "leer" análoga a BACnet/Modbus) +
+  `MqttTopicMessage` (dataclass) + `MqttInvalidTopicPatternError` (excepción
+  de dominio, RF-004, mismo criterio que `BacnetReadTimeoutError` — a
+  diferencia de `ModbusReadFailure`, que es un valor de retorno). Sin test
+  propio, igual que `bacnet_transport_port.py`/`device_repository_port.py`.
+  Implementación concreta: `adapters/mqtt/mqtt_scan_adapter.py::
+  MqttScanAdapter` (`paho-mqtt` real, T-009/T-010) — archivo **separado** de
+  `adapters/mqtt/mosquitto_adapter.py` (`NotificationPort`, ciclo de vida de
+  conexión distinto, ver `SRV-005-mqtt-scanning/plan.md §1` Registro de
+  decisiones).
