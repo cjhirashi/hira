@@ -24,12 +24,17 @@ Los tres adaptadores concretos de arriba están verificados con
 `tests/integration/test_adapters.py` y `tests/integration/test_mqtt_security.py`
 contra los contenedores reales del compose (`tasks.md` T-019..T-023).
 
+- `bacnet/` — `bac0_adapter.py::BAC0Adapter` implementa `BacnetTransportPort`
+  (`BAC0`/`bacpypes3` real, ver su propio README).
+
 `get_bacnet_transport_port()`/`get_device_repository_port()`
-(`SRV-003-bacnet-adapter`, T-008/T-009) son una 5ª y 6ª función de `factory.py`,
-mismo patrón: nacen con `_PlaceholderBacnetTransport` (`who_is` siempre `[]`,
-sin BAC0 real) y `_InMemoryDeviceRepository` (CRUD in-memory completo del
-contrato de `DeviceRepositoryPort`, único por `(protocol, address)`/
-`(device_id, object_type, object_instance)`) — `adapters/bacnet/
-bac0_adapter.py::BAC0Adapter` (T-013/T-014, fuera de alcance de este batch) y
+(`SRV-003-bacnet-adapter`) son una 5ª y 6ª función de `factory.py`, mismo
+patrón: nacieron (T-008/T-009) con `_PlaceholderBacnetTransport` (`who_is`
+siempre `[]`, sin BAC0 real) y `_InMemoryDeviceRepository` (CRUD in-memory
+completo del contrato de `DeviceRepositoryPort`, único por `(protocol,
+address)`/`(device_id, object_type, object_instance)`). T-013/T-014 reemplazó
+el cuerpo de `get_bacnet_transport_port()` con `adapters/bacnet/
+bac0_adapter.py::BAC0Adapter` real (`_PlaceholderBacnetTransport` retirado).
 `adapters/db/device_repository_adapter.py::PostgreSQLDeviceRepository`
-(T-015/T-016, fuera de alcance) reemplazan sus cuerpos sin cambiar la firma.
+(T-015/T-016, fuera de alcance de este batch) reemplaza el cuerpo de
+`get_device_repository_port()` — ninguna firma cambia.

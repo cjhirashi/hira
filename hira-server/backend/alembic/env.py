@@ -1,9 +1,14 @@
-"""`alembic/env.py` — plantilla async (`SRV-002-auth-rbac`, T-023, `plan.md §3`).
+"""`alembic/env.py` — plantilla async (`SRV-002-auth-rbac`, T-023, `plan.md §3`;
+ampliado en `SRV-003-bacnet-adapter`, T-012, `plan.md §3`/§6 paso 9).
 
 Reutiliza `asyncpg` (ya en `requirements.txt`, mismo driver que
 `adapters/db/postgresql_adapter.py`) — sin añadir un driver síncrono nuevo solo
-para migrar. `target_metadata` = `models/user_model.py::metadata` (SQLAlchemy
-Core `Table`, no ORM declarativo).
+para migrar. `target_metadata` = `models/base.py::metadata` (SQLAlchemy Core
+`Table`, no ORM declarativo) — única `MetaData()` compartida por `users`
+(`models/user_model.py`) y `devices`/`device_points_candidates`
+(`models/device_model.py`). Ambos módulos de modelo se importan aquí solo para
+que sus `Table` se registren contra esa `metadata` compartida antes de que
+Alembic la lea — ninguno de los dos se referencia directamente más abajo.
 
 La URL de conexión se toma de la variable de entorno `DATABASE_URL` (mismo
 formato `postgresql+asyncpg://...` que `core/config.py::Settings.database_url`)
@@ -21,7 +26,9 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
-from models.user_model import metadata as user_model_metadata
+from models import device_model  # noqa: F401 — registra Table contra `models.base.metadata`
+from models import user_model  # noqa: F401 — registra Table contra `models.base.metadata`
+from models.base import metadata as shared_metadata
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -36,9 +43,9 @@ if database_url:
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# `models/user_model.py::metadata` — primera (y única, en este sprint) tabla de
-# negocio del producto (`users`).
-target_metadata = user_model_metadata
+# `models/base.py::metadata` — compartida por `users` (`models/user_model.py`)
+# y `devices`/`device_points_candidates` (`models/device_model.py`).
+target_metadata = shared_metadata
 
 
 def run_migrations_offline() -> None:

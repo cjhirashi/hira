@@ -3,7 +3,9 @@ de negocio del producto (`SRV-002-auth-rbac`, `plan.md §3`, T-023).
 
 Mismo estilo que `adapters/db/postgresql_adapter.py` (Core, sin
 `declarative_base()`/`Session`) — una sola tabla no lo justifica (Anti-Abstraction,
-`plan.md §0`). `metadata` es el `target_metadata` de `alembic/env.py`;
+`plan.md §0`). `metadata` (`models/base.py`, `SRV-003-bacnet-adapter`, T-010 —
+extraída de aquí sin cambiar columnas/constraints/comportamiento, ver su propio
+docstring) es el `target_metadata` de `alembic/env.py`;
 `adapters/db/user_repository_adapter.py::PostgreSQLUserRepository` (T-024/T-025)
 es el único módulo de `services`/`adapters` que debería referenciar `users_table`
 en operaciones `select`/`insert`/`update` (`services/` sigue importando solo
@@ -17,7 +19,6 @@ from sqlalchemy import (
     CheckConstraint,
     Column,
     Index,
-    MetaData,
     String,
     Table,
     Text,
@@ -25,7 +26,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import UUID
 
-metadata = MetaData()
+from models.base import metadata
 
 users_table = Table(
     "users",

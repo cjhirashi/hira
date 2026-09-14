@@ -33,3 +33,11 @@ class Settings(BaseSettings):
     # antes de sembrar).
     seed_admin_email: str | None = None
     seed_admin_password: str | None = None
+
+    # `SRV-003-bacnet-adapter` (`plan.md §0`/§1, Registro de decisiones) —
+    # opcionales: `BAC0.lite(ip=None)` autodetecta la interfaz/IP local del
+    # host (comportamiento correcto para un solo NIC on-premise, Art. 10 — no
+    # anticipar una variable de entorno obligatoria sin caso de uso real de
+    # multi-NIC). Fijarlas es un ajuste operativo excepcional.
+    bacnet_ip: str | None = None
+    bacnet_port: int | None = None

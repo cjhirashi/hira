@@ -22,3 +22,10 @@ PyJWT==2.10.1
 # Migraciones (`SRV-002-auth-rbac`, T-023) — primera tabla de negocio del
 # producto (`users`). Plantilla async, reutiliza `asyncpg` (ya arriba).
 alembic==1.14.0
+
+# Adaptador BACnet/IP real (`SRV-003-bacnet-adapter`, T-013/T-014, `plan.md §2`)
+# — solo `adapters/bacnet/bac0_adapter.py` importa `BAC0`/`bacpypes3`
+# (`SRV-ADR-017`). `bacpypes3` llega como dependencia transitiva de `BAC0`
+# (0.0.106 al momento de fijar esta versión) — sin pinearla aparte salvo que
+# un futuro conflicto lo exija (`plan.md §2`, Registro de decisiones).
+BAC0==2026.7.25

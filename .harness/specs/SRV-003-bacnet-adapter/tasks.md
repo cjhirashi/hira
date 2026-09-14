@@ -91,47 +91,118 @@ actualizado: 2026-09-14
       de este batch), sin regresiones en `SRV-001`/`SRV-002`.
 
 ### Modelo de datos
-- [ ] T-010 — `hira-server/backend/models/base.py` (nuevo, `metadata`
+- [x] T-010 — `hira-server/backend/models/base.py` (nuevo, `metadata`
       compartida) + editar `models/user_model.py` (importa `metadata` de
       `models/base.py` en vez de declarar la suya — sin cambio de
       comportamiento; confirmar que la suite de `SRV-002` sigue en verde sin
       modificar sus aserciones) (cubre RF-002) [zona: modelo-de-datos]
-- [ ] T-011 — `models/device_model.py` (`devices_table` con `UNIQUE(protocol,
+      **Evidencia:** verificado contenido letra por letra contra `plan.md
+      §3`/§7 (sesión continuación tras corte de rate-limit) — `user_model.py`
+      solo cambió el import de `MetaData()` propio a `from models.base import
+      metadata`, cero cambios en columnas/`CHECK`/`Index`. Suite completa
+      (`python -m pytest -m "not integration"`): 157 passed, 19 deselected,
+      0 failed — sin regresión en `SRV-001`/`SRV-002`.
+- [x] T-011 — `models/device_model.py` (`devices_table` con `UNIQUE(protocol,
       address)`, `device_points_candidates_table` con `UNIQUE(device_id,
       object_type, object_instance)` — Core `Table`) (cubre RF-002)
       [zona: modelo-de-datos]
-- [ ] T-012 — Ampliar `alembic/env.py` (importar `models.device_model`) +
+      **Evidencia:** columnas/constraints verificados contra `plan.md §3`
+      (tipos, `CHECK (protocol IN (...))`, `UNIQUE(protocol, address)`, FK
+      `device_id → devices.id ON DELETE CASCADE`, `UNIQUE(device_id,
+      object_type, object_instance)`) — coincide exactamente. Registra ambas
+      `Table` contra `models/base.py::metadata` compartida.
+- [x] T-012 — Ampliar `alembic/env.py` (importar `models.device_model`) +
       `alembic/versions/0002_create_devices_tables.py`
       (`down_revision="0001"`) (cubre RF-002) [zona: modelo-de-datos]
+      **Evidencia:** contra Postgres real (`docker compose -f
+      docker-compose.yml -f docker-compose.dev.yml up -d postgres`,
+      TimescaleDB pg16): `alembic upgrade head` (0001→0002, ambas tablas
+      creadas con columnas/constraints exactos de `plan.md §3`, verificado
+      con `\d devices`/`\d device_points_candidates`) → `alembic downgrade
+      base` (dropea las 3 tablas de negocio, deja solo `alembic_version`) →
+      `alembic upgrade head` de nuevo (reproducible, mismas 4 tablas). Sin
+      romper `0001` (`users` se sigue creando igual).
 
 ### Adaptador BACnet real — integración sin hardware
-- [ ] T-013 — Test `tests/integration/test_bac0_adapter.py` (requiere 2
+- [x] T-013 — Test `tests/integration/test_bac0_adapter.py` (requiere 2
       instancias reales de `BAC0.lite()` en `127.0.0.1`, una con objetos
       BACnet reales de prueba, otra escaneando — Who-Is/I-Am real por UDP,
       unicast) (debe fallar) (cubre RF-001, RF-002, RF-006, RF-010)
       [zona: test-adaptadores]
-- [ ] T-014 — Implementar `adapters/bacnet/bac0_adapter.py::BAC0Adapter` +
+      **Evidencia:** 3 tests, `ModuleNotFoundError: No module named
+      'adapters.bacnet.bac0_adapter'` antes de T-014 → 3 passed tras T-014
+      (`python -m pytest tests/integration/test_bac0_adapter.py -v -m
+      integration`, 4.17s) — UDP real en `127.0.0.1` con `BAC0==2026.7.25`/
+      `bacpypes3==0.0.106` instalado (`pip show BAC0` confirma la versión
+      exacta del `plan.md`). Who-Is unicast dirigido (`target_address`,
+      parámetro propio de `BAC0Adapter`, no del `Protocol`) — evita depender
+      de broadcast UDP en el entorno de test, mismo criterio ya documentado
+      en `plan.md §5`.
+- [x] T-014 — Implementar `adapters/bacnet/bac0_adapter.py::BAC0Adapter` +
       `BAC0==2026.7.25` en `requirements.txt` — reemplaza el **cuerpo** (no la
       firma) de `adapters/factory.py::get_bacnet_transport_port()` (cubre
       RF-001, RF-002, RF-006, RF-010) [zona: adaptadores]
+      **Evidencia:** spike real (no solo lectura de código) contra el wheel
+      instalado resolvió la "duda abierta" de `plan.md §5`: `who_is(address=,
+      timeout=)` retorna `list[bacpypes3.apdu.IAmRequest]`
+      (`.pduSource`/`.iAmDeviceIdentifier`); `device_info_cache` ya queda
+      poblado tras `who_is()`, permite resolver `device_instance` solo con
+      `network_address` (firma del puerto, sin parámetro de instancia extra);
+      `bacnet.read()` por propiedad maneja con gracia `units` ausente
+      (`EngineeringUnits("noUnits")`) pero `readMultiple()` lanza `TypeError`
+      interno en el mismo caso (verificado con ejecución real) — por eso se
+      usa `read()` por propiedad, documentado en el docstring del adaptador.
+      Objetos `device`/`network-port` excluidos de los candidatos (sin
+      `presentValue`, verificado con ejecución real). Suite completa (`pytest
+      -m "not integration"`): 157 passed, 22 deselected, sin regresión.
 
 ### Adaptador de repositorio real — integración contra Postgres
-- [ ] T-015 — Test `tests/integration/test_device_repository_adapter.py`
+- [x] T-015 — Test `tests/integration/test_device_repository_adapter.py`
       (requiere Postgres real + `alembic upgrade head` con la migración
       `0002` aplicada) (debe fallar) (cubre RF-002, RF-004, RF-005, RF-009)
       [zona: test-adaptadores]
-- [ ] T-016 — Implementar `adapters/db/device_repository_adapter.py::
+      **Evidencia:** 8 tests, `ModuleNotFoundError: No module named
+      'adapters.db.device_repository_adapter'` antes de T-016 → 8 passed tras
+      T-016 (`TEST_DATABASE_URL=postgresql+asyncpg://hira:testpass123@
+      localhost:5432/hiradb python -m pytest
+      tests/integration/test_device_repository_adapter.py -v -m integration`,
+      2.25s, contra Postgres real con la migración `0002` aplicada).
+- [x] T-016 — Implementar `adapters/db/device_repository_adapter.py::
       PostgreSQLDeviceRepository` — reemplaza el **cuerpo** de
       `adapters/factory.py::get_device_repository_port()` (cubre RF-002,
       RF-004, RF-005, RF-009) [zona: adaptadores]
+      **Evidencia:** `INSERT ... ON CONFLICT DO UPDATE` real (`upsert_device`
+      sobre `(protocol, address)`, `upsert_candidate` sobre `(device_id,
+      object_type, object_instance)`) verificado con un segundo `upsert_*` del
+      mismo par que actualiza sin duplicar
+      (`test_upsert_device_same_protocol_address_updates_not_duplicates`,
+      `test_upsert_candidate_same_key_updates_not_duplicates`).
+      `_InMemoryDeviceRepository` placeholder retirado de
+      `adapters/factory.py` (dead code tras el reemplazo). Suite completa
+      (`pytest -m "not integration"`): 157 passed, 30 deselected, sin
+      regresión.
 
 ### Sistema — verificación e2e
-- [ ] T-017 — `tests/integration/test_devices_scan_e2e.py` (contenedores
+- [x] T-017 — `tests/integration/test_devices_scan_e2e.py` (contenedores
       reales + 2 instancias BAC0 reales): recorrido completo `POST /devices/
       scan/bacnet` → `GET /devices` → `GET /devices/{id}/candidates`,
       RNF-001 medido con evidencia real (debe fallar antes de T-014/T-016,
       pasa después) (cubre RF-001, RF-002, RF-004, RF-005, RF-008, RF-009,
       RNF-001) [zona: sistema-e2e]
+      **Evidencia:** 1 test, recorrido completo con Postgres real (migración
+      `0002` aplicada) + `BAC0Adapter` real contra una instancia `BAC0.lite()`
+      simulando el dispositivo — `TEST_DATABASE_URL=postgresql+asyncpg://
+      hira:testpass123@localhost:5432/hiradb python -m pytest
+      tests/integration/test_devices_scan_e2e.py -v -m integration`, 2.52s.
+      RNF-001 medido: escaneo completo (Who-Is unicast + lectura de 2 objetos)
+      **0.127s** (evidencia real, `-s`), muy por debajo de la ventana de 3s.
+      Cliente HTTP: `httpx.AsyncClient(transport=ASGITransport(app=app))`, no
+      `TestClient` — `TestClient` corre la app en un *event loop* propio (hilo
+      del *portal* de `anyio`) y los objetos `asyncio` internos de `BAC0`
+      quedan atados al loop en que se crearon; mezclarlos falló en tiempo real
+      con `ValueError: The future belongs to a different loop...` (verificado
+      con ejecución real, documentado en el docstring del test) —
+      `ASGITransport` corre la app en el mismo loop que el test, sin cruce.
 
 ### Documentación (`plan.md §8`) — puede correr en paralelo desde T-001
 - [ ] T-018 — Corregir `docs/hira-server/spec/modules/dispositivos-
@@ -149,17 +220,17 @@ actualizado: 2026-09-14
 ## Cobertura (el gate exige 100 %; `Estado` lo rellena el gate)
 | RF / doc | Tareas | Test(s) | Estado |
 |---|---|---|---|
-| RF-001 | T-005, T-006, T-008, T-009, T-013, T-014, T-017 | `test_device_scan_service.py`, `test_devices_router.py`, `test_bac0_adapter.py`, `test_devices_scan_e2e.py` | Pendiente |
-| RF-002 | T-001, T-002, T-005, T-006, T-008, T-009, T-010, T-011, T-012, T-013, T-014, T-015, T-016, T-017 | `test_bacnet_address.py`, `test_device_scan_service.py`, `test_devices_router.py`, `test_bac0_adapter.py`, `test_device_repository_adapter.py`, `test_devices_scan_e2e.py` | Pendiente |
+| RF-001 | T-005, T-006, T-008, T-009, T-013, T-014, T-017 | `test_device_scan_service.py`, `test_devices_router.py`, `test_bac0_adapter.py`, `test_devices_scan_e2e.py` | Pass |
+| RF-002 | T-001, T-002, T-005, T-006, T-008, T-009, T-010, T-011, T-012, T-013, T-014, T-015, T-016, T-017 | `test_bacnet_address.py`, `test_device_scan_service.py`, `test_devices_router.py`, `test_bac0_adapter.py`, `test_device_repository_adapter.py`, `test_devices_scan_e2e.py` | Pass |
 | RF-003 | T-008, T-009 | `test_devices_router.py` | Pass |
-| RF-004 | T-008, T-009, T-015, T-016, T-017 | `test_devices_router.py`, `test_device_repository_adapter.py`, `test_devices_scan_e2e.py` | Pendiente |
-| RF-005 | T-008, T-009, T-015, T-016, T-017 | `test_devices_router.py`, `test_device_repository_adapter.py`, `test_devices_scan_e2e.py` | Pendiente |
-| RF-006 | T-005, T-006, T-013, T-014, T-017 | `test_device_scan_service.py`, `test_bac0_adapter.py`, `test_devices_scan_e2e.py` | Pendiente |
+| RF-004 | T-008, T-009, T-015, T-016, T-017 | `test_devices_router.py`, `test_device_repository_adapter.py`, `test_devices_scan_e2e.py` | Pass |
+| RF-005 | T-008, T-009, T-015, T-016, T-017 | `test_devices_router.py`, `test_device_repository_adapter.py`, `test_devices_scan_e2e.py` | Pass |
+| RF-006 | T-005, T-006, T-013, T-014, T-017 | `test_device_scan_service.py`, `test_bac0_adapter.py`, `test_devices_scan_e2e.py` | Pass |
 | RF-007 | T-006 | `test_device_scan_service.py` (ausencia de escritura a tabla de puntos operables) | Pass |
-| RF-008 | T-005, T-006, T-008, T-009, T-017 | `test_device_scan_service.py`, `test_devices_router.py`, `test_devices_scan_e2e.py` | Pendiente |
-| RF-009 | T-008, T-009, T-015, T-016, T-017 | `test_devices_router.py`, `test_device_repository_adapter.py`, `test_devices_scan_e2e.py` | Pendiente |
-| RF-010 | T-013, T-014 | `test_bac0_adapter.py` | Pendiente |
-| RNF-001 | T-005, T-006, T-017 | `test_device_scan_service.py`, `test_devices_scan_e2e.py` | Pendiente |
+| RF-008 | T-005, T-006, T-008, T-009, T-017 | `test_device_scan_service.py`, `test_devices_router.py`, `test_devices_scan_e2e.py` | Pass |
+| RF-009 | T-008, T-009, T-015, T-016, T-017 | `test_devices_router.py`, `test_device_repository_adapter.py`, `test_devices_scan_e2e.py` | Pass |
+| RF-010 | T-013, T-014 | `test_bac0_adapter.py` | Pass |
+| RNF-001 | T-005, T-006, T-017 | `test_device_scan_service.py`, `test_devices_scan_e2e.py` | Pass |
 | doc: dispositivos-protocolos-puntos.md | T-018 | — | Pendiente |
 
 > Esta tabla **es** la trazabilidad de la feature (no hay `traceability-matrix.md`).
