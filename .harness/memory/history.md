@@ -25,6 +25,38 @@ Session-End por sesión, con el formato fijo de `method.md §10`. Las bitácoras
 
 ---
 
+## [2026-09-14] SRV-004-modbus-adapter — implemented
+
+- **Fase alcanzada:** implement (13/13 tareas, T-001..T-013)
+- **Rebotes del verificador:** 0 (aprobado en ambas rondas de revisión)
+- **Directiva de Pausa:** no
+- **Drift / re-anchor:** no (primer anclaje de la feature)
+- **Anclas movidas:** `SRV-004-modbus-adapter` → `089b1e0d59d455a0dd71ab769b6c1fd9a682ed2b`
+- **Gate:** verde (28 ok · 1 warn preexistente — `spectral` no instalado)
+- **Docs actualizadas:** `hira-server/docs/openapi.yaml` (`POST /devices/scan/
+  modbus`, resto intacto); `docs/hira-server/spec/modules/dispositivos-
+  protocolos-puntos.md` (nota de `SRV-003` ampliada con Modbus TCP).
+- **Decisiones de diseño / límites de integración:** segunda de 4 features del
+  grupo de protocolos. Sin `AC-SRV-0X` previo (a diferencia de BACnet) —
+  criterios construidos desde cero, mismo patrón `verified`. Reutilización
+  máxima de `SRV-003`: sin puerto de persistencia nuevo, sin migración
+  (`devices.protocol` ya admitía `'modbus'`), sin tocar los endpoints `GET`
+  existentes (protocolo-agnósticos). `ModbusTransportPort` nuevo con un único
+  método `read_range` para los 4 tipos de registro; fallos por dirección como
+  valor de retorno (no excepción, a diferencia de BACnet — es el caso normal
+  al sondear un rango, no el excepcional). Límite de 125 direcciones/tipo
+  (estándar Modbus), timeout 1s. Arquitecto verificó `pymodbus==3.15.0` con
+  ejecución real en Fase 2 (API clásica del servidor de test rota en esa
+  versión, se usa `SimData`/`SimDevice`) — cero sorpresas en Fase 4. Verificado
+  contra servidor Modbus TCP real (sin hardware, sin mocks) + Postgres real;
+  el revisor confirmó ausencia de regresión levantando Postgres+Redis+
+  Mosquitto completos.
+- **Próximo paso:** MQTT-scanning o Simuladores (las otras 2 del grupo), o
+  retomar otro track (`HUB-H1`). Aprobación humana final de `estado: verified`
+  pendiente (Gate 4) — el orquestador no se autoaprueba.
+
+---
+
 ## [2026-09-14] SRV-003-bacnet-adapter — implemented
 
 - **Fase alcanzada:** implement (19/19 tareas, T-001..T-019)
