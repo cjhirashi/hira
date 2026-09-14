@@ -2,7 +2,7 @@
 id: SPEC-HUB-001
 tipo: spec
 feature: HUB-001-walking-skeleton
-estado: implemented
+estado: verified
 anchor_commit: 4d180449ae41c30e402bf88eb7c36cded5592eea
 anchor_mode: strict
 covers:

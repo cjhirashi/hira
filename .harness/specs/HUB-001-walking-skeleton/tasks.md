@@ -2,7 +2,7 @@
 id: TASKS-HUB-001
 tipo: tasks
 feature: HUB-001-walking-skeleton
-estado: implemented
+estado: verified
 actualizado: 2026-09-14
 ---
 

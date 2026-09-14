@@ -91,19 +91,12 @@ actualizado: 2026-09-13
 - Antes de tocar nada: `bash .harness/gate/check.sh`.
 - **`SRV-001-walking-skeleton`** y **`SRV-002-auth-rbac`**: `estado: verified`
   (Carlos, Gate 4). Detalle en sus entradas Session-End de `memory/history.md`.
-- **`HUB-001-walking-skeleton`** (Walking Skeleton de Hira Hub, primera feature
-  real de Hub, sin dependencia de `SRV-*`): **`estado: implemented`**, 25/25
+- **`HUB-001-walking-skeleton`**: `estado: verified` (Carlos, Gate 4). 25/25
   tareas, ancla en `4d180449ae41c30e402bf88eb7c36cded5592eea`. 1 rebote real
-  del revisor (credenciales de Redis no usadas — `/health` mentía sobre el
-  estado real; corregido de raíz reproduciendo el flujo `.env.example` real, no
-  un atajo). Ambos servicios (`hira-server`, `hira-hub`) corren ya su suite
-  real en el mismo `gate/check.sh`. Detalle completo: entrada Session-End
-  `[2026-09-14] HUB-001-walking-skeleton` en `memory/history.md` — no se
-  repite aquí (`method.md §10`).
-- **Pendiente de tu confirmación:** ¿`HUB-001-walking-skeleton` pasa a `estado:
-  verified` (Gate 4)? El orquestador no se autoaprueba.
-- **Siguiente paso:** elegir la siguiente feature real — `SRV-Sprint-3`
-  (protocolos BACnet/Modbus/MQTT + simuladores, sigue el roadmap sobre Server)
-  o `HUB-H1` (gestión de licencias, sobre el Walking Skeleton de Hub ya
-  `implemented`). Aplicar la rúbrica (`method.md §2`) y Fase 1 con
-  `autor-de-spec` para la que se elija.
+  del revisor (credenciales de Redis no usadas, corregido de raíz). Ambos
+  servicios (`hira-server`, `hira-hub`) corren ya su suite real en el mismo
+  `gate/check.sh`. Detalle en su entrada Session-End de `memory/history.md`.
+- **Siguiente paso:** `SRV-Sprint-3` — protocolos industriales de Hira Server
+  (BACnet/Modbus/MQTT + adaptadores + escaneo de red + simuladores,
+  `SRV-ADR-014`, `AC-SRV-03/04/05`), sobre `SRV-002-auth-rbac` ya `verified`.
+  Aplicar la rúbrica (`method.md §2`) y Fase 1 con `autor-de-spec`.
