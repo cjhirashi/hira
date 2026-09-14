@@ -205,17 +205,29 @@ actualizado: 2026-09-14
       `ASGITransport` corre la app en el mismo loop que el test, sin cruce.
 
 ### Documentación (`plan.md §8`) — puede correr en paralelo desde T-001
-- [ ] T-018 — Corregir `docs/hira-server/spec/modules/dispositivos-
+- [x] T-018 — Corregir `docs/hira-server/spec/modules/dispositivos-
       protocolos-puntos.md`: nota aclarando que esta feature añade el
       escaneo/candidatos (Who-Is/I-Am + `device_points_candidates`) que
       alimentan la futura asociación explícita — el Motor de Protocolos
       completo (lectura/escritura/polling de puntos *asociados*) sigue sin
       existir todavía [doc]
+      **Evidencia:** nota `> **Estado de implementación.** ...` añadida bajo
+      "Responsabilidad" (antes de "## Escaneo y descubrimiento"), texto letra
+      por letra el fijado en `plan.md §8`. Resto del documento sin tocar
+      (verificado con `git diff` — un solo bloque insertado).
 
 ### Higiene de repo
-- [ ] T-019 — `hira-server/backend/adapters/bacnet/README.md` (nuevo) +
+- [x] T-019 — `hira-server/backend/adapters/bacnet/README.md` (nuevo) +
       `adapters/db/README.md` (ampliar, ya existe de `SRV-001`/`SRV-002`) —
       documentan las carpetas nuevas/ampliadas [zona: infra]
+      **Evidencia (verificación, no rehecho):** los 3 READMEs (`adapters/
+      bacnet/README.md`, `adapters/db/README.md`, `models/README.md`) ya
+      documentaban con contenido real las carpetas nuevas/ampliadas de este
+      batch — nombres de clase/función y tablas citados coinciden letra por
+      letra con el código (`grep -n "def \|class "` sobre `bac0_adapter.py`
+      y `device_repository_adapter.py`, `grep -n "Table("` sobre
+      `device_model.py`), con referencias a RF-/T- correctas. Sin
+      placeholders vacíos. No se modificó ningún README.
 
 ## Cobertura (el gate exige 100 %; `Estado` lo rellena el gate)
 | RF / doc | Tareas | Test(s) | Estado |
@@ -231,7 +243,7 @@ actualizado: 2026-09-14
 | RF-009 | T-008, T-009, T-015, T-016, T-017 | `test_devices_router.py`, `test_device_repository_adapter.py`, `test_devices_scan_e2e.py` | Pass |
 | RF-010 | T-013, T-014 | `test_bac0_adapter.py` | Pass |
 | RNF-001 | T-005, T-006, T-017 | `test_device_scan_service.py`, `test_devices_scan_e2e.py` | Pass |
-| doc: dispositivos-protocolos-puntos.md | T-018 | — | Pendiente |
+| doc: dispositivos-protocolos-puntos.md | T-018 | — | Pass |
 
 > Esta tabla **es** la trazabilidad de la feature (no hay `traceability-matrix.md`).
 > Fila sin test, en `Fail` o `Pendiente` → el gate no abre.
