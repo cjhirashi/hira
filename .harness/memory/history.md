@@ -25,6 +25,44 @@ Session-End por sesión, con el formato fijo de `method.md §10`. Las bitácoras
 
 ---
 
+## [2026-09-14] HUB-001-walking-skeleton — implemented
+
+- **Fase alcanzada:** implement (25/25 tareas, T-001..T-025)
+- **Rebotes del verificador:** 1 — `RedisAdapter`/`adapters/factory.py` nunca leían
+  `Settings().redis_password`; con el `.env.example` real (Redis del compose exige
+  `--requirepass`), `GET /health` reportaba `redis: error` falso aunque Redis
+  estuviera sano. El test de integración lo enmascaraba (URL hardcodeada con
+  password embebida, distinta de la que usaba producción). El revisor lo encontró
+  reproduciendo el flujo real (`.env.example` sin editar), no solo leyendo código.
+  Corregido de raíz: `RedisAdapter` combina `redis_url`+`redis_password`; nuevo
+  `test_cache_adapter_wiring.py` (mockeado, sin Docker) detecta esta clase de
+  regresión; test de integración usa la misma fuente de verdad que `.env.example`.
+- **Directiva de Pausa:** no
+- **Drift / re-anchor:** no (primer anclaje de la feature)
+- **Anclas movidas:** `HUB-001-walking-skeleton` → `4d180449ae41c30e402bf88eb7c36cded5592eea`
+- **Gate:** verde (24 ok · 1 warn preexistente — `spectral` no instalado). Primera vez
+  que 2 servicios (`hira-server/backend`, `hira-hub/backend`) corren su suite real
+  en el mismo gate.
+- **Docs actualizadas:** `hira-hub/docs/openapi.yaml` (nuevo); `docs/hira-hub/spec/
+  conceptual-design.md` (nota *superseded* de "ADR-5 — Arquitectura directa");
+  `detailed-design.md` (árbol con `core/ports/`/`adapters/`, retira
+  `core/database.py` monolítico); `dev-guide.md` (tabla Sprint H0 real, nginx H0
+  aclarado como local); `validation.md` (checklist H0 corregido, `trace_id`
+  añadido).
+- **Decisiones de diseño / límites de integración:** primera feature real de Hira
+  Hub, sin dependencia de `SRV-*`. Hexagonal desde el día 1 (`E-ADR-002`, supersede
+  `HUB-ADR-05` "directa") — solo `DatabasePort`/`CachePort` *liveness*, sin
+  adelantar puertos de negocio de H1/H2/H3 (Art. 10). `adapters/factory.py` nace
+  proactivamente junto al router (aplicando la lección de la Directiva de Pausa de
+  `SRV-001` sin tener que repetirla). Sin Mosquitto (`HUB-ADR-01`). Backend en
+  puerto 8001 (evita colisión con `hira-server:8000` en desarrollo local paralelo).
+  Despliegue de producción real (VPS/dominio/TLS) queda fuera de este sprint.
+- **Próximo paso:** decidir con el usuario la siguiente feature — `SRV-Sprint-3`
+  (protocolos de Server) o `HUB-H1` (gestión de licencias). Aprobación humana final
+  de `estado: verified` pendiente (Gate 4) — el orquestador no se autoaprueba.
+
+---
+
 ## [2026-09-13] SRV-002-auth-rbac — implemented
 
 - **Fase alcanzada:** implement (40/40 tareas, T-001..T-040)

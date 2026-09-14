@@ -83,21 +83,27 @@ actualizado: 2026-09-13
   decidió no reescribir ese corpus — es documentación de producto cerrada, no
   maquinaria del arnés. 404 en uno de esos enlaces = doc de producto desactualizada,
   no un problema del arnés; backlog de higiene separado, no se parchea el arnés.
-- Ninguno abierto — `SRV-001-walking-skeleton` y `SRV-002-auth-rbac` cerradas.
+- Ninguno abierto — `SRV-001-walking-skeleton` y `SRV-002-auth-rbac` `verified`;
+  `HUB-001-walking-skeleton` `implemented` (pendiente confirmación `verified`).
 
 ## Próximo paso concreto
 
 - Antes de tocar nada: `bash .harness/gate/check.sh`.
-- **`SRV-001-walking-skeleton`**: `estado: verified` (Carlos, Gate 4).
-- **`SRV-002-auth-rbac`** (Auth + RBAC MVP, 3 roles fijos): **`estado:
-  verified`** (Carlos, Gate 4). 40/40 tareas, ancla en
-  `f8157ed6efb7668b90c3dd4a61a97a2616301cf3`. Incluyó 1 Directiva de Pausa
-  arquitectónica (RNF-001, resuelta de raíz — ~54ms → ~0.1ms real) y un nuevo
-  ADR de ecosistema (`E-ADR-003`, convención RFC 9457). Detalle completo:
-  entrada Session-End `[2026-09-13] SRV-002-auth-rbac` en `memory/history.md`
-  y tabla de Cobertura de `tasks.md` — no se repite aquí (`method.md §10`).
-- **Siguiente paso:** `HUB-H0` — Walking Skeleton de Hira Hub (Compose FastAPI
-  + PostgreSQL + Redis + Nginx, `/health`, logger JSON — mismo tipo de tarea
-  que `SRV-001` pero para Hub, por puertos/adaptadores ya que `E-ADR-002`
-  homogeneizó a Hexagonal). Sin dependencia con `SRV-*`, puede correr en
-  paralelo. Aplicar la rúbrica (`method.md §2`) y Fase 1 con `autor-de-spec`.
+- **`SRV-001-walking-skeleton`** y **`SRV-002-auth-rbac`**: `estado: verified`
+  (Carlos, Gate 4). Detalle en sus entradas Session-End de `memory/history.md`.
+- **`HUB-001-walking-skeleton`** (Walking Skeleton de Hira Hub, primera feature
+  real de Hub, sin dependencia de `SRV-*`): **`estado: implemented`**, 25/25
+  tareas, ancla en `4d180449ae41c30e402bf88eb7c36cded5592eea`. 1 rebote real
+  del revisor (credenciales de Redis no usadas — `/health` mentía sobre el
+  estado real; corregido de raíz reproduciendo el flujo `.env.example` real, no
+  un atajo). Ambos servicios (`hira-server`, `hira-hub`) corren ya su suite
+  real en el mismo `gate/check.sh`. Detalle completo: entrada Session-End
+  `[2026-09-14] HUB-001-walking-skeleton` en `memory/history.md` — no se
+  repite aquí (`method.md §10`).
+- **Pendiente de tu confirmación:** ¿`HUB-001-walking-skeleton` pasa a `estado:
+  verified` (Gate 4)? El orquestador no se autoaprueba.
+- **Siguiente paso:** elegir la siguiente feature real — `SRV-Sprint-3`
+  (protocolos BACnet/Modbus/MQTT + simuladores, sigue el roadmap sobre Server)
+  o `HUB-H1` (gestión de licencias, sobre el Walking Skeleton de Hub ya
+  `implemented`). Aplicar la rúbrica (`method.md §2`) y Fase 1 con
+  `autor-de-spec` para la que se elija.
