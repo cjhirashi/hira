@@ -2,14 +2,16 @@
 id: SPEC-SRV-003
 tipo: spec
 feature: SRV-003-bacnet-adapter
-estado: in-review
+estado: approved
 anchor_commit: ‹pendiente›
 anchor_mode: advisory
 covers:
   - hira-server/backend/**
+  - hira-server/docs/openapi.yaml
+  - docs/hira-server/spec/modules/dispositivos-protocolos-puntos.md
 aprobaciones:
   fase_1: { por: "Carlos", fecha: 2026-09-14 }
-  fase_2: pendiente
+  fase_2: { por: "Carlos", fecha: 2026-09-14 }
 actualizado: 2026-09-14
 ---
 
