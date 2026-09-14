@@ -1,0 +1,14 @@
+# Versiones exactas fijadas (sin rangos ^ ni ~), mismo criterio que
+# `hira-server/backend/requirements.txt`. Alcance de T-001..T-012
+# (`HUB-001-walking-skeleton`): solo lo que `backend/` importa en este batch
+# (`main.py` nace en T-012 con FastAPI + Correlation ID; sin adaptadores
+# reales todavía — llegan en T-018/T-019).
+fastapi==0.141.1
+uvicorn[standard]==0.52.3
+pydantic==2.13.4
+pydantic-settings==2.15.0
+
+# Adaptadores reales de PostgreSQL/Redis (T-018/T-019, RF-002) — solo
+# `adapters/*` importará estas librerías (`E-ADR-002`). Se añaden a este
+# archivo cuando ese batch los importe de verdad — no anticipar
+# (Constitución Art. 10).
