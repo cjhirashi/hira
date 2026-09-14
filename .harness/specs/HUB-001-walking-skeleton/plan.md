@@ -2,7 +2,7 @@
 id: PLAN-HUB-001
 tipo: plan
 feature: HUB-001-walking-skeleton
-estado: approved
+estado: implemented
 aprobaciones:
   fase_2: { por: "Carlos", fecha: 2026-09-14 }
 actualizado: 2026-09-14

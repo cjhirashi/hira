@@ -2,9 +2,9 @@
 id: SPEC-HUB-001
 tipo: spec
 feature: HUB-001-walking-skeleton
-estado: in-review
-anchor_commit: ‹pendiente›
-anchor_mode: advisory
+estado: implemented
+anchor_commit: 4d180449ae41c30e402bf88eb7c36cded5592eea
+anchor_mode: strict
 covers:
   - hira-hub/backend/**
   - hira-hub/docs/**
