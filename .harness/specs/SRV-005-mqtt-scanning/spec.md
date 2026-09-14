@@ -2,9 +2,9 @@
 id: SPEC-SRV-005
 tipo: spec
 feature: SRV-005-mqtt-scanning
-estado: approved
-anchor_commit: ‹pendiente›
-anchor_mode: advisory
+estado: implemented
+anchor_commit: d93243a
+anchor_mode: strict
 covers:
   - hira-server/backend/**
 aprobaciones:

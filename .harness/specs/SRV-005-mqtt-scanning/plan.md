@@ -2,7 +2,7 @@
 id: PLAN-SRV-005
 tipo: plan
 feature: SRV-005-mqtt-scanning
-estado: approved
+estado: implemented
 aprobaciones:
   fase_2: { por: "Carlos", fecha: 2026-09-14 }
 actualizado: 2026-09-14

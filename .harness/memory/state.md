@@ -1,7 +1,7 @@
 ---
 tipo: memoria
 subtipo: state
-actualizado: 2026-09-13
+actualizado: 2026-09-14
 ---
 
 # Estado del arnés — ecosistema Hira
@@ -108,7 +108,25 @@ actualizado: 2026-09-13
   — ambas `estado: verified` (Carlos, Gate 4), sobre el mismo modelo `devices`/
   `device_points_candidates` (`SRV-003` lo creó, `SRV-004` lo reutiliza sin
   migración nueva). Detalle en sus entradas Session-End de `memory/history.md`.
-- **Siguiente paso:** `SRV-005-mqtt-scanning` (tercera del grupo de
-  protocolos) — suscripción wildcard, detección de topics nuevos como
-  candidatos, mismo patrón ya `verified` 2 veces (BACnet/Modbus). Aplicar
-  `method.md §2` y Fase 1 con `autor-de-spec`.
+- **`SRV-005-mqtt-scanning`** (MQTT, tercera del grupo de protocolos) —
+  `estado: implemented`, ancla en `d93243a`. 13/13 tareas, ciclo completo
+  Fase 1→4, 1 rebote real del revisor (tabla de Cobertura con fila RF-005
+  `Pendiente` pese a verificable — mismo bug recurrente de `SRV-001/003/004`,
+  corregido). Sin Directiva de Pausa formal, pero sí un hallazgo real
+  documentado de raíz (orden `disconnect()`/`loop_stop()` en
+  `MqttScanAdapter` — bloqueo de hasta ~1s en el hilo de red de paho-mqtt,
+  sin violar ningún RF-/RNF-). Decisión de dominio: sin identidad fija de
+  "dispositivo" — un `device` MQTT = el patrón de suscripción completo;
+  `crc32` del topic real en `object_instance`, topic completo en
+  `object_name`. Verificado contra el Mosquitto real ya autenticado de
+  `SRV-001` (sin broker de prueba aparte). 234/234 tests, gate verde.
+  Pendiente confirmación humana de Gate 4 (`verified`). Detalle completo:
+  entrada Session-End `[2026-09-14]` en `memory/history.md`.
+- **Próximo paso:** confirmar `verified` de `SRV-005-mqtt-scanning` (Gate 4,
+  pendiente de respuesta del usuario). Después, decidir entre: (a)
+  `Simuladores` — 4ª y última feature del grupo de protocolos, permitiría
+  probar BACnet/Modbus/MQTT sin hardware (aunque las 3 ya se verificaron sin
+  él, con infraestructura de prueba ad-hoc); (b) cambiar de frente a
+  `HUB-H1` (gestión de licencias); (c) la feature de "asociación explícita
+  de puntos" — diferida explícitamente por las 3 features de protocolos, ver
+  `SRV-003-bacnet-adapter/spec.md §6`.

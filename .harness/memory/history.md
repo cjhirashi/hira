@@ -25,6 +25,52 @@ Session-End por sesión, con el formato fijo de `method.md §10`. Las bitácoras
 
 ---
 
+## [2026-09-14] SRV-005-mqtt-scanning — implemented
+
+- **Fase alcanzada:** implement (13/13 tareas, T-001..T-013)
+- **Rebotes del verificador:** 1 (tabla de Cobertura: fila RF-005 quedó
+  `Pendiente` tras el primer batch T-001..T-008 pese a estar completamente
+  verificable — mismo bug recurrente ya visto en `SRV-001`/`SRV-003`/
+  `SRV-004`; corregido a `Pass` citando el precedente). Batch final
+  T-009..T-013 aprobado sin rebotes.
+- **Directiva de Pausa:** no (un hallazgo real durante T-009/T-010 —
+  `plan.md §5` asumía "<1s" para el rechazo de patrón inválido basado en un
+  spike que nunca ejerció `loop_stop()`; el orden real de cleanup en
+  `MqttScanAdapter` permitía hasta ~1s de bloqueo en el hilo de red de
+  paho-mqtt — **no** disparó Pausa porque ningún `RF-`/`RNF-` quedó violado
+  ni ninguna decisión de `spec.md §6` se revirtió; se corrigió de raíz
+  invirtiendo el orden `disconnect()`→`loop_stop()`, documentado en 3 sitios.
+  Revisor dio veredicto propio: correcto no pausar).
+- **Drift / re-anchor:** no (primer anclaje de la feature)
+- **Anclas movidas:** `SRV-005-mqtt-scanning` → `d93243a`
+- **Gate:** verde (28 ok · 2 warn esperados — `spectral` no instalado,
+  preexistente — · 0 errores)
+- **Docs actualizadas:** `hira-server/docs/openapi.yaml` (`POST /devices/
+  scan/mqtt`, resto intacto); `docs/hira-server/spec/modules/dispositivos-
+  protocolos-puntos.md` (nota de `SRV-003`/`SRV-004` ampliada con MQTT);
+  `adapters/mqtt/README.md`, `adapters/README.md`, `core/README.md`,
+  `core/ports/README.md`.
+- **Decisiones de diseño / límites de integración:** tercera de 4 features
+  del grupo de protocolos (BACnet → Modbus → **MQTT** → Simuladores).
+  Reutiliza `devices`/`device_points_candidates` de `SRV-003` sin migración
+  nueva. Decisión de dominio clave: sin identidad fija de "dispositivo" en
+  MQTT (push-based) — un `device` = el patrón de suscripción completo; cada
+  topic real que publicó durante la ventana (3s) es un candidato. `crc32`
+  del topic real ocupa `object_instance` (columna `INTEGER` compartida con
+  BACnet/Modbus, sin migrar); el topic completo vive en `object_name`
+  (`String(255)`, límite conocido, sin `RF-` que lo cubra). Verificado
+  contra el Mosquitto real ya autenticado de `SRV-001`/`VUL-SRV-001` — sin
+  broker de prueba aparte, a diferencia de BACnet/Modbus. Adaptador nuevo
+  (`mqtt_scan_adapter.py`) deliberadamente separado de `mosquitto_adapter.py`
+  (`NotificationPort` de `SRV-001`, conexión persistente con backoff — ciclo
+  de vida incompatible con el escaneo efímero por-request). 234/234 tests
+  (191 unit + 43 integración) sin regresión cruzada sobre BACnet/Modbus.
+- **Próximo paso:** confirmación humana de Gate 4 (`verified`) pendiente.
+  Después: decidir entre `Simuladores` (4ª y última del grupo de protocolos)
+  o cambiar de frente a `HUB-H1` (gestión de licencias) — ver `memory/state.md`.
+
+---
+
 ## [2026-09-14] SRV-004-modbus-adapter — implemented
 
 - **Fase alcanzada:** implement (13/13 tareas, T-001..T-013)
