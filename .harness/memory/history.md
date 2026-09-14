@@ -25,6 +25,45 @@ Session-End por sesión, con el formato fijo de `method.md §10`. Las bitácoras
 
 ---
 
+## [2026-09-14] SRV-003-bacnet-adapter — implemented
+
+- **Fase alcanzada:** implement (19/19 tareas, T-001..T-019)
+- **Rebotes del verificador:** 1 — el cierre (T-018/T-019) se dio por completo sin
+  el protocolo de Session-End (`estado`/`anchor_commit`/entrada en `history.md`/
+  `state.md` reescrito) — responsabilidad del coordinador, no del implementador;
+  corregido con este cierre.
+- **Directiva de Pausa:** no (una sesión de implementación se cortó por rate-limit
+  a mitad de T-010..T-017; se retomó verificando primero el trabajo parcial ya en
+  el working tree antes de continuar — no fue necesario abrir Directiva de Pausa,
+  el trabajo parcial resultó correcto)
+- **Drift / re-anchor:** no (primer anclaje de la feature)
+- **Anclas movidas:** `SRV-003-bacnet-adapter` → `ad10ac91880083f3a5cb793f8f4de98ec2ac3827`
+- **Gate:** verde (26 ok · 1 warn preexistente — `spectral` no instalado). Primera
+  vez que 2 servicios (`hira-server`, `hira-hub`) más una suite de integración
+  contra un protocolo de campo real (BACnet/UDP) conviven en el mismo gate.
+- **Docs actualizadas:** `hira-server/docs/openapi.yaml` (3 endpoints `/devices/*`
+  nuevos, `/health`/`/auth/*` intactos); `hira-server/.env.example` (`BACNET_IP`/
+  `BACNET_PORT` opcionales); `docs/hira-server/spec/modules/dispositivos-
+  protocolos-puntos.md` (nota de estado de implementación real vs. diseño).
+- **Decisiones de diseño / límites de integración:** primera de 4 features en que
+  se partió `SRV-Sprint-3` del ROADMAP (BACnet/Modbus/MQTT/Simuladores, dominio
+  demasiado heterogéneo para un solo ciclo). Solo escaneo Who-Is/I-Am + candidatos
+  crudos (`devices`/`device_points_candidates`) — asociación explícita de puntos,
+  escritura, polling y el `asyncio.Lock` de `VUL-SRV-005` quedan diferidos a
+  cuando exista escritura/polling concurrente real (Art. 10). Solo BACnet/IP
+  (MSTP diferido, requiere hardware serial). `BacnetTransportPort`/
+  `DeviceRepositoryPort` nuevos (ningún tipo de BAC0/bacpypes3 cruza a
+  `services/`). Verificación de integración real sin hardware: 2 instancias
+  `BAC0.lite()` reales por UDP en localhost — Who-Is/I-Am genuino, no mocks.
+  Hallazgos técnicos reales de la librería (BAC0 2026.7.25) documentados y
+  verificados de forma independiente por el revisor con scripts propios.
+- **Próximo paso:** siguiente feature del grupo de protocolos — Modbus, MQTT-
+  scanning, o Simuladores (orden a confirmar con el usuario), o retomar otro
+  track (`HUB-H1`). Aprobación humana final de `estado: verified` pendiente
+  (Gate 4) — el orquestador no se autoaprueba.
+
+---
+
 ## [2026-09-14] HUB-001-walking-skeleton — implemented
 
 - **Fase alcanzada:** implement (25/25 tareas, T-001..T-025)

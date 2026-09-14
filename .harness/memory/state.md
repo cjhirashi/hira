@@ -96,25 +96,21 @@ actualizado: 2026-09-13
   del revisor (credenciales de Redis no usadas, corregido de raíz). Ambos
   servicios (`hira-server`, `hira-hub`) corren ya su suite real en el mismo
   `gate/check.sh`. Detalle en su entrada Session-End de `memory/history.md`.
-- **Decisión (2026-09-14): `SRV-Sprint-3` (ROADMAP) se parte en 4 features del
-  arnés**, no una sola — BACnet/Modbus/MQTT/Simuladores son heterogéneos y el
-  bloque completo sería 3-4x más grande que `SRV-002`. Orden: **BACnet**
-  primero (descubrimiento nativo Who-Is/I-Am, criterio más completo de
-  `AC-SRV-03`), luego Modbus, MQTT-scanning, Simuladores — a confirmar tras
-  BACnet si el orden sigue teniendo sentido.
-- **Decisión (2026-09-14): asociación explícita de puntos diferida.**
-  `AC-SRV-03` mezcla criterios de adaptador/escaneo (3.1) con criterios de
-  asociación (3.2-3.5, `access_mode`/prioridad/polling — `SRV-ADR-019`), pero
-  `ROADMAP.md` ya separaba esto en Sprint 3 (adaptadores) vs. Sprint 4
-  (modelo de puntos candidatos → asociación explícita). Cada feature de
-  protocolo demuestra solo escaneo → `device_points_candidates` (persistencia
-  mínima de candidatos crudos, `SRV-ADR-012`); la asociación explícita
-  (tabla `points`, `access_mode`, prioridad, polling de puntos *asociados*,
-  offline detection en dashboard) es una feature aparte, posterior a las 4.
-- **Nota:** `ROADMAP.md` cita `VUL-SRV-001` (Mosquitto sin auth) como ancla de
-  `SRV-Sprint-3` — ya resuelto en `SRV-001`, referencia obsoleta (mismo tipo de
-  drift ya visto antes; no bloquea, no se corrige todavía).
-- **Siguiente paso:** Fase 1 (Specify) de la primera de las 4 —
-  `SRV-003-bacnet-adapter` (adaptador BACnet vía BAC0 + escaneo Who-Is/I-Am +
-  modelo mínimo `devices`/`device_points_candidates`, sin asociación
-  explícita). Aplicar `method.md §2` y elicitación con `autor-de-spec`.
+- **`SRV-Sprint-3` (ROADMAP) partido en 4 features del arnés** (decisión
+  2026-09-14): BACnet, Modbus, MQTT-scanning, Simuladores — dominio demasiado
+  heterogéneo para un solo ciclo. Asociación explícita de puntos (`points`,
+  `access_mode`, prioridad, polling, `asyncio.Lock` de `VUL-SRV-005`) diferida
+  a una feature aparte, posterior a las 4 (coherente con la propia separación
+  Sprint 3/4 de `ROADMAP.md` — ver detalle en `SRV-003-bacnet-adapter/spec.md
+  §6`). `ROADMAP.md` cita `VUL-SRV-001` como ancla de este sprint — ya
+  resuelto en `SRV-001`, referencia obsoleta, no bloquea.
+- **`SRV-003-bacnet-adapter`** (primera de las 4, BACnet): `estado:
+  implemented`, 19/19 tareas, ancla en `ad10ac91880083f3a5cb793f8f4de98ec2ac3827`.
+  Escaneo Who-Is/I-Am + candidatos crudos, verificado con 2 instancias BAC0
+  reales por UDP (sin hardware) + Postgres real. 1 rebote (protocolo de
+  cierre, no técnico). Detalle en su entrada Session-End de `memory/history.md`.
+- **Pendiente de tu confirmación:** ¿`SRV-003-bacnet-adapter` pasa a `estado:
+  verified` (Gate 4)? El orquestador no se autoaprueba.
+- **Siguiente paso:** Modbus, MQTT-scanning, o Simuladores (las otras 3 del
+  grupo) — o retomar otro track (`HUB-H1`, gestión de licencias). A decidir
+  con el usuario.
