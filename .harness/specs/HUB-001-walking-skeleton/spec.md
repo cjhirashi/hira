@@ -7,9 +7,15 @@ anchor_commit: ‹pendiente›
 anchor_mode: advisory
 covers:
   - hira-hub/backend/**
+  - hira-hub/docs/**
   - hira-hub/docker-compose*.yml
   - hira-hub/.env.example
   - hira-hub/nginx/**
+  - .harness/gate/services.txt
+  - docs/hira-hub/spec/conceptual-design.md
+  - docs/hira-hub/spec/detailed-design.md
+  - docs/hira-hub/spec/dev-guide.md
+  - docs/hira-hub/spec/validation.md
 aprobaciones:
   fase_1: { por: "Carlos", fecha: 2026-09-14 }
   fase_2: pendiente
