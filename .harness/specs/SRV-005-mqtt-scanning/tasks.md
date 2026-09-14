@@ -17,40 +17,40 @@ actualizado: 2026-09-14
 ## Tareas
 
 ### Núcleo — clave de topic
-- [ ] T-001 — Test `test_mqtt_topic_key.py`: hash determinista del topic
+- [x] T-001 — Test `test_mqtt_topic_key.py`: hash determinista del topic
       (`crc32`, mismo topic → misma clave, topics distintos → claves
       distintas en el caso normal) (debe fallar) (cubre RF-002)
       [zona: test-núcleo]
-- [ ] T-002 — Implementar `core/mqtt_topic_key.py` (cubre RF-002) [zona: núcleo]
+- [x] T-002 — Implementar `core/mqtt_topic_key.py` (cubre RF-002) [zona: núcleo]
 
 ### Puerto
-- [ ] T-003 — Implementar `core/ports/mqtt_scan_transport_port.py`
+- [x] T-003 — Implementar `core/ports/mqtt_scan_transport_port.py`
       (`MqttScanTransportPort`, `MqttTopicMessage`,
       `MqttInvalidTopicPatternError` — `Protocol`, sin test propio)
       [zona: puertos]
 
 ### Coordinación — servicio de escaneo (amplía `device_scan_service.py`)
-- [ ] T-004 — Ampliar `test_device_scan_service.py` con los casos de
+- [x] T-004 — Ampliar `test_device_scan_service.py` con los casos de
       `scan_mqtt`: patrón inválido propaga `MqttInvalidTopicPatternError` como
       400; varios mensajes en topics distintos se persisten como candidatos
       separados (misma clave `crc32` = actualiza, no duplica); sin ningún
       mensaje → candidatos vacíos, sin crear `device` (debe fallar) (cubre
       RF-001, RF-002, RF-004, RF-005, RF-006, RNF-001) [zona: test-coordinación]
-- [ ] T-005 — Implementar `services/device_scan_service.py::scan_mqtt` (+
+- [x] T-005 — Implementar `services/device_scan_service.py::scan_mqtt` (+
       `MQTT_SCAN_WINDOW_SECONDS=3`) (cubre RF-001, RF-002, RF-004, RF-005,
       RF-006, RNF-001) [zona: coordinación]
 
 ### Contrato — Contract-First
-- [ ] T-006 — Ampliar `hira-server/docs/openapi.yaml` con `POST /devices/scan/
+- [x] T-006 — Ampliar `hira-server/docs/openapi.yaml` con `POST /devices/scan/
       mqtt` (`ScanMqttRequest`) — sin tocar los 8 endpoints existentes (cubre
       RF-001, RF-003, RF-004, RF-006) [zona: contrato]
 
 ### Adaptador de entrada — router
-- [ ] T-007 — Ampliar `test_devices_router.py` (`TestClient`): contrato del
+- [x] T-007 — Ampliar `test_devices_router.py` (`TestClient`): contrato del
       nuevo endpoint, 403 para Visor, 400 con sobre RFC 9457 si el patrón es
       inválido (debe fallar) (cubre RF-001, RF-003, RF-004, RF-006)
       [zona: test-adaptador-entrada]
-- [ ] T-008 — Implementar el nuevo endpoint en `routers/devices.py` +
+- [x] T-008 — Implementar el nuevo endpoint en `routers/devices.py` +
       `schemas/devices.py` (`ScanMqttRequest`) + `adapters/factory.py::
       get_mqtt_scan_transport_port()` (nace aquí con placeholder in-memory,
       mismo patrón ya aplicado 5 veces) (cubre RF-001, RF-003, RF-004, RF-006)
@@ -93,7 +93,7 @@ actualizado: 2026-09-14
 | RF-002 | T-001, T-002, T-004, T-005, T-009, T-010, T-011 | `test_mqtt_topic_key.py`, `test_device_scan_service.py`, `test_mqtt_scan_adapter.py`, `test_devices_scan_e2e.py` | Pendiente |
 | RF-003 | T-007, T-008, T-011 | `test_devices_router.py`, `test_devices_scan_e2e.py` | Pendiente |
 | RF-004 | T-004, T-005, T-006, T-007, T-008, T-009, T-010, T-011 | `test_device_scan_service.py`, `test_devices_router.py`, `test_mqtt_scan_adapter.py`, `test_devices_scan_e2e.py` | Pendiente |
-| RF-005 | T-004, T-005 | `test_device_scan_service.py` (ausencia de escritura a tabla de puntos operables) | Pendiente |
+| RF-005 | T-004, T-005 | `test_device_scan_service.py` (ausencia de escritura a tabla de puntos operables) | Pass |
 | RF-006 | T-004, T-005, T-006, T-007, T-008, T-011 | `test_device_scan_service.py`, `test_devices_router.py`, `test_devices_scan_e2e.py` | Pendiente |
 | RNF-001 | T-004, T-005, T-009, T-010, T-011 | `test_device_scan_service.py`, `test_mqtt_scan_adapter.py`, `test_devices_scan_e2e.py` | Pendiente |
 | doc: dispositivos-protocolos-puntos.md | T-012 | — | Pendiente |

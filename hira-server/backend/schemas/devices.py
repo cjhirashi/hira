@@ -1,6 +1,7 @@
 """Response/request Pydantic de `GET /devices|/devices/{id}/candidates`,
-`POST /devices/scan/bacnet` (`SRV-003-bacnet-adapter`) y
-`POST /devices/scan/modbus` (`SRV-004-modbus-adapter`).
+`POST /devices/scan/bacnet` (`SRV-003-bacnet-adapter`),
+`POST /devices/scan/modbus` (`SRV-004-modbus-adapter`) y
+`POST /devices/scan/mqtt` (`SRV-005-mqtt-scanning`).
 
 Traducción exacta de `hira-server/docs/openapi.yaml#/components/schemas`
 (Contract-First, escrito antes que este módulo) — no se introduce ningún
@@ -67,3 +68,10 @@ class ScanModbusRequest(BaseModel):
     discrete_inputs: ModbusRangeIn | None = None
     holding_registers: ModbusRangeIn | None = None
     input_registers: ModbusRangeIn | None = None
+
+
+class ScanMqttRequest(BaseModel):
+    """Body de `POST /devices/scan/mqtt` (`SRV-005-mqtt-scanning`, RF-001) —
+    traduce `openapi.yaml#/components/schemas/ScanMqttRequest`."""
+
+    topic_pattern: str = Field(min_length=1)

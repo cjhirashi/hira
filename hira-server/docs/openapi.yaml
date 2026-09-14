@@ -12,10 +12,14 @@ info:
     Modbus TCP — coils, discrete inputs, holding registers, input registers —
     y persistencia de candidatos, mismo modelo `devices`/
     `device_points_candidates`, sin descubrimiento nativo a diferencia de
-    BACnet). El sobre de error de los endpoints de negocio sigue RFC 9457
-    (`ProblemDetail`, `E-ADR-003`) — `GET /health` es la única excepción
-    (endpoint de monitoreo, siempre HTTP 200, ver su descripción).
-  version: "0.4.0"
+    BACnet). `SRV-005-mqtt-scanning` añade `POST /devices/scan/mqtt`
+    (suscripción wildcard MQTT durante una ventana de 3 segundos, captura de
+    topics activos como candidatos — push-based, sin descubrimiento previo
+    tipo Who-Is, un `device` = el patrón de suscripción completo). El sobre
+    de error de los endpoints de negocio sigue RFC 9457 (`ProblemDetail`,
+    `E-ADR-003`) — `GET /health` es la única excepción (endpoint de
+    monitoreo, siempre HTTP 200, ver su descripción).
+  version: "0.5.0"
 paths:
   /auth/login:
     post:
@@ -229,6 +233,72 @@ paths:
                     title: "Rango de registros demasiado grande"
                     status: 400
                     detail: "El rango solicitado para 'holding_register' tiene 200 direcciones; el máximo permitido por tipo de registro es 125."
+        "403":
+          description: Rol Visor invocando el escaneo (RF-003).
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+              examples:
+                insufficient_role:
+                  value:
+                    type: "https://hira.dev/errors/insufficient-role"
+                    title: "Rol insuficiente"
+                    status: 403
+                    detail: "Se requiere uno de los roles: admin, operador."
+  /devices/scan/mqtt:
+    post:
+      operationId: scanMqttDevices
+      summary: Se suscribe a un patrón MQTT durante una ventana de 3s y persiste candidatos
+      description: >
+        RF-001, RF-002, RF-004, RF-006 (`.harness/specs/SRV-005-mqtt-scanning/
+        spec.md`). A diferencia de BACnet/Modbus (request/response), MQTT es
+        push-based: el llamador indica un `topic_pattern` de suscripción
+        (wildcard, p. ej. `"edificio/piso1/#"`) y el sistema se suscribe y
+        espera mensajes durante 3 segundos. Un `device` = el patrón de
+        suscripción completo (`protocol='mqtt'`, `address=topic_pattern`,
+        creándolo si no existe); cada topic real que publicó durante la
+        ventana es un candidato de ese `device` en
+        `device_points_candidates` (`object_type='mqtt_topic'`,
+        `present_value` = payload del **último** mensaje de ese topic) —
+        actualiza si ya existía, no duplica. Nunca promueve un candidato a
+        una tabla de puntos operables (`SRV-ADR-012`). Sin ningún mensaje
+        durante la ventana, responde 200 con una lista vacía, sin crear
+        `device` (RF-006, no es un error). Requiere rol Admin u Operador
+        (RF-003).
+      tags:
+        - devices
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScanMqttRequest"
+      responses:
+        "200":
+          description: >
+            Candidatos nuevos/actualizados de este escaneo (puede ser `[]`
+            si ningún mensaje llegó, RF-006).
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DeviceCandidateOut"
+        "400":
+          description: >
+            `topic_pattern` rechazado por la librería MQTT al suscribirse (RF-004).
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+              examples:
+                mqtt_invalid_topic_pattern:
+                  value:
+                    type: "https://hira.dev/errors/mqtt-invalid-topic-pattern"
+                    title: "Patrón de topic MQTT inválido"
+                    status: 400
+                    detail: "El patrón de topic 'edificio/#/piso1' fue rechazado: Invalid subscription filter."
         "403":
           description: Rol Visor invocando el escaneo (RF-003).
           content:
@@ -552,6 +622,21 @@ components:
         input_registers:
           $ref: "#/components/schemas/ModbusRegisterRange"
           nullable: true
+    ScanMqttRequest:
+      type: object
+      description: >
+        Body de `POST /devices/scan/mqtt` (`SRV-005-mqtt-scanning`,
+        `plan.md §4`).
+      required: [topic_pattern]
+      additionalProperties: false
+      properties:
+        topic_pattern:
+          type: string
+          minLength: 1
+          example: "edificio/piso1/#"
+          description: >
+            Patrón de suscripción MQTT (wildcard `#`/`+` soportados por el
+            broker). Validado por la librería MQTT al suscribirse (RF-004).
     ProblemDetail:
       type: object
       description: >
@@ -569,7 +654,11 @@ components:
         nuevos de `devices`, sin redefinirse. Catálogo añadido por
         `SRV-004-modbus-adapter` (`plan.md §4`): `modbus-range-too-large`
         (400, `POST /devices/scan/modbus` con un rango que excede 125
-        direcciones).
+        direcciones). Catálogo añadido por `SRV-005-mqtt-scanning`
+        (`plan.md §4`): `mqtt-invalid-topic-pattern` (400,
+        `POST /devices/scan/mqtt` con un `topic_pattern` rechazado por la
+        librería MQTT al suscribirse) — `insufficient-role` (403) se
+        reutiliza tal cual, sin redefinirse.
       required: [type, title, status, detail]
       additionalProperties: false
       properties:

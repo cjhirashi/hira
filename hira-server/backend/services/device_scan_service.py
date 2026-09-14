@@ -1,19 +1,22 @@
-"""`scan_bacnet`/`scan_modbus` — casos de uso de escaneo de dispositivos
-(`SRV-003-bacnet-adapter`/`SRV-004-modbus-adapter`, `plan.md §2`).
+"""`scan_bacnet`/`scan_modbus`/`scan_mqtt` — casos de uso de escaneo de
+dispositivos (`SRV-003-bacnet-adapter`/`SRV-004-modbus-adapter`/
+`SRV-005-mqtt-scanning`, `plan.md §2`).
 
 Importa solo de `core/ports/`, `core/bacnet_address.py`, `core/modbus_address.py`,
-`core/errors.py` y `core/logger.py` — nunca `BAC0`/`pymodbus`/`sqlalchemy`
-directamente (`SRV-ADR-017`). Recibe los puertos por parámetro
-(`adapters/factory.py` los inyecta desde `routers/devices.py`).
+`core/mqtt_topic_key.py`, `core/errors.py` y `core/logger.py` — nunca
+`BAC0`/`pymodbus`/`paho-mqtt`/`sqlalchemy` directamente (`SRV-ADR-017`).
+Recibe los puertos por parámetro (`adapters/factory.py` los inyecta desde
+`routers/devices.py`).
 
-`scan_modbus` vive en este mismo módulo que `scan_bacnet` (`SRV-004-modbus-
-adapter/plan.md §1`, Registro de decisiones: mismo dominio de coordinación,
-misma dependencia de `DeviceRepositoryPort`, no se separa por protocolo).
+`scan_modbus`/`scan_mqtt` viven en este mismo módulo que `scan_bacnet`
+(`SRV-004-modbus-adapter/plan.md §1`, Registro de decisiones: mismo dominio
+de coordinación, misma dependencia de `DeviceRepositoryPort`, no se separa
+por protocolo).
 
-RF-006/RF-007 (nunca promover un candidato a tabla operable, `SRV-ADR-012`)
-se cumple por omisión de diseño: este módulo no tiene ningún método que
-escriba en una tabla `points` — no existe ningún `PointsRepositoryPort`
-importado ni referenciado.
+RF-005 (`scan_mqtt`)/RF-006/RF-007 (nunca promover un candidato a tabla
+operable, `SRV-ADR-012`) se cumple por omisión de diseño: este módulo no
+tiene ningún método que escriba en una tabla `points` — no existe ningún
+`PointsRepositoryPort` importado ni referenciado.
 """
 import asyncio
 
@@ -21,6 +24,7 @@ from core.bacnet_address import format_device_address
 from core.errors import ProblemDetailError
 from core.logger import get_logger
 from core.modbus_address import format_modbus_address
+from core.mqtt_topic_key import topic_instance_key
 from core.ports.bacnet_transport_port import BacnetReadTimeoutError, BacnetTransportPort
 from core.ports.device_repository_port import (
     DeviceCandidateRecord,
@@ -33,11 +37,17 @@ from core.ports.modbus_transport_port import (
     ModbusRegisterType,
     ModbusTransportPort,
 )
+from core.ports.mqtt_scan_transport_port import (
+    MqttInvalidTopicPatternError,
+    MqttScanTransportPort,
+    MqttTopicMessage,
+)
 
 WHOIS_TIMEOUT_SECONDS = 3.0
 READ_TIMEOUT_SECONDS = 2.0
 MODBUS_MAX_RANGE_ADDRESSES = 125
 MODBUS_READ_TIMEOUT_SECONDS = 1.0
+MQTT_SCAN_WINDOW_SECONDS = 3.0
 
 _ERRORS_BASE_URL = "https://hira.dev/errors"
 
@@ -182,5 +192,68 @@ async def scan_modbus(
                 units=None,
             )
             candidates.append(candidate)
+
+    return candidates
+
+
+async def scan_mqtt(
+    *,
+    topic_pattern: str,
+    transport: MqttScanTransportPort,
+    device_repo: DeviceRepositoryPort,
+) -> list[DeviceCandidateRecord]:
+    """Se suscribe a `topic_pattern` durante `MQTT_SCAN_WINDOW_SECONDS` (RF-001)
+    y persiste los topics reales que publicaron como candidatos (RF-002).
+
+    RF-004: rechaza con `ProblemDetailError(400, .../mqtt-invalid-topic-pattern)`
+    si `transport.listen` lanza `MqttInvalidTopicPatternError` — **antes** de
+    invocar `device_repo`.
+
+    RF-006: sin ningún mensaje durante la ventana, retorna `[]` sin invocar
+    `device_repo.upsert_device` (sin `device` "fantasma").
+
+    `spec.md §2`: un `device` = el patrón de suscripción completo
+    (`protocol='mqtt'`, `address=topic_pattern`); cada topic real que publicó
+    es un candidato de ese `device` (`object_type='mqtt_topic'`,
+    `object_instance` = `core/mqtt_topic_key.py::topic_instance_key(topic)`,
+    `object_name` = el topic real completo, `present_value` = payload del
+    **último** mensaje de ese topic — "último mensaje gana", deduplicado
+    aquí en `services/`, no en el adaptador).
+    """
+    try:
+        messages = await transport.listen(topic_pattern, MQTT_SCAN_WINDOW_SECONDS)
+    except MqttInvalidTopicPatternError as exc:
+        raise ProblemDetailError(
+            status=400,
+            type_=f"{_ERRORS_BASE_URL}/mqtt-invalid-topic-pattern",
+            title="Patrón de topic MQTT inválido",
+            detail=f"El patrón de topic '{topic_pattern}' fue rechazado: {exc}",
+        ) from exc
+
+    if not messages:
+        return []
+
+    last_by_topic: dict[str, MqttTopicMessage] = {}
+    for message in messages:
+        last_by_topic[message.topic] = message
+
+    device = await device_repo.upsert_device(
+        name=f"MQTT {topic_pattern}",
+        protocol="mqtt",
+        address=topic_pattern,
+        is_simulator=False,
+    )
+
+    candidates: list[DeviceCandidateRecord] = []
+    for topic, message in last_by_topic.items():
+        candidate = await device_repo.upsert_candidate(
+            device_id=device.id,
+            object_type="mqtt_topic",
+            object_instance=topic_instance_key(topic),
+            object_name=topic,
+            present_value=message.payload,
+            units=None,
+        )
+        candidates.append(candidate)
 
     return candidates

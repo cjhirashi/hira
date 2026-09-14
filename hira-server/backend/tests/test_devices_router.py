@@ -1,25 +1,27 @@
 """`routers/devices.py` — `POST /devices/scan/bacnet`, `POST /devices/scan/
-modbus`, `GET /devices`, `GET /devices/{id}/candidates` (adaptador de entrada
-HTTP, `SRV-003-bacnet-adapter`/`SRV-004-modbus-adapter`).
+modbus`, `POST /devices/scan/mqtt`, `GET /devices`, `GET /devices/{id}/
+candidates` (adaptador de entrada HTTP, `SRV-003-bacnet-adapter`/
+`SRV-004-modbus-adapter`/`SRV-005-mqtt-scanning`).
 
 Contrato: `hira-server/docs/openapi.yaml#/paths/~1devices~1scan~1bacnet`
-(+ `~1devices~1scan~1modbus`, `~1devices`, `~1devices~1{id}~1candidates`) —
-verifica el *shape* exacto de 200/400/403/404, incluyendo el sobre RFC 9457
-en los errores.
+(+ `~1devices~1scan~1modbus`, `~1devices~1scan~1mqtt`, `~1devices`,
+`~1devices~1{id}~1candidates`) — verifica el *shape* exacto de
+200/400/403/404, incluyendo el sobre RFC 9457 en los errores.
 
 Golpea la app real de `main.py` vía `TestClient` (mismo patrón que
 `test_auth_router.py`), sustituyendo `UserRepositoryPort`/`CachePort` por
 dobles in-memory vía `app.dependency_overrides` — un login real emite el JWT
 que autentica cada llamada (los endpoints están fuera de `PUBLIC_ALLOWLIST`,
 `core/middleware.py`). `BacnetTransportPort`/`ModbusTransportPort`/
-`DeviceRepositoryPort` (`adapters/factory.py::get_bacnet_transport_port/
-get_modbus_transport_port/get_device_repository_port`) también se sustituyen
-por dobles in-memory propios de este archivo, controlando exactamente qué
-devuelve el escaneo.
+`MqttScanTransportPort`/`DeviceRepositoryPort`
+(`adapters/factory.py::get_bacnet_transport_port/get_modbus_transport_port/
+get_mqtt_scan_transport_port/get_device_repository_port`) también se
+sustituyen por dobles in-memory propios de este archivo, controlando
+exactamente qué devuelve el escaneo.
 
-Los casos de `POST /devices/scan/modbus` (`SRV-004-modbus-adapter`) deben
+Los casos de `POST /devices/scan/mqtt` (`SRV-005-mqtt-scanning`) deben
 fallar antes de T-008 (no existen el endpoint en `routers/devices.py` ni
-`adapters/factory.py::get_modbus_transport_port`).
+`adapters/factory.py::get_mqtt_scan_transport_port`).
 """
 import asyncio
 from dataclasses import dataclass, field
@@ -43,6 +45,10 @@ from core.ports.modbus_transport_port import (
     ModbusReadFailure,
     ModbusRegisterReading,
     ModbusRegisterType,
+)
+from core.ports.mqtt_scan_transport_port import (
+    MqttInvalidTopicPatternError,
+    MqttTopicMessage,
 )
 from core.ports.user_repository_port import UserRecord
 from core.security.passwords import hash_password
@@ -245,6 +251,26 @@ class _FakeModbusTransport:
         return self._results_by_range.get((register_type, start, count), [])
 
 
+class _FakeMqttTransport:
+    """`MqttScanTransportPort` in-memory — controla los mensajes retornados
+    por `listen()` (o lanza `MqttInvalidTopicPatternError`) para cada test."""
+
+    def __init__(
+        self,
+        messages: list[MqttTopicMessage] | None = None,
+        invalid_pattern_error: Exception | None = None,
+    ) -> None:
+        self._messages = messages or []
+        self._invalid_pattern_error = invalid_pattern_error
+
+    async def listen(
+        self, topic_pattern: str, window_seconds: float
+    ) -> list[MqttTopicMessage]:
+        if self._invalid_pattern_error is not None:
+            raise self._invalid_pattern_error
+        return self._messages
+
+
 @pytest.fixture
 def make_client(monkeypatch):
     """Factory de `TestClient` parametrizable por usuario/dobles de puertos
@@ -255,6 +281,7 @@ def make_client(monkeypatch):
         user: UserRecord,
         transport: _FakeBacnetTransport | None = None,
         modbus_transport: _FakeModbusTransport | None = None,
+        mqtt_transport: _FakeMqttTransport | None = None,
         device_repo: _FakeDeviceRepository | None = None,
     ) -> TestClient:
         for key, value in REQUIRED_ENV.items():
@@ -265,18 +292,21 @@ def make_client(monkeypatch):
         cache = _FakeCache()
         transport = transport or _FakeBacnetTransport()
         modbus_transport = modbus_transport or _FakeModbusTransport()
+        mqtt_transport = mqtt_transport or _FakeMqttTransport()
         device_repo = device_repo or _FakeDeviceRepository()
 
         from adapters.factory import (
             get_bacnet_transport_port,
             get_device_repository_port,
             get_modbus_transport_port,
+            get_mqtt_scan_transport_port,
         )
 
         app.dependency_overrides[get_user_repository_port] = lambda: user_repo
         app.dependency_overrides[get_cache_port] = lambda: cache
         app.dependency_overrides[get_bacnet_transport_port] = lambda: transport
         app.dependency_overrides[get_modbus_transport_port] = lambda: modbus_transport
+        app.dependency_overrides[get_mqtt_scan_transport_port] = lambda: mqtt_transport
         app.dependency_overrides[get_device_repository_port] = lambda: device_repo
         monkeypatch.setattr(middleware_module, "get_user_repository_port", lambda: user_repo)
         monkeypatch.setattr(middleware_module, "get_cache_port", lambda: cache)
@@ -573,5 +603,101 @@ def test_scan_modbus_body_invalido_422(make_client):
         "/devices/scan/modbus",
         json={"host": "192.168.1.50", "port": 70000, "unit_id": 1},
     )
+
+    assert response.status_code == 422
+
+
+# ── POST /devices/scan/mqtt (SRV-005-mqtt-scanning) ─────────────────────────
+
+
+def test_scan_mqtt_admin_200_lista_candidatos_del_escaneo(make_client):
+    """RF-001, RF-002 — Admin dispara el escaneo, 200 con los candidatos
+    nuevos (contrato exacto de `openapi.yaml`)."""
+    mqtt_transport = _FakeMqttTransport(
+        messages=[
+            MqttTopicMessage(topic="edificio/piso1/ahu1/temp", payload="21.5"),
+            MqttTopicMessage(topic="edificio/piso1/ahu2/humidity", payload="55"),
+        ]
+    )
+    client = make_client(user=_make_user(rol="admin"), mqtt_transport=mqtt_transport)
+
+    response = client.post(
+        "/devices/scan/mqtt", json={"topic_pattern": "edificio/piso1/#"}
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert isinstance(body, list)
+    assert len(body) == 2
+    candidate = body[0]
+    assert set(candidate.keys()) == {
+        "id",
+        "object_type",
+        "object_instance",
+        "object_name",
+        "present_value",
+        "units",
+        "discovered_at",
+        "updated_at",
+    }
+    assert candidate["object_type"] == "mqtt_topic"
+
+
+def test_scan_mqtt_sin_ningun_mensaje_200_lista_vacia(make_client):
+    """RF-006 — sin ningún mensaje durante la ventana, 200 con lista vacía
+    (no es un error), sin `device` creado."""
+    client = make_client(user=_make_user(rol="operador"))
+
+    response = client.post(
+        "/devices/scan/mqtt", json={"topic_pattern": "edificio/piso1/#"}
+    )
+
+    assert response.status_code == 200
+    assert response.json() == []
+
+
+def test_scan_mqtt_visor_403_rfc9457(make_client):
+    """RF-003 — Visor no puede disparar el escaneo."""
+    client = make_client(user=_make_user(rol="visor"))
+
+    response = client.post(
+        "/devices/scan/mqtt", json={"topic_pattern": "edificio/piso1/#"}
+    )
+
+    assert response.status_code == 403
+    assert response.headers["content-type"] == "application/problem+json"
+    body = response.json()
+    assert body["type"] == "https://hira.dev/errors/insufficient-role"
+    assert set(body.keys()) == {"type", "title", "status", "detail"}
+
+
+def test_scan_mqtt_patron_invalido_400_rfc9457(make_client):
+    """RF-004 — `topic_pattern` inválido (doble de `MqttScanTransportPort`
+    que lanza `MqttInvalidTopicPatternError`) responde 400 con el sobre RFC
+    9457 y el slug `mqtt-invalid-topic-pattern`."""
+    mqtt_transport = _FakeMqttTransport(
+        invalid_pattern_error=MqttInvalidTopicPatternError(
+            "Invalid subscription filter."
+        )
+    )
+    client = make_client(user=_make_user(rol="admin"), mqtt_transport=mqtt_transport)
+
+    response = client.post(
+        "/devices/scan/mqtt", json={"topic_pattern": "edificio/#/piso1"}
+    )
+
+    assert response.status_code == 400
+    assert response.headers["content-type"] == "application/problem+json"
+    body = response.json()
+    assert body["type"] == "https://hira.dev/errors/mqtt-invalid-topic-pattern"
+    assert set(body.keys()) == {"type", "title", "status", "detail"}
+
+
+def test_scan_mqtt_body_invalido_422(make_client):
+    """Defensa en profundidad de forma (`ScanMqttRequest`): `topic_pattern`
+    vacío es rechazado por FastAPI/Pydantic antes de llegar al servicio."""
+    client = make_client(user=_make_user(rol="admin"))
+
+    response = client.post("/devices/scan/mqtt", json={"topic_pattern": ""})
 
     assert response.status_code == 422

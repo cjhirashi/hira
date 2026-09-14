@@ -1,18 +1,20 @@
-"""`POST /devices/scan/bacnet`, `POST /devices/scan/modbus`, `GET /devices`,
-`GET /devices/{id}/candidates` — adaptador de entrada HTTP
-(`SRV-003-bacnet-adapter`/`SRV-004-modbus-adapter`).
+"""`POST /devices/scan/bacnet`, `POST /devices/scan/modbus`,
+`POST /devices/scan/mqtt`, `GET /devices`, `GET /devices/{id}/candidates` —
+adaptador de entrada HTTP (`SRV-003-bacnet-adapter`/`SRV-004-modbus-adapter`/
+`SRV-005-mqtt-scanning`).
 
 Contrato: `hira-server/docs/openapi.yaml#/paths/~1devices~1scan~1bacnet`
-(+ `~1devices~1scan~1modbus`, `~1devices`, `~1devices~1{id}~1candidates`),
-escrito antes que este router (Contract-First).
+(+ `~1devices~1scan~1modbus`, `~1devices~1scan~1mqtt`, `~1devices`,
+`~1devices~1{id}~1candidates`), escrito antes que este router (Contract-First).
 
-Inyecta `BacnetTransportPort`/`ModbusTransportPort`/`DeviceRepositoryPort` vía
-`Depends(adapters.factory.*)` — nunca instancia un adaptador concreto
-(`SRV-ADR-017`), mismo patrón que `routers/auth.py`/`routers/monitor.py`.
-Protegidos con `require_role("admin", "operador")` (RF-003, reusa
+Inyecta `BacnetTransportPort`/`ModbusTransportPort`/`MqttScanTransportPort`/
+`DeviceRepositoryPort` vía `Depends(adapters.factory.*)` — nunca instancia un
+adaptador concreto (`SRV-ADR-017`), mismo patrón que
+`routers/auth.py`/`routers/monitor.py`. Protegidos con
+`require_role("admin", "operador")` (RF-003, reusa
 `core/security/dependencies.py` de `SRV-002-auth-rbac`, sin reimplementarlo).
 Delega la lógica de escaneo a `services/device_scan_service.py::scan_bacnet`/
-`scan_modbus`.
+`scan_modbus`/`scan_mqtt`.
 """
 from fastapi import APIRouter, Depends
 
@@ -20,14 +22,16 @@ from adapters.factory import (
     get_bacnet_transport_port,
     get_device_repository_port,
     get_modbus_transport_port,
+    get_mqtt_scan_transport_port,
 )
 from core.errors import ProblemDetailError
 from core.ports.bacnet_transport_port import BacnetTransportPort
 from core.ports.device_repository_port import DeviceRepositoryPort
 from core.ports.modbus_transport_port import ModbusRegisterType, ModbusTransportPort
+from core.ports.mqtt_scan_transport_port import MqttScanTransportPort
 from core.security.dependencies import require_role
-from schemas.devices import DeviceCandidateOut, DeviceOut, ScanModbusRequest
-from services.device_scan_service import scan_bacnet, scan_modbus
+from schemas.devices import DeviceCandidateOut, DeviceOut, ScanModbusRequest, ScanMqttRequest
+from services.device_scan_service import scan_bacnet, scan_modbus, scan_mqtt
 
 _ERRORS_BASE_URL = "https://hira.dev/errors"
 
@@ -84,6 +88,24 @@ async def scan_modbus_devices(
         port=body.port,
         unit_id=body.unit_id,
         ranges=ranges,
+        transport=transport,
+        device_repo=device_repo,
+    )
+    return [DeviceCandidateOut(**candidate.__dict__) for candidate in candidates]
+
+
+@router.post("/scan/mqtt", response_model=list[DeviceCandidateOut])
+async def scan_mqtt_devices(
+    body: ScanMqttRequest,
+    transport: MqttScanTransportPort = Depends(get_mqtt_scan_transport_port),
+    device_repo: DeviceRepositoryPort = Depends(get_device_repository_port),
+) -> list[DeviceCandidateOut]:
+    """RF-001, RF-002, RF-004, RF-006 — expone
+    `services/device_scan_service.py::scan_mqtt` vía HTTP. `ProblemDetailError`
+    (400, RF-004) propaga sin captura explícita — el `exception_handler` de
+    `main.py` la traduce a HTTP."""
+    candidates = await scan_mqtt(
+        topic_pattern=body.topic_pattern,
         transport=transport,
         device_repo=device_repo,
     )

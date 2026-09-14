@@ -1,11 +1,12 @@
-"""`services/device_scan_service.py::scan_bacnet`/`scan_modbus` — coordinación,
-sin I/O real (`SRV-003-bacnet-adapter`/`SRV-004-modbus-adapter`, `plan.md §2`).
+"""`services/device_scan_service.py::scan_bacnet`/`scan_modbus`/`scan_mqtt` —
+coordinación, sin I/O real (`SRV-003-bacnet-adapter`/`SRV-004-modbus-adapter`/
+`SRV-005-mqtt-scanning`, `plan.md §2`).
 
 Dobles (`Protocol` fakes) de `BacnetTransportPort`/`ModbusTransportPort`/
-`DeviceRepositoryPort` — sin BAC0/pymodbus/Postgres reales (`plan.md §5`:
-"unit + dobles"). Los casos de `scan_modbus` (RF-001, RF-002, RF-004, RF-005,
-RF-006, RF-007, RNF-001) deben fallar antes de T-005 (`services/
-device_scan_service.py::scan_modbus` no existe todavía).
+`MqttScanTransportPort`/`DeviceRepositoryPort` — sin BAC0/pymodbus/paho-mqtt/
+Postgres reales (`plan.md §5`: "unit + dobles"). Los casos de `scan_mqtt`
+(RF-001, RF-002, RF-004, RF-005, RF-006, RNF-001) deben fallar antes de T-005
+(`services/device_scan_service.py::scan_mqtt` no existe todavía).
 """
 import asyncio
 import time
@@ -28,6 +29,10 @@ from core.ports.modbus_transport_port import (
     ModbusReadFailure,
     ModbusRegisterReading,
     ModbusRegisterType,
+)
+from core.ports.mqtt_scan_transport_port import (
+    MqttInvalidTopicPatternError,
+    MqttTopicMessage,
 )
 
 
@@ -197,6 +202,30 @@ class _AlwaysFailsModbusTransport:
         raise AssertionError(
             "read_range no debía invocarse: el rango excede el límite (RF-004)"
         )
+
+
+class _FakeMqttTransport:
+    """`MqttScanTransportPort` in-memory — controla los mensajes retornados
+    por `listen()` (o lanza `MqttInvalidTopicPatternError`) para cada test."""
+
+    def __init__(
+        self,
+        messages: list[MqttTopicMessage] | None = None,
+        invalid_pattern_error: Exception | None = None,
+    ) -> None:
+        self._messages = messages or []
+        self._invalid_pattern_error = invalid_pattern_error
+        self.listen_calls: list[dict] = []
+
+    async def listen(
+        self, topic_pattern: str, window_seconds: float
+    ) -> list[MqttTopicMessage]:
+        self.listen_calls.append(
+            {"topic_pattern": topic_pattern, "window_seconds": window_seconds}
+        )
+        if self._invalid_pattern_error is not None:
+            raise self._invalid_pattern_error
+        return self._messages
 
 
 class _AlwaysFailsModbusDeviceRepository:
@@ -606,3 +635,126 @@ async def test_scan_modbus_segundo_escaneo_actualiza_no_duplica():
     await scan_modbus(**kwargs)
 
     assert len(repo.devices_by_key) == 1
+
+
+# ── scan_mqtt (SRV-005-mqtt-scanning) ───────────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_scan_mqtt_camino_feliz_dos_topics_persiste_device_y_candidatos():
+    """RF-001, RF-002 — 3 mensajes en 2 topics distintos → 1 `upsert_device`
+    + 2 `upsert_candidate` (candidatos separados por topic, clave `crc32`)."""
+    from core.mqtt_topic_key import topic_instance_key
+    from services.device_scan_service import scan_mqtt
+
+    messages = [
+        MqttTopicMessage(topic="edificio/piso1/ahu1/temp", payload="21.5"),
+        MqttTopicMessage(topic="edificio/piso1/ahu2/humidity", payload="55"),
+        MqttTopicMessage(topic="edificio/piso1/ahu1/temp", payload="21.7"),
+    ]
+    transport = _FakeMqttTransport(messages)
+    repo = _FakeDeviceRepository()
+
+    result = await scan_mqtt(
+        topic_pattern="edificio/piso1/#", transport=transport, device_repo=repo
+    )
+
+    assert len(result) == 2
+    assert len(repo.upsert_device_calls) == 1
+    assert repo.upsert_device_calls[0]["protocol"] == "mqtt"
+    assert repo.upsert_device_calls[0]["address"] == "edificio/piso1/#"
+
+    assert len(repo.upsert_candidate_calls) == 2
+    instances = {call["object_instance"] for call in repo.upsert_candidate_calls}
+    assert instances == {
+        topic_instance_key("edificio/piso1/ahu1/temp"),
+        topic_instance_key("edificio/piso1/ahu2/humidity"),
+    }
+    for call in repo.upsert_candidate_calls:
+        assert call["object_type"] == "mqtt_topic"
+
+
+@pytest.mark.asyncio
+async def test_scan_mqtt_mismo_topic_dos_veces_actualiza_no_duplica_ultimo_mensaje_gana():
+    """`spec.md §2` — el mismo topic recibe 2 mensajes en la ventana: el
+    candidato final lleva el `present_value` del **último** mensaje, sin
+    duplicar filas (misma clave `crc32`, un solo `upsert_candidate` visible
+    en el resultado por topic)."""
+    from services.device_scan_service import scan_mqtt
+
+    messages = [
+        MqttTopicMessage(topic="edificio/piso1/ahu1/temp", payload="21.5"),
+        MqttTopicMessage(topic="edificio/piso1/ahu1/temp", payload="22.0"),
+    ]
+    transport = _FakeMqttTransport(messages)
+    repo = _FakeDeviceRepository()
+
+    result = await scan_mqtt(
+        topic_pattern="edificio/piso1/#", transport=transport, device_repo=repo
+    )
+
+    assert len(result) == 1
+    assert result[0].present_value == "22.0"
+    # El repositorio recibe una sola invocación de upsert_candidate para este
+    # topic (deduplicado en services/, RF-002) — no dos.
+    assert len(repo.upsert_candidate_calls) == 1
+
+
+@pytest.mark.asyncio
+async def test_scan_mqtt_patron_invalido_propaga_como_problem_detail_400_antes_de_tocar_repo():
+    """RF-004 — el doble de `MqttScanTransportPort` lanza
+    `MqttInvalidTopicPatternError`; `scan_mqtt` la traduce a
+    `ProblemDetailError(400, .../mqtt-invalid-topic-pattern)` **antes** de
+    invocar `device_repo` (doble que falla el test si se llama)."""
+    from services.device_scan_service import scan_mqtt
+
+    transport = _FakeMqttTransport(
+        invalid_pattern_error=MqttInvalidTopicPatternError("Invalid subscription filter.")
+    )
+    repo = _AlwaysFailsModbusDeviceRepository()
+
+    with pytest.raises(ProblemDetailError) as exc_info:
+        await scan_mqtt(
+            topic_pattern="edificio/#/piso1", transport=transport, device_repo=repo
+        )
+
+    assert exc_info.value.status == 400
+    assert (
+        exc_info.value.type_ == "https://hira.dev/errors/mqtt-invalid-topic-pattern"
+    )
+
+
+@pytest.mark.asyncio
+async def test_scan_mqtt_sin_ningun_mensaje_retorna_lista_vacia_sin_crear_device():
+    """RF-006 — sin ningún mensaje durante la ventana, `[]` sin invocar
+    `upsert_device` (doble que falla el test si se llama) — sin `device`
+    "fantasma"."""
+    from services.device_scan_service import scan_mqtt
+
+    transport = _FakeMqttTransport(messages=[])
+    repo = _AlwaysFailsModbusDeviceRepository()
+
+    result = await scan_mqtt(
+        topic_pattern="edificio/piso1/#", transport=transport, device_repo=repo
+    )
+
+    assert result == []
+
+
+@pytest.mark.asyncio
+async def test_scan_mqtt_usa_ventana_de_3_segundos():
+    """RF-001, RNF-001 — `listen()` se invoca con la ventana fija de 3s
+    (`MQTT_SCAN_WINDOW_SECONDS`)."""
+    from services.device_scan_service import MQTT_SCAN_WINDOW_SECONDS, scan_mqtt
+
+    transport = _FakeMqttTransport(messages=[])
+    repo = _FakeDeviceRepository()
+
+    await scan_mqtt(
+        topic_pattern="edificio/piso1/#", transport=transport, device_repo=repo
+    )
+
+    assert MQTT_SCAN_WINDOW_SECONDS == 3
+    assert transport.listen_calls == [
+        {"topic_pattern": "edificio/piso1/#", "window_seconds": MQTT_SCAN_WINDOW_SECONDS}
+    ]
