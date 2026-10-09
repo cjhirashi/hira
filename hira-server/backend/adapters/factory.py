@@ -47,6 +47,19 @@ PymodbusAdapter` real (`_PlaceholderModbusTransport` retirado, dead code tras
 el reemplazo — ningún test la importaba directamente) — la **firma no
 cambia**, `routers/devices.py` no se toca en este batch.
 
+`get_bacnet_simulator_port()`/`get_modbus_simulator_port()`/
+`get_mqtt_publisher_port()` (`SRV-006-simuladores`, `tasks.md` T-017,
+`plan.md §2`/§6 paso 7): nacen aquí con placeholders in-memory triviales
+(`_PlaceholderBacnetSimulator`/`_PlaceholderModbusSimulator`/
+`_PlaceholderMqttPublisher`, sin `BAC0`/`pymodbus`/`paho-mqtt` real) — mismo
+patrón exacto de las funciones de arriba en su batch de nacimiento. Un
+batch posterior de `tasks.md` (T-021/T-023/T-025) reemplaza el **cuerpo** de
+cada una con su adaptador real (`adapters/bacnet/bacnet_simulator_adapter.py::
+BacnetSimulatorAdapter`, `adapters/modbus/modbus_simulator_adapter.py::
+ModbusSimulatorAdapter`, `adapters/mqtt/mqtt_publisher_adapter.py::
+MqttPublisherAdapter`) — la **firma no cambia**, `routers/simulators.py` no
+se toca en esos batches.
+
 `get_mqtt_scan_transport_port()` (`SRV-005-mqtt-scanning`, `tasks.md` T-008,
 `plan.md §2`/§6 paso 5): nació con un placeholder in-memory trivial
 (`_PlaceholderMqttScanTransport`, `listen()` siempre retorna `[]` — sin
@@ -71,11 +84,14 @@ from adapters.modbus.pymodbus_adapter import PymodbusAdapter
 from adapters.mqtt.mosquitto_adapter import MosquittoAdapter
 from adapters.mqtt.mqtt_scan_adapter import MqttScanAdapter
 from core.config import Settings
+from core.ports.bacnet_simulator_port import BacnetSimulatedObjectSpec, BacnetSimulatorPort
 from core.ports.bacnet_transport_port import BacnetTransportPort
 from core.ports.cache_port import CachePort
 from core.ports.database_port import DatabasePort
 from core.ports.device_repository_port import DeviceRepositoryPort
+from core.ports.modbus_simulator_port import ModbusSimulatedRegisterSpec, ModbusSimulatorPort
 from core.ports.modbus_transport_port import ModbusTransportPort
+from core.ports.mqtt_publisher_port import MqttPublisherPort
 from core.ports.mqtt_scan_transport_port import MqttScanTransportPort
 from core.ports.notification_port import NotificationPort
 from core.ports.user_repository_port import UserRepositoryPort
@@ -88,6 +104,54 @@ _bacnet_transport_port: BacnetTransportPort | None = None
 _device_repository_port: DeviceRepositoryPort | None = None
 _modbus_transport_port: ModbusTransportPort | None = None
 _mqtt_scan_transport_port: MqttScanTransportPort | None = None
+_bacnet_simulator_port: BacnetSimulatorPort | None = None
+_modbus_simulator_port: ModbusSimulatorPort | None = None
+_mqtt_publisher_port: MqttPublisherPort | None = None
+
+
+class _PlaceholderBacnetSimulator:
+    """`BacnetSimulatorPort` in-memory trivial — sin `BAC0` real
+    (`SRV-006-simuladores`, nace en T-017; T-021 reemplaza el cuerpo de
+    `get_bacnet_simulator_port()` con `BacnetSimulatorAdapter` real)."""
+
+    async def start(
+        self, *, device_instance: int, objects: list[BacnetSimulatedObjectSpec]
+    ) -> str:
+        return f"placeholder-bacnet-{device_instance}"
+
+    async def stop(self, token: str) -> None:
+        pass
+
+
+class _PlaceholderModbusSimulator:
+    """`ModbusSimulatorPort` in-memory trivial — sin `pymodbus` real
+    (`SRV-006-simuladores`, nace en T-017; T-023 reemplaza el cuerpo de
+    `get_modbus_simulator_port()` con `ModbusSimulatorAdapter` real)."""
+
+    async def start(
+        self,
+        *,
+        host: str,
+        port: int,
+        unit_id: int,
+        registers: list[ModbusSimulatedRegisterSpec],
+    ) -> str:
+        return f"placeholder-modbus-{host}:{port}:{unit_id}"
+
+    async def stop(self, token: str) -> None:
+        pass
+
+
+class _PlaceholderMqttPublisher:
+    """`MqttPublisherPort` in-memory trivial — sin `paho-mqtt` real
+    (`SRV-006-simuladores`, nace en T-017; T-025 reemplaza el cuerpo de
+    `get_mqtt_publisher_port()` con `MqttPublisherAdapter` real)."""
+
+    async def start(self, *, topic: str, payload: str, interval_seconds: float) -> str:
+        return f"placeholder-mqtt-{topic}"
+
+    async def stop(self, token: str) -> None:
+        pass
 
 
 def get_database_port() -> DatabasePort:
@@ -185,3 +249,41 @@ def get_mqtt_scan_transport_port() -> MqttScanTransportPort:
             password=settings.mqtt_password,
         )
     return _mqtt_scan_transport_port
+
+
+def get_bacnet_simulator_port() -> BacnetSimulatorPort:
+    """Único punto de selección de la implementación de `BacnetSimulatorPort`
+    (`SRV-006-simuladores`, RF-001, RF-009). Nace con
+    `_PlaceholderBacnetSimulator` (sin `BAC0` real, T-017); T-021 reemplaza el
+    cuerpo con `adapters/bacnet/bacnet_simulator_adapter.py::
+    BacnetSimulatorAdapter` real."""
+    global _bacnet_simulator_port
+    if _bacnet_simulator_port is None:
+        _bacnet_simulator_port = _PlaceholderBacnetSimulator()
+    return _bacnet_simulator_port
+
+
+def get_modbus_simulator_port() -> ModbusSimulatorPort:
+    """Único punto de selección de la implementación de `ModbusSimulatorPort`
+    (`SRV-006-simuladores`, RF-002, RF-009). Nace con
+    `_PlaceholderModbusSimulator` (sin `pymodbus` real, T-017); T-023
+    reemplaza el cuerpo con `adapters/modbus/modbus_simulator_adapter.py::
+    ModbusSimulatorAdapter` real."""
+    global _modbus_simulator_port
+    if _modbus_simulator_port is None:
+        _modbus_simulator_port = _PlaceholderModbusSimulator()
+    return _modbus_simulator_port
+
+
+def get_mqtt_publisher_port() -> MqttPublisherPort:
+    """Único punto de selección de la implementación de `MqttPublisherPort`
+    (`SRV-006-simuladores`, RF-003, RF-009, RF-014). Nace con
+    `_PlaceholderMqttPublisher` (sin `paho-mqtt` real, T-017); T-025
+    reemplaza el cuerpo con `adapters/mqtt/mqtt_publisher_adapter.py::
+    MqttPublisherAdapter` real — función **independiente** de
+    `get_notification_port()`/`get_mqtt_scan_transport_port()` (ciclo de vida
+    de conexión distinto, `plan.md §1`)."""
+    global _mqtt_publisher_port
+    if _mqtt_publisher_port is None:
+        _mqtt_publisher_port = _PlaceholderMqttPublisher()
+    return _mqtt_publisher_port

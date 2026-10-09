@@ -65,6 +65,7 @@ from core.middleware import AuthenticationMiddleware, CorrelationIdMiddleware
 from routers.auth import router as auth_router
 from routers.devices import router as devices_router
 from routers.monitor import router as monitor_router
+from routers.simulators import router as simulators_router
 from schemas.errors import ProblemDetail
 from services.rbac_service import run_invalidation_subscriber
 
@@ -118,6 +119,7 @@ app.add_middleware(CorrelationIdMiddleware)
 app.include_router(monitor_router)
 app.include_router(auth_router)
 app.include_router(devices_router)
+app.include_router(simulators_router)
 
 
 @app.exception_handler(ProblemDetailError)

@@ -385,6 +385,297 @@ paths:
                     title: "Dispositivo no encontrado"
                     status: 404
                     detail: "No existe un dispositivo con ese id."
+  /simulators/bacnet:
+    post:
+      operationId: startBacnetSimulator
+      summary: Arranca un simulador BACnet/IP y lo registra como dispositivo
+      description: >
+        RF-001, RF-006, RF-007 (`.harness/specs/SRV-006-simuladores/spec.md`).
+        Arranca una instancia BACnet/IP real que responde a Who-Is con
+        `device_instance` y expone `objects` (si los hay) como objetos BACnet
+        reales; registra/actualiza en `devices` un dispositivo
+        (`protocol='bacnet'`, `is_simulator=true`) con sus `objects` como
+        candidatos en `device_points_candidates`. Si `device_instance` ya
+        corresponde a un dispositivo real, o ya tiene un simulador en
+        ejecución, responde 409 sin arrancar ningún proceso (RF-006). Si
+        corresponde a un simulador previamente registrado pero no en
+        ejecución (p. ej. tras un reinicio), lo reanuda reutilizando el mismo
+        `device_id` (RF-007). Requiere rol Admin.
+      tags:
+        - simulators
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StartBacnetSimulatorRequest"
+      responses:
+        "201":
+          description: Simulador arrancado y registrado (RF-001).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimulatorOut"
+        "403":
+          description: Rol distinto de Admin invocando el arranque (RF-004).
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+              examples:
+                insufficient_role:
+                  value:
+                    type: "https://hira.dev/errors/insufficient-role"
+                    title: "Rol insuficiente"
+                    status: 403
+                    detail: "Se requiere uno de los roles: admin."
+        "409":
+          description: >
+            La dirección ya es un dispositivo real, o ya tiene un simulador
+            en ejecución (RF-006).
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+              examples:
+                simulator_address_conflict:
+                  value:
+                    type: "https://hira.dev/errors/simulator-address-conflict"
+                    title: "Dirección ya registrada"
+                    status: 409
+                    detail: "La dirección '999123' ya corresponde a un dispositivo real."
+                simulator_already_running:
+                  value:
+                    type: "https://hira.dev/errors/simulator-already-running"
+                    title: "Simulador ya en ejecución"
+                    status: 409
+                    detail: "Ya hay un simulador en ejecución en la dirección '999123'."
+  /simulators/modbus:
+    post:
+      operationId: startModbusSimulator
+      summary: Arranca un simulador Modbus TCP y lo registra como dispositivo
+      description: >
+        RF-002, RF-006, RF-007. Arranca un servidor Modbus TCP real en
+        `host:port` que responde con `unit_id`, cargado con los valores
+        iniciales indicados; registra/actualiza en `devices` un dispositivo
+        (`protocol='modbus'`, `is_simulator=true`) con esos valores como
+        candidatos. Mismas reglas de conflicto (409, RF-006) y reanudación
+        (RF-007) que `POST /simulators/bacnet`. Requiere rol Admin.
+      tags:
+        - simulators
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StartModbusSimulatorRequest"
+      responses:
+        "201":
+          description: Simulador arrancado y registrado (RF-002).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimulatorOut"
+        "403":
+          description: Rol distinto de Admin invocando el arranque (RF-004).
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+              examples:
+                insufficient_role:
+                  value:
+                    type: "https://hira.dev/errors/insufficient-role"
+                    title: "Rol insuficiente"
+                    status: 403
+                    detail: "Se requiere uno de los roles: admin."
+        "409":
+          description: >
+            La dirección ya es un dispositivo real, o ya tiene un simulador
+            en ejecución (RF-006).
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+              examples:
+                simulator_address_conflict:
+                  value:
+                    type: "https://hira.dev/errors/simulator-address-conflict"
+                    title: "Dirección ya registrada"
+                    status: 409
+                    detail: "La dirección '192.168.1.50:502:1' ya corresponde a un dispositivo real."
+                simulator_already_running:
+                  value:
+                    type: "https://hira.dev/errors/simulator-already-running"
+                    title: "Simulador ya en ejecución"
+                    status: 409
+                    detail: "Ya hay un simulador en ejecución en la dirección '192.168.1.50:502:1'."
+  /simulators/mqtt:
+    post:
+      operationId: startMqttSimulator
+      summary: Arranca un publicador MQTT y lo registra como dispositivo
+      description: >
+        RF-003, RF-006, RF-007, RF-014, RF-015. Arranca un publicador MQTT
+        real que publica `payload` en `topic` cada `interval_seconds`
+        segundos; registra/actualiza en `devices` un dispositivo
+        (`protocol='mqtt'`, `is_simulator=true`), sin candidatos. Mismas
+        reglas de conflicto (409, RF-006) y reanudación (RF-007) que
+        `POST /simulators/bacnet`. `interval_seconds <= 0` responde 400 sin
+        arrancar nada (RF-015); un `topic`/`payload` rechazado por la
+        librería MQTT al publicar responde 400 (RF-014). Requiere rol Admin.
+      tags:
+        - simulators
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StartMqttSimulatorRequest"
+      responses:
+        "201":
+          description: Publicador arrancado y registrado (RF-003).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimulatorOut"
+        "400":
+          description: >
+            `interval_seconds <= 0` (RF-015), o `topic`/`payload` rechazado
+            por la librería MQTT al publicar (RF-014).
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+              examples:
+                mqtt_invalid_interval:
+                  value:
+                    type: "https://hira.dev/errors/mqtt-invalid-interval"
+                    title: "Intervalo inválido"
+                    status: 400
+                    detail: "interval_seconds debe ser > 0, recibido: 0."
+                mqtt_invalid_publish:
+                  value:
+                    type: "https://hira.dev/errors/mqtt-invalid-publish"
+                    title: "Publicación MQTT inválida"
+                    status: 400
+                    detail: "El topic/payload para 'edificio/#' fue rechazado al publicar: Publish topic cannot contain wildcards."
+        "403":
+          description: Rol distinto de Admin invocando el arranque (RF-004).
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+              examples:
+                insufficient_role:
+                  value:
+                    type: "https://hira.dev/errors/insufficient-role"
+                    title: "Rol insuficiente"
+                    status: 403
+                    detail: "Se requiere uno de los roles: admin."
+        "409":
+          description: >
+            La dirección ya es un dispositivo real, o ya tiene un simulador
+            en ejecución (RF-006).
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+              examples:
+                simulator_address_conflict:
+                  value:
+                    type: "https://hira.dev/errors/simulator-address-conflict"
+                    title: "Dirección ya registrada"
+                    status: 409
+                    detail: "La dirección 'edificio/piso1/ahu1/temp' ya corresponde a un dispositivo real."
+                simulator_already_running:
+                  value:
+                    type: "https://hira.dev/errors/simulator-already-running"
+                    title: "Simulador ya en ejecución"
+                    status: 409
+                    detail: "Ya hay un simulador en ejecución en la dirección 'edificio/piso1/ahu1/temp'."
+  /simulators:
+    get:
+      operationId: listSimulators
+      summary: Lista los simuladores actualmente en ejecución
+      description: >
+        RF-010. Lista únicamente los simuladores actualmente en ejecución
+        (protocolo, dirección/identidad, `device_id`, hora de arranque) — ni
+        dispositivos reales ni simuladores detenidos (el estado vive en
+        memoria del proceso, `spec.md §3`). Requiere rol Admin u Operador.
+      tags:
+        - simulators
+      responses:
+        "200":
+          description: Simuladores en ejecución (puede ser `[]`).
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SimulatorOut"
+        "403":
+          description: Rol Visor invocando el listado (RF-005).
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+              examples:
+                insufficient_role:
+                  value:
+                    type: "https://hira.dev/errors/insufficient-role"
+                    title: "Rol insuficiente"
+                    status: 403
+                    detail: "Se requiere uno de los roles: admin, operador."
+  /simulators/{device_id}:
+    delete:
+      operationId: stopSimulator
+      summary: Detiene un simulador en ejecución
+      description: >
+        RF-009, RF-012. Detiene el proceso identificado por `device_id` sin
+        eliminar el dispositivo ni sus candidatos de `devices`/
+        `device_points_candidates` — `is_simulator=true` es permanente en
+        esta feature (RF-011). Requiere rol Admin.
+      tags:
+        - simulators
+      parameters:
+        - in: path
+          name: device_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Identificador del dispositivo (`devices.id`).
+      responses:
+        "204":
+          description: Simulador detenido — sin contenido (RF-009).
+        "403":
+          description: Rol distinto de Admin invocando la detención (RF-004).
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+              examples:
+                insufficient_role:
+                  value:
+                    type: "https://hira.dev/errors/insufficient-role"
+                    title: "Rol insuficiente"
+                    status: 403
+                    detail: "Se requiere uno de los roles: admin."
+        "404":
+          description: >
+            `device_id` sin ningún simulador actualmente en ejecución — no
+            existe, es `is_simulator=false`, o ya está detenido (RF-012).
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+              examples:
+                simulator_not_running:
+                  value:
+                    type: "https://hira.dev/errors/simulator-not-running"
+                    title: "Simulador no encontrado"
+                    status: 404
+                    detail: "No hay ningún simulador en ejecución con device_id 'a3d1...'."
   /health:
     get:
       operationId: getHealth
@@ -637,6 +928,121 @@ components:
           description: >
             Patrón de suscripción MQTT (wildcard `#`/`+` soportados por el
             broker). Validado por la librería MQTT al suscribirse (RF-004).
+    BacnetSimulatedObjectIn:
+      type: object
+      description: >
+        Un objeto BACnet inicial del simulador (`SRV-006-simuladores`, RF-001).
+      required: [object_type, object_instance, present_value]
+      additionalProperties: false
+      properties:
+        object_type:
+          type: string
+          enum: [analog-value, analog-input, analog-output, binary-value, binary-input, binary-output]
+        object_instance:
+          type: integer
+          minimum: 0
+        present_value:
+          type: string
+          description: >
+            Texto — analog-*: parseable a número; binary-*: "active"/"inactive".
+    StartBacnetSimulatorRequest:
+      type: object
+      description: >
+        Body de `POST /simulators/bacnet` (`SRV-006-simuladores`, RF-001).
+      required: [device_instance]
+      additionalProperties: false
+      properties:
+        device_instance:
+          type: integer
+          minimum: 0
+          maximum: 4194303
+        objects:
+          type: array
+          items:
+            $ref: "#/components/schemas/BacnetSimulatedObjectIn"
+    ModbusRegisterValueIn:
+      type: object
+      description: >
+        Un registro inicial del simulador Modbus (`SRV-006-simuladores`, RF-002).
+      required: [address, value]
+      additionalProperties: false
+      properties:
+        address:
+          type: integer
+          minimum: 0
+        value:
+          oneOf: [{type: boolean}, {type: integer}]
+    StartModbusSimulatorRequest:
+      type: object
+      description: >
+        Body de `POST /simulators/modbus` (`SRV-006-simuladores`, RF-002).
+      required: [host, port, unit_id]
+      additionalProperties: false
+      properties:
+        host:
+          type: string
+          minLength: 1
+        port:
+          type: integer
+          minimum: 1
+          maximum: 65535
+        unit_id:
+          type: integer
+          minimum: 0
+          maximum: 255
+        coils:
+          type: array
+          items:
+            $ref: "#/components/schemas/ModbusRegisterValueIn"
+        discrete_inputs:
+          type: array
+          items:
+            $ref: "#/components/schemas/ModbusRegisterValueIn"
+        holding_registers:
+          type: array
+          items:
+            $ref: "#/components/schemas/ModbusRegisterValueIn"
+        input_registers:
+          type: array
+          items:
+            $ref: "#/components/schemas/ModbusRegisterValueIn"
+    StartMqttSimulatorRequest:
+      type: object
+      description: >
+        Body de `POST /simulators/mqtt` (`SRV-006-simuladores`, RF-003).
+        `topic` es un topic concreto (sin wildcard), a diferencia de
+        `topic_pattern` de `ScanMqttRequest`.
+      required: [topic, payload, interval_seconds]
+      additionalProperties: false
+      properties:
+        topic:
+          type: string
+          minLength: 1
+        payload:
+          type: string
+        interval_seconds:
+          type: number
+          description: >
+            Sin `minimum` a propósito — RF-015 exige 400 RFC 9457, no el 422
+            genérico de Pydantic (mismo criterio que `ModbusRangeIn.count`, `SRV-004`).
+    SimulatorOut:
+      type: object
+      description: >
+        Simulador en ejecución (`SRV-006-simuladores`, RF-001, RF-002, RF-003, RF-010).
+      required: [device_id, protocol, address, started_at]
+      additionalProperties: false
+      properties:
+        device_id:
+          type: string
+          format: uuid
+        protocol:
+          type: string
+          enum: [bacnet, modbus, mqtt]
+        address:
+          type: string
+        started_at:
+          type: string
+          format: date-time
     ProblemDetail:
       type: object
       description: >
@@ -658,7 +1064,17 @@ components:
         (`plan.md §4`): `mqtt-invalid-topic-pattern` (400,
         `POST /devices/scan/mqtt` con un `topic_pattern` rechazado por la
         librería MQTT al suscribirse) — `insufficient-role` (403) se
-        reutiliza tal cual, sin redefinirse.
+        reutiliza tal cual, sin redefinirse. Catálogo añadido por
+        `SRV-006-simuladores` (`plan.md §4`): `simulator-address-conflict`
+        (409, la dirección ya es un dispositivo real), `simulator-already-
+        running` (409, la dirección ya tiene un simulador en ejecución),
+        `simulator-not-running` (404, `DELETE /simulators/{device_id}` sin
+        un simulador en ejecución con ese id), `mqtt-invalid-publish` (400,
+        `POST /simulators/mqtt` con `topic`/`payload` rechazado al
+        publicar — distinto de `mqtt-invalid-topic-pattern`, que valida
+        `subscribe()`), `mqtt-invalid-interval` (400, `interval_seconds <= 0`)
+        — `insufficient-role` (403) se reutiliza tal cual en `/simulators/*`,
+        sin redefinirse.
       required: [type, title, status, detail]
       additionalProperties: false
       properties:

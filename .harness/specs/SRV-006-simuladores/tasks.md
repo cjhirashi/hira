@@ -87,7 +87,7 @@ actualizado: 2026-09-14
       (cubre RF-009, RF-011, RF-012) [zona: coordinación]
 
 ### Contrato — Contract-First
-- [ ] T-015 — Ampliar `hira-server/docs/openapi.yaml` con los 5 paths
+- [x] T-015 — Ampliar `hira-server/docs/openapi.yaml` con los 5 paths
       (`POST /simulators/{bacnet,modbus,mqtt}`, `GET /simulators`,
       `DELETE /simulators/{device_id}`) y los 6 schemas nuevos
       (`BacnetSimulatedObjectIn`, `StartBacnetSimulatorRequest`,
@@ -97,7 +97,7 @@ actualizado: 2026-09-14
       RF-006, RF-012, RF-014, RF-015) [zona: contrato]
 
 ### Adaptador de entrada — router
-- [ ] T-016 — Test `tests/test_simulators_router.py` (`TestClient`,
+- [x] T-016 — Test `tests/test_simulators_router.py` (`TestClient`,
       dobles vía `app.dependency_overrides`): contrato exacto de
       `openapi.yaml`, 201 con `SimulatorOut` (los 3 protocolos), 403 con
       Operador/Visor en `POST`/`DELETE`, 403 con Visor y 200 con
@@ -106,7 +106,7 @@ actualizado: 2026-09-14
       cuerpo en `DELETE` exitoso (debe fallar) (cubre RF-001, RF-002,
       RF-003, RF-004, RF-005, RF-006, RF-009, RF-010, RF-012, RF-014,
       RF-015) [zona: test-adaptador-entrada]
-- [ ] T-017 — Implementar `routers/simulators.py` + `schemas/simulators.py`
+- [x] T-017 — Implementar `routers/simulators.py` + `schemas/simulators.py`
       + `adapters/factory.py::get_bacnet_simulator_port()/
       get_modbus_simulator_port()/get_mqtt_publisher_port()` (nacen aquí
       con placeholders in-memory, mismo patrón ya aplicado 8 veces);
