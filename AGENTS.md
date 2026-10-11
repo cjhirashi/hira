@@ -134,3 +134,12 @@ Binding de Claude Code / Cursor, **obligatorio para continuar**. Manual de cada 
 - **Validar:** Test que asegure aislamiento
 
 **Por qué:** Parches = deuda técnica + código frágil. Fix desde raíz = profesional + mantenible.
+
+## 🔴 Regla Crítica — Respuestas Concisas
+
+**Chat = directo al grano. Claro, conciso, sin relleno.**
+
+**✅ Bien:** Una frase qué + resultado + próximo (3-4 líneas max)
+**❌ Mal:** "Como te mencioné", contexto basura, redundancias
+
+**Por qué:** Tokens = recursos. Respuestas largas = consumo innecesario.
