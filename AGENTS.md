@@ -63,16 +63,74 @@ roadmap, glosario, legacy). Tabla con "se actualiza cuando cambia…":
 
 ## Bindings de herramienta — `.claude/agents/`
 
-Binding de Claude Code, **opcional**. Manual de cada rol: `.harness/method.md §8`.
+Binding de Claude Code / Cursor, **obligatorio para continuar**. Manual de cada rol: `.harness/method.md §8`.
 
-- **Base:** `orquestador` · `autor-de-spec` · `arquitecto` · `implementador` ·
-  `revisor` · `explorador`.
-- **`experto-ux-ui`** (`ADR-003`, activo) — diseña y revisa la UX/UI de los frontends
-  de los 3 productos; complementa a `hira-frontend`. Toda feature de interfaz pasa por
-  él antes de `verified` (Constitución Art. 8).
-- **16 especialistas de módulo pre-diseñados** (`hira-*`, `hub-*`) — ver
-  `.claude/agents/README.md`. **Referencian rutas retiradas; refrescar antes de usarlos**
-  (ver `memory/state.md`).
+### Agentes Base (6)
+- **`orquestador`** — Coordina features, asigna fases, delega roles
+- **`autor-de-spec`** — Elicita Fase 1 (especificación interactiva con usuario)
+- **`arquitecto`** — Redacta Fase 2 (Plan: componentes, contratos, secuenciación)
+- **`implementador`** — Fase 3–4 (Tasks, código, tests, validación)
+- **`revisor`** — QA, Gate, documentación, verificación `verified`
+- **`explorador`** — Investigación, búsquedas en repo, mapeo de dependencias
 
-`.harness/claude/` genera `AGENTS.md`/`CLAUDE.md` por producto (`build_claude.py`);
-sus fuentes también necesitan actualizarse a los `docs/` nuevos antes de regenerar.
+### Especialistas (17)
+- **`experto-ux-ui`** (`ADR-003`, activo) — diseña y revisa la UX/UI de los 3 productos. Toda feature de interfaz pasa por él antes de `verified`.
+- **16 especialistas de módulo** — ver `.claude/agents/README.md` (nota: referencian rutas pre-ADR-001; refrescar antes de usar).
+
+## 🔴 Regla Crítica — Código Ordenado y Profesional
+
+**Código DEBE reflejar orden, comentarios y metodología — no aleatoriedad.**
+
+**Comentarios:**
+- Obligatorios donde la lógica no es obvia
+- Explicar POR QUÉ, no QUÉ
+- Una línea antes de la sección, breve
+
+**Orden Visual:**
+- Estructura clara y predecible
+- Agrupación lógica de funciones
+- Separación visual entre bloques (línea en blanco)
+- Indentación consistente (2 espacios JS, 4 Python)
+
+**Patrones Consistentes:**
+- **Mismo tipo = mismo patrón en TODO el repo**
+- Todos los servicios usan la misma estructura
+- Todos los endpoints: ruta → validar → procesar → responder
+- Todos los tests: arrange → act → assert
+
+**Profesionalismo Visual:**
+- Código que diga "personas ordenadas" de inmediato
+- Quien lee entiende la arquitectura en 2 minutos
+- Patrones visuales claros
+
+**Checklist (pre-commit):**
+- [ ] ¿Hay comentarios donde no es obvio?
+- [ ] ¿Está ordenado por bloques lógicos?
+- [ ] ¿Sigue el patrón de archivos similares?
+- [ ] ¿Indentación consistente?
+
+## 🔴 Regla Crítica — Resolver Desde la Raíz
+
+**Ante fallas: NUNCA parches. SIEMPRE resolver desde la causa raíz.**
+
+**Prohibido:**
+- ❌ If temporales (`if os.getenv("TESTING")`)
+- ❌ Comentarios `TODO`, `HACK`, `FIXME` sin fecha
+- ❌ Skipear tests ("lo arreglamos después")
+- ❌ Agregar defensas alrededor del error
+
+**Método (resolver desde la raíz):**
+
+1. **Investigar:** Stacktrace de abajo hacia arriba — ¿dónde se originó?
+2. **Comprender:** ¿Qué asunción era incorrecta?
+3. **Fixar:** Cambiar la causa raíz, no el síntoma
+4. **Validar:** Tests que confirmen que el fix es permanente
+5. **Limpiar:** Eliminar workarounds y code smells
+
+**Ejemplo:**
+- **Síntoma:** Endpoint GET `/vaults` retorna bóveda de otro usuario
+- **Raíz:** No validar `current_user.id == vault.owner_id`
+- **Fix:** Agregar validación en el query
+- **Validar:** Test que asegure aislamiento
+
+**Por qué:** Parches = deuda técnica + código frágil. Fix desde raíz = profesional + mantenible.
