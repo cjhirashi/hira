@@ -2,8 +2,8 @@
 id: SPEC-SRV-006
 tipo: spec
 feature: SRV-006-simuladores
-estado: implemented
-anchor_commit: 5b29160
+estado: verified
+anchor_commit: 5b2916099a4027c1efdc32967541f5ca03d90498
 anchor_mode: strict
 covers:
   - hira-server/backend/**

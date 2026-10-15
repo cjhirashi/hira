@@ -2,7 +2,7 @@
 id: TASKS-SRV-006
 tipo: tasks
 feature: SRV-006-simuladores
-estado: implemented
+estado: verified
 actualizado: 2026-10-15
 ---
 

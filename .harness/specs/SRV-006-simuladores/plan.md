@@ -2,7 +2,7 @@
 id: PLAN-SRV-006
 tipo: plan
 feature: SRV-006-simuladores
-estado: implemented
+estado: verified
 aprobaciones:
   fase_2: { por: "Carlos", fecha: 2026-09-14 }
 actualizado: 2026-10-15

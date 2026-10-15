@@ -25,6 +25,29 @@ Session-End por sesión, con el formato fijo de `method.md §10`. Las bitácoras
 
 ---
 
+## [2026-10-15] SRV-006-simuladores — verified
+
+- **Fase alcanzada:** verified (Gate 4, confirmado por Carlos sobre la evidencia de la
+  sesión anterior: 320/320 tests, tabla de cobertura corregida — sin levantar el
+  backend ni frontend, el proyecto aún no tiene nada operativo que navegar)
+- **Rebotes del verificador:** 0
+- **Directiva de Pausa:** no
+- **Drift / re-anchor:** no
+- **Anclas movidas:** `SRV-006-simuladores` → `5b2916099a4027c1efdc32967541f5ca03d90498`
+  (hash completo; antes `5b29160` en `implemented`)
+- **Gate:** verde (31 ok · 0 warn · 0 error)
+- **Docs actualizadas:** `spec.md`/`plan.md`/`tasks.md` de `SRV-006-simuladores`
+  (`estado: implemented` → `verified`)
+- **Decisiones de diseño / límites de integración:** ninguna nueva — cierra el grupo
+  de protocolos (BACnet → Modbus → MQTT → Simuladores). `SRV-007` (asociación
+  explícita de puntos) queda desbloqueada.
+- **Próximo paso:** usuario marca `hira-studio` como prioridad siguiente (diseño
+  de la herramienta de ingeniería que carga/prueba proyectos contra un
+  `hira-server`, `CT-engineering-session`) — decidir si se trabaja junto con o
+  antes de `SRV-007`/`HUB-H1`.
+
+---
+
 ## [2026-10-15] SRV-006-simuladores — implemented
 
 - **Fase alcanzada:** implement (Fases 1-4 completas, T-001..T-028; Gate 4/`verified`

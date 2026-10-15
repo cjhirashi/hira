@@ -95,22 +95,20 @@ actualizado: 2026-10-15
 - **`SRV-004-modbus-adapter`**: `estado: verified`
 - **`SRV-005-mqtt-scanning`**: `estado: verified`, 13/13 tareas, ancla d93243a
 - **`HUB-001-walking-skeleton`**: `estado: verified`, 25/25 tareas, ancla 4d18044
-
-### 🔶 Implementadas, pendientes de Gate 4
-- **`SRV-006-simuladores`**: `estado: implemented`, 28/28 tareas (T-001..T-028), ancla
-  `5b29160` (320/320 tests: 252 unit + 68 integración). Tabla de cobertura de
-  `tasks.md` corregida de `Pendiente` a `Pass` (mismo bug recurrente del gate ya
-  visto en SRV-001/003/004/005 — el gate no la autollena, el revisor la corrige
-  citando precedente). `anchor_mode` pasó a `strict`.
+- **`SRV-006-simuladores`**: `estado: verified` (Gate 4, Carlos, 2026-10-15), 28/28
+  tareas (T-001..T-028), ancla `5b2916099a4027c1efdc32967541f5ca03d90498`
+  (320/320 tests: 252 unit + 68 integración)
 
 ### ⏳ Próximos Pasos
-- **`SRV-006-simuladores` → Gate 4 (Verificación):** aplicar `method.md §4` con
-  `revisor`; única pieza pendiente es el veredicto de Carlos contra los criterios
-  de aceptación (spec.md/plan.md ya están sincronizados, tests pasan, ancla fijada).
-- **Posterior a SRV-006 `verified`:**
-  - `SRV-007` (asociación explícita de puntos) — bloqueada hasta SRV-006 verified
-  - `HUB-H1` (gestión de licencias) — backlog futuro
-  - `STU-001` (Walking Skeleton Studio) — requiere decisiones previas
+- **`SRV-007`** (asociación explícita de puntos) — ya desbloqueada (SRV-006 `verified`).
+- **Prioridad del usuario (2026-10-15): completar el diseño de `hira-studio`.**
+  Studio es la herramienta con la que se diseña el proyecto de ingeniería que luego
+  corre en un `hira-server`; Studio se conecta al Server para cargar y probar esos
+  proyectos (`CT-engineering-session`, ya documentado en `AGENTS.md`/`E-ADR-001`).
+  El usuario lo marca como siguiente foco, antes o junto con `SRV-007`/`HUB-H1`.
+- `HUB-H1` (gestión de licencias) — backlog futuro.
+- `STU-001` (Walking Skeleton Studio) — requiere decisiones previas de diseño
+  (ver prioridad arriba).
 
 ## Nota operativa (2026-10-15, AIRA)
 
