@@ -1,0 +1,71 @@
+╔════════════════════════════════════════════════════════════════════════════════╗
+║                       BIENVENIDO AL PROYECTO HIRA                               ║
+║                                                                                  ║
+║  Plataforma SCADA moderna, asequible, sin código, con IA nativa.                ║
+║  Ecosistema: Server (on-premise) + Studio + Hub (cloud)                         ║
+║  Arquitectura: Hexagonal en los 3 productos                                      ║
+║  Método: SDD Anchored (Spec-Driven Development)                                  ║
+╚════════════════════════════════════════════════════════════════════════════════╝
+
+👉 PRIMER PASO (OBLIGATORIO): Lee PLAN-IMPLEMENTACION.md
+   Ubicación: /mnt/disco2/cjhirashi-data/proyectos/hira/PLAN-IMPLEMENTACION.md
+   Tiempo: 10 minutos
+   Qué contiene:
+   - Matriz de features (estado actual, qué sigue)
+   - 5 pasos concretos (Validación → Decisiones → Plan → Tasks → Implement)
+   - Timeline estimado
+   - Reglas innegociables
+   - Checklist de inicio
+
+📋 DESPUÉS, LEE (en orden):
+   1. .harness/memory/state.md        (correcciones de Carlos — CRÍTICO)
+   2. .harness/specs/SRV-006-*        (feature en curso)
+   3. AGENTS.md                       (roles y delegación)
+   4. CLAUDE.md                       (protocolo + reglas)
+
+🚀 COMANDO INICIAL (Cursor):
+   cd /mnt/disco2/cjhirashi-data/proyectos/hira
+   bash .harness/gate/check.sh
+
+   Si ve ✅ → Sigue PLAN-IMPLEMENTACION.md Paso 1
+   Si ve ❌ → Reporta a Carlos
+
+📞 CONTACTOS:
+   - Carlos Jiménez (propietario, decisiones)
+   - Cursor (especialista de proyecto, implementación)
+   - Revisor (QA, gates)
+
+⏰ HITO ACTUAL:
+   Feature activa: SRV-006 (Simuladores)
+   Estado: Fase 1 approved → Fase 2 (Plan) pendiente
+   Próximo: Arquitecto redacta plan.md
+
+═══════════════════════════════════════════════════════════════════════════════
+
+REFERENCIAS RÁPIDAS:
+
+Workspace AIRA (documentación de contexto):
+├── HIRA-ESTADO-ACTUAL.md             (resumen ejecutivo + features)
+├── HIRA-ESPECIFICACIONES-PENDIENTES.md (criterios SRV-006 + roadmap)
+└── HIRA-QUICK-START-CURSOR.md        (onboarding 30 min)
+
+Proyecto Hira (código real):
+├── PLAN-IMPLEMENTACION.md ← LEER PRIMERO
+├── CLAUDE.md
+├── AGENTS.md
+├── .harness/method.md
+├── .harness/constitution.md
+├── .harness/memory/state.md ← LEER SEGUNDO
+└── .harness/specs/SRV-006-simuladores/ ← Feature en curso
+
+═══════════════════════════════════════════════════════════════════════════════
+
+REGLA DE ORO:
+  1. Ejecuta SIEMPRE: bash .harness/gate/check.sh
+  2. Lee SIEMPRE: .harness/memory/state.md (correcciones de Carlos)
+  3. No saltes fases (Specify → Plan → Tasks → Implement → Verify)
+  4. No recrees features previas (SRV-001–005, HUB-001 ya verificadas)
+  5. Reporta blockers, no improvises
+
+═══════════════════════════════════════════════════════════════════════════════
+Generado: 2026-10-09 | Por: AIRA | Versión: 1.0

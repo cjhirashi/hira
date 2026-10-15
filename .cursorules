@@ -1,0 +1,249 @@
+# .cursorules — Configuración Automática de Cursor para Proyecto Hira
+
+# Propósito: Cuando Cursor abra esta carpeta, lee automáticamente este archivo
+# y aplica el contexto de proyecto + instrucciones de arranque.
+
+---
+
+## 🎯 CONTEXTO DE PROYECTO
+
+**Proyecto:** Hira — Ecosistema SCADA moderno, sin código, con IA nativa
+**Tipo:** Monorepo con 3 productos (hira-server, hira-studio, hira-hub)
+**Arquitectura:** Hexagonal en los 3 productos
+**Método de desarrollo:** SDD Anchored (Spec-Driven Development)
+**Tu rol:** Especialista de Proyecto Hira
+
+---
+
+## ⚡ ARRANQUE OBLIGATORIO (En Orden)
+
+### 1. LEE PRIMERO
+```
+PLAN-IMPLEMENTACION.md (raíz de este proyecto)
+└─ Matriz de features, 5 pasos concretos, timeline, reglas innegociables
+```
+
+### 2. EJECUTA SIEMPRE
+```bash
+bash .harness/gate/check.sh
+└─ Si ✅: continúa
+└─ Si ❌: detente, reporta a Carlos
+```
+
+### 3. LEE SEGUNDO
+```
+.harness/memory/state.md
+└─ Correcciones de Carlos (CRÍTICO — leer completo)
+```
+
+### 4. SIGUE LOS 5 PASOS
+```
+PLAN-IMPLEMENTACION.md Paso 1 → 2 → 3 → 4 → 5
+└─ No saltees fases
+└─ Gate siempre primero
+```
+
+---
+
+## 📂 ESTRUCTURA DE PROYECTO
+
+```
+hira/
+├── PLAN-IMPLEMENTACION.md        ← 🎯 TU MAPA (lee primero)
+├── INICIO.txt                    ← Bienvenida visual
+├── README.md                     ← Referencias
+├── CLAUDE.md                     ← Reglas duras
+├── AGENTS.md                     ← Roles y delegación (léelo §"Contexto para Cursor")
+│
+├── hira-server/                  ← Producto 1: Core SCADA
+│   ├── src/core/                 ├─ Lógica de negocio (hexagonal: core)
+│   ├── src/ports/                ├─ Contratos (hexagonal: ports)
+│   ├── src/adapters/             ├─ Implementaciones (hexagonal: adapters)
+│   ├── tests/                    └─ Suite completa (TDD)
+│   └── docs/
+│
+├── hira-studio/                  ← Producto 2: Ingeniería Cloud
+│   ├── frontend/                 ├─ React/Vue + Canvas
+│   ├── backend/                  ├─ API design
+│   ├── tests/                    └─ Suite
+│   └── docs/
+│
+├── hira-hub/                     ← Producto 3: Licencias/Versiones
+│   ├── src/core/
+│   ├── src/ports/
+│   ├── src/adapters/
+│   ├── tests/
+│   └── docs/
+│
+├── docs/                         ← Especificación de producto
+│   ├── planning/ROADMAP.md       ├─ Timeline 3 tracks
+│   ├── contracts/                ├─ OpenAPI (CT-license, CT-session, etc.)
+│   ├── hira-server/spec/         └─ Specs de producto
+│   ├── decisions/                └─ ADRs (E-ADR-*, SRV-ADR-*, etc.)
+│   └── glosario.md
+│
+└── .harness/                     ← Arnés SDD Anchored
+    ├── method.md                 ├─ Método completo (léelo §0–2 mínimo)
+    ├── constitution.md           ├─ Arquitectura + principios
+    ├── memory/
+    │   ├── state.md              ├─ LEER PRIMERO (correcciones Carlos)
+    │   └── history.md            └─ Bitácora completa
+    ├── specs/
+    │   ├── SRV-001-walking-skeleton/  ├─ Verified ✅
+    │   ├── SRV-002-auth-rbac/         ├─ Verified ✅
+    │   ├── SRV-003-bacnet/            ├─ Verified ✅
+    │   ├── SRV-004-modbus/            ├─ Verified ✅
+    │   ├── SRV-005-mqtt/              ├─ Verified ✅
+    │   ├── SRV-006-simuladores/       ├─ ← EN CURSO (Fase 1 approved)
+    │   │   ├── spec.md                ├─ Especificación
+    │   │   ├── plan.md                ├─ (Pendiente Fase 2)
+    │   │   └── tasks.md               └─ (Generado post Gate 2)
+    │   └── _template/                 └─ Plantilla
+    ├── gate/
+    │   └── check.sh               ← Gate de integridad (EJECUTAR SIEMPRE)
+    └── claude/
+        └── agents/                ← 6 base + 16 especialistas
+```
+
+---
+
+## 🎯 FEATURE EN CURSO: SRV-006 (Simuladores)
+
+**Estado:** Fase 1 (Specify) **APPROVED** · Gate 1 ✅
+**Próximo:** Fase 2 (Plan) — Redactar plan.md
+**Blockers:** Espera decisiones de Carlos (4 opciones de diseño)
+**Timeline:** 2026-10-10 → 2026-10-16
+
+**Qué es:** Emuladores software de dispositivos (BACnet/Modbus/MQTT) para testing sin hardware.
+
+**No recrees:** SRV-001–005 ya están verificadas. Reutiliza sus modelos, adaptadores, tests.
+
+---
+
+## 👥 AGENTES BASE (Delega Según Fase)
+
+| Fase | Agente | Rol | Cuándo |
+|------|--------|-----|--------|
+| 1 (Specify) | `autor-de-spec` | Elicita con usuario | Si hay ambigüedad |
+| 2 (Plan) | `arquitecto` | Diseña componentes hexagonales | Después Gate 1 |
+| 3–4 (Tasks, Implement) | `implementador` | Código + tests (TDD) | Después Gate 2 |
+| Todas | `revisor` | QA + gates | Cada batch |
+
+**Referencia:** AGENTS.md (este repo, raíz)
+
+---
+
+## 🛡️ REGLAS INNEGOCIABLES
+
+1. **GATE PRIMERO**
+   ```bash
+   bash .harness/gate/check.sh
+   # Siempre, antes de cualquier trabajo
+   ```
+
+2. **LEE MEMORY/STATE.MD**
+   - Correcciones de Carlos (CRÍTICO)
+   - Obstáculos conocidos
+   - No saltees esto
+
+3. **NO SALTEES FASES**
+   - Fase 1 → 2: solo si Gate 1 pasa
+   - Fase 2 → 3: solo si Gate 2 pasa
+   - Fase 3 → 4: tasks.md DEBE ser generado desde plan.md
+   - Fase 4 → Verified: solo si Gate 4 pasa + Carlos firma
+
+4. **NO RECREES FEATURES VERIFICADAS**
+   - SRV-001, 002, 003, 004, 005, HUB-001 ya están ✅
+   - REUTILIZA modelos, adaptadores, tests
+   - Solo crea lo nuevo
+
+5. **COMMITS CON (RF-NNN)**
+   ```
+   feat: simulator factory (RF-006)
+   test: simulator e2e (RF-006)
+   docs: simulator module (RF-006)
+   ```
+
+6. **NO MARQUES VERIFIED**
+   - Solo revisor + Carlos pueden firmar Gate 4
+   - Tú: implementas + tests verdes
+
+7. **BLOCKERS**
+   - No improvises
+   - Reporta: qué, dónde, por qué
+   - Espera decisión Carlos antes de continuar
+
+---
+
+## 📞 CONTACTOS DE DECISIÓN
+
+| Decisión | Responsable | Cuándo |
+|----------|---|---|
+| Spec final (Fase 1) | Carlos | Aprobación Gate 1 |
+| Diseño arquitectura (Fase 2) | Carlos + Arquitecto | Aprobación Gate 2 |
+| Tasksificación (Fase 3) | Implementador | Auto (derivado de plan.md) |
+| Verificación final (Gate 4) | Revisor + Carlos | Cierre feature |
+
+---
+
+## 🔗 REFERENCIAS CRÍTICAS
+
+**Lee en orden:**
+1. **PLAN-IMPLEMENTACION.md** (raíz, este proyecto) — Tu mapa
+2. **.harness/memory/state.md** — Correcciones de Carlos
+3. **.harness/method.md §0–2** — Método SDD mínimo
+4. **.harness/specs/SRV-006-simuladores/spec.md** — Feature en detalle
+5. **AGENTS.md** (raíz) — Roles y delegación
+
+**Para contexto amplio:**
+- `/home/cjhirashi/.openclaw/workspace-aira/HIRA-ESTADO-ACTUAL.md` — Resumen estado
+- `/home/cjhirashi/.openclaw/workspace-aira/PARA-CARLOS-SIGUIENTES-PASOS.md` — 4 decisiones
+- `/home/cjhirashi/.openclaw/workspace-aira/HIRA-QUICK-START-CURSOR.md` — Onboarding 30 min
+
+---
+
+## ✅ CHECKLIST: PRIMER MINUTO
+
+- [ ] Leí este .cursorules completo
+- [ ] Ejecuté `bash .harness/gate/check.sh` y pasó ✅
+- [ ] Leí `.harness/memory/state.md` (correcciones de Carlos)
+- [ ] Leí `PLAN-IMPLEMENTACION.md` (5 pasos)
+- [ ] Entiendo que SRV-006 es Fase 1 approved → Fase 2 pending
+- [ ] Estoy esperando decisiones de Carlos (4 opciones)
+
+---
+
+## 🚀 TU PRIMER COMANDO
+
+```bash
+# Paso 1: Validar
+bash .harness/gate/check.sh
+
+# Paso 2: Entender contexto
+cat .harness/memory/state.md | head -50
+
+# Paso 3: Leer plan
+cat PLAN-IMPLEMENTACION.md | head -100
+
+# Paso 4: Esperar decisiones de Carlos (mañana)
+# Carlos comunica 4 decisiones → tú continúas Fase 2
+```
+
+---
+
+## 💡 CUANDO CARLOS COMUNIQUE SUS DECISIONES
+
+1. Incluye en PLAN-IMPLEMENTACION.md (Paso 2)
+2. Crea issue en `.harness/memory/state.md` con decisiones
+3. Delega Fase 2 a agente `arquitecto`
+4. Arquitecto redacta plan.md
+5. Gate 2 valida
+6. Fase 3–4: implementador + revisor
+
+---
+
+**Archivo de configuración automática**
+**Proyecto:** Hira (3 productos: server, studio, hub)
+**Versión:** 1.0
+**Actualizado:** 2026-10-09
+**Responsable:** AIRA
