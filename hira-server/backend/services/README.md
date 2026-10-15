@@ -41,3 +41,45 @@ y `core/errors.py` — nunca de `adapters/` directamente ni de FastAPI (regla de
   dispositivo+candidatos vía `DeviceRepositoryPort` (RF-002). Nunca escribe en
   una tabla de puntos operables (RF-007, `SRV-ADR-012`) — no importa ningún
   `PointsRepositoryPort`, que no existe todavía.
+
+Servicios de `SRV-006-simuladores`:
+
+- `simulator_registry_service.py::SimulatorRegistryService` + `RunningSimulator`
+  + `get_simulator_registry()` — estado en memoria del proceso de los
+  simuladores actualmente en ejecución. **No es un puerto** (mismo criterio
+  que `LocalPermissionsCache` en `rbac_service.py`, `SRV-002`): no habla con
+  ningún sistema externo, es un `dict[device_id, RunningSimulator]` interno.
+  Un reinicio del proceso lo vacía sin código adicional (RF-013, por omisión
+  de diseño — `main.py` no lo persiste ni restaura). Vive en su propio
+  archivo (no inline en `simulator_service.py`) porque las 3 funciones de
+  arranque más `stop_simulator`/`GET /simulators` convergen sobre el **mismo**
+  registro. `RunningSimulator` es un `@dataclass(frozen=True)` con `device_id`,
+  `protocol`, `address`, `token`, `started_at` (RF-010). `SimulatorRegistryService`
+  expone `self.lock` (`asyncio.Lock`) **público** — `simulator_service.py`
+  lo adquiere para envolver la sección crítica completa "verificar conflicto
+  → arrancar → registrar", no solo la mutación del `dict` (un único lock
+  global serializa las llamadas de gestión de simuladores, `plan.md §2`
+  Registro de decisiones). `get_simulator_registry()` — singleton de módulo,
+  inyectado vía `Depends()` en `routers/simulators.py`.
+
+- `simulator_service.py::start_bacnet_simulator / start_modbus_simulator /
+  start_mqtt_simulator / stop_simulator` — coordinación de arranque/detención
+  de simuladores (RF-001/RF-002/RF-003, RF-006, RF-007, RF-009, RF-012,
+  RF-014, RF-015, RNF-001). Solo importa de `core/ports/`,
+  `core/bacnet_address.py`, `core/modbus_address.py`, `core/errors.py`,
+  `core/logger.py` y `services/simulator_registry_service.py` — nunca de
+  `adapters/` ni de FastAPI. Recibe los puertos por parámetro.
+  Cada `start_*_simulator` adquiere `registry.lock` para la sección crítica:
+  (1) `_check_conflict` (RF-006: 409 si dirección real o ya corriendo, antes
+  de arrancar nada); (2) `transport.start(...)` (arranca el proceso real);
+  (3) `try/except` para limpiar defensivamente con `transport.stop(token)` si
+  la persistencia falla tras el arranque; (4) `device_repo.upsert_device(...,
+  is_simulator=True)` + candidatos; (5) `registry.register(entry)`. BACnet
+  usa `format_simulator_device_address(device_instance)`; Modbus usa
+  `format_modbus_address(host, port, unit_id)` (`SRV-004`, reutilizado tal
+  cual). MQTT añade RF-015 (`interval_seconds<=0` → 400 antes del lock) y
+  RF-014 (captura `MqttInvalidPublishError` de `transport.start()` → 400 sin
+  `upsert_device`). `stop_simulator` adquiere `registry.lock`, busca la
+  entrada y despacha al puerto correcto según `entry.protocol`, luego llama
+  `registry.unregister(device_id)` — sin tocar `devices`/candidatos (RF-009,
+  RF-011, por omisión de diseño: no importa ningún método de borrado).

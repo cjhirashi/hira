@@ -62,7 +62,9 @@ class PostgreSQLDeviceRepository:
         self, *, name: str, protocol: str, address: str, is_simulator: bool = False
     ) -> DeviceRecord:
         """Crea o actualiza (único por `(protocol, address)`), refrescando
-        `last_seen_at` (RF-002)."""
+        `last_seen_at` (RF-002). `is_simulator` se combina con `OR` en el
+        conflicto: una fila ya simulador nunca vuelve a `false` por un
+        escaneo real posterior (`SRV-006-simuladores`, RF-008)."""
         insert_stmt = pg_insert(devices_table).values(
             name=name,
             protocol=protocol,
@@ -74,7 +76,8 @@ class PostgreSQLDeviceRepository:
             index_elements=["protocol", "address"],
             set_={
                 "name": insert_stmt.excluded.name,
-                "is_simulator": insert_stmt.excluded.is_simulator,
+                "is_simulator": devices_table.c.is_simulator
+                | insert_stmt.excluded.is_simulator,
                 "last_seen_at": insert_stmt.excluded.last_seen_at,
                 "updated_at": func.now(),
             },
@@ -97,6 +100,21 @@ class PostgreSQLDeviceRepository:
         async with self._engine.connect() as connection:
             result = await connection.execute(
                 select(devices_table).where(devices_table.c.id == device_id)
+            )
+            row = result.first()
+        return self._row_to_device(row) if row is not None else None
+
+    async def get_device_by_address(
+        self, protocol: str, address: str
+    ) -> DeviceRecord | None:
+        """`SRV-006-simuladores`, RF-006/RF-007 — lectura puntual por el
+        `UNIQUE (protocol, address)`; `None` si no existe."""
+        async with self._engine.connect() as connection:
+            result = await connection.execute(
+                select(devices_table).where(
+                    devices_table.c.protocol == protocol,
+                    devices_table.c.address == address,
+                )
             )
             row = result.first()
         return self._row_to_device(row) if row is not None else None

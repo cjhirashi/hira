@@ -2,8 +2,8 @@
 id: TASKS-SRV-006
 tipo: tasks
 feature: SRV-006-simuladores
-estado: draft
-actualizado: 2026-09-14
+estado: implemented
+actualizado: 2026-10-15
 ---
 
 # TASKS-SRV-006 · Simuladores de dispositivos (BACnet, Modbus, MQTT)
@@ -115,50 +115,50 @@ actualizado: 2026-09-14
       [zona: adaptador-entrada]
 
 ### Adaptador de repositorio — Postgres real
-- [ ] T-018 — Ampliar `tests/integration/test_device_repository_adapter.py`:
+- [x] T-018 — Ampliar `tests/integration/test_device_repository_adapter.py`:
       `get_device_by_address` (existente vs. inexistente, distingue por
       `protocol`); `upsert_device` preserva `is_simulator=true` (fila ya
       simulador → segundo `upsert_device(..., is_simulator=False)` →
       sigue `true`) — contra Postgres real (debe fallar) (cubre RF-006,
       RF-007, RF-008) [zona: test-adaptadores]
-- [ ] T-019 — Implementar `adapters/db/device_repository_adapter.py::
+- [x] T-019 — Implementar `adapters/db/device_repository_adapter.py::
       PostgreSQLDeviceRepository.get_device_by_address` +
       `upsert_device` corregido (`OR` booleano en `ON CONFLICT DO
       UPDATE`) (cubre RF-006, RF-007, RF-008) [zona: adaptadores]
 
 ### Adaptador BACnet real — integración contra un cliente BACnet real
-- [ ] T-020 — Test `tests/integration/test_bacnet_simulator_adapter.py`
+- [x] T-020 — Test `tests/integration/test_bacnet_simulator_adapter.py`
       (requiere `BAC0` real, sin `BAC0Adapter`/mocks): `start(...)` → un
       cliente BACnet real recibe I-Am con el `device_instance` correcto y
       lee `presentValue` del objeto inicial; `stop(token)` libera el
       puerto UDP; 2 simuladores concurrentes conviven sin colisión de
       puerto (debe fallar) (cubre RF-001, RNF-001) [zona: test-adaptadores]
-- [ ] T-021 — Implementar `adapters/bacnet/bacnet_simulator_adapter.py::
+- [x] T-021 — Implementar `adapters/bacnet/bacnet_simulator_adapter.py::
       BacnetSimulatorAdapter` (`BAC0.lite(deviceId=...)`) — reemplaza el
       **cuerpo** (no la firma) de `get_bacnet_simulator_port()`; añade
       `Settings.bacnet_simulator_port_range_start` (opcional, default
       `47900`) (cubre RF-001, RNF-001) [zona: adaptadores]
 
 ### Adaptador Modbus real — integración contra un cliente Modbus real
-- [ ] T-022 — Test `tests/integration/test_modbus_simulator_adapter.py`
+- [x] T-022 — Test `tests/integration/test_modbus_simulator_adapter.py`
       (requiere `pymodbus` real, sin `PymodbusAdapter`/mocks): `start(...)`
       → un cliente Modbus real lee los registros cargados
       (holding/input → int, coil/discrete → bool); `stop(token)` cierra el
       servidor (debe fallar) (cubre RF-002, RNF-001) [zona: test-adaptadores]
-- [ ] T-023 — Implementar `adapters/modbus/modbus_simulator_adapter.py::
+- [x] T-023 — Implementar `adapters/modbus/modbus_simulator_adapter.py::
       ModbusSimulatorAdapter` (`ModbusTcpServer` + `SimData`/`SimDevice`)
       — reemplaza el cuerpo de `get_modbus_simulator_port()` (cubre
       RF-002, RNF-001) [zona: adaptadores]
 
 ### Adaptador MQTT real — integración contra el Mosquitto real
-- [ ] T-024 — Test `tests/integration/test_mqtt_publisher_adapter.py`
+- [x] T-024 — Test `tests/integration/test_mqtt_publisher_adapter.py`
       (Mosquitto real del compose, un segundo cliente `paho-mqtt` como
       suscriptor): `start(...)` → el suscriptor recibe ≥ 3 mensajes en
       3.5s con `interval_seconds=1.0`; RF-014: topic con wildcard o vacío
       → `MqttInvalidPublishError` inmediato (< 1s); `stop(token)` detiene
       el bucle (debe fallar) (cubre RF-003, RF-014, RNF-001)
       [zona: test-adaptadores]
-- [ ] T-025 — Implementar `adapters/mqtt/mqtt_publisher_adapter.py::
+- [x] T-025 — Implementar `adapters/mqtt/mqtt_publisher_adapter.py::
       MqttPublisherAdapter` (`paho-mqtt`, `CallbackAPIVersion.VERSION2`,
       archivo nuevo separado de `mosquitto_adapter.py`/
       `mqtt_scan_adapter.py`) — reemplaza el cuerpo de
@@ -166,7 +166,7 @@ actualizado: 2026-09-14
       [zona: adaptadores]
 
 ### Sistema — verificación e2e
-- [ ] T-026 — Nuevo `tests/integration/test_simulators_e2e.py`
+- [x] T-026 — Nuevo `tests/integration/test_simulators_e2e.py`
       (contenedores reales + clientes reales de cada protocolo):
       `POST /simulators/bacnet` → I-Am real confirmado → `GET /simulators`
       lo lista → `GET /devices` también (`is_simulator=true`) →
@@ -181,13 +181,13 @@ actualizado: 2026-09-14
       RF-014, RF-015, RNF-001) [zona: sistema-e2e]
 
 ### Documentación (`plan.md §8`) — puede correr en paralelo desde T-001
-- [ ] T-027 — Actualizar `docs/hira-server/spec/modules/dispositivos-
+- [x] T-027 — Actualizar `docs/hira-server/spec/modules/dispositivos-
       protocolos-puntos.md`: cerrar la nota de estado de implementación
       ya dejada por `SRV-003`/`004`/`005` para incluir simuladores de los
       3 protocolos [doc]
 
 ### Higiene de repo
-- [ ] T-028 — Ampliar `adapters/bacnet/README.md` (añade
+- [x] T-028 — Ampliar `adapters/bacnet/README.md` (añade
       `bacnet_simulator_adapter.py`), `adapters/modbus/README.md` (añade
       `modbus_simulator_adapter.py`), `adapters/mqtt/README.md` (añade
       `mqtt_publisher_adapter.py`), `adapters/README.md` (3 funciones
@@ -200,23 +200,23 @@ actualizado: 2026-09-14
 ## Cobertura (el gate exige 100 %; `Estado` lo rellena el gate)
 | RF / doc | Tareas | Test(s) | Estado |
 |---|---|---|---|
-| RF-001 | T-001, T-002, T-007, T-008, T-015, T-016, T-017, T-020, T-021, T-026 | `test_bacnet_address.py`, `test_simulator_service.py`, `test_simulators_router.py`, `test_bacnet_simulator_adapter.py`, `test_simulators_e2e.py` | Pendiente |
-| RF-002 | T-009, T-010, T-015, T-016, T-017, T-022, T-023, T-026 | `test_simulator_service.py`, `test_simulators_router.py`, `test_modbus_simulator_adapter.py`, `test_simulators_e2e.py` | Pendiente |
-| RF-003 | T-011, T-012, T-015, T-016, T-017, T-024, T-025, T-026 | `test_simulator_service.py`, `test_simulators_router.py`, `test_mqtt_publisher_adapter.py`, `test_simulators_e2e.py` | Pendiente |
-| RF-004 | T-015, T-016, T-017, T-026 | `test_simulators_router.py`, `test_simulators_e2e.py` | Pendiente |
-| RF-005 | T-015, T-016, T-017, T-026 | `test_simulators_router.py`, `test_simulators_e2e.py` | Pendiente |
-| RF-006 | T-006, T-007, T-009, T-011, T-015, T-016, T-017, T-018, T-019, T-026 | `test_simulator_service.py`, `test_simulators_router.py`, `test_device_repository_adapter.py`, `test_simulators_e2e.py` | Pendiente |
-| RF-007 | T-001, T-002, T-006, T-007, T-009, T-011, T-018, T-019, T-026 | `test_bacnet_address.py`, `test_simulator_service.py`, `test_device_repository_adapter.py`, `test_simulators_e2e.py` | Pendiente |
-| RF-008 | T-006, T-018, T-019, T-026 | `test_device_repository_adapter.py`, `test_simulators_e2e.py` | Pendiente |
-| RF-009 | T-013, T-014, T-016, T-017, T-026 | `test_simulator_service.py`, `test_simulators_router.py`, `test_simulators_e2e.py` | Pendiente |
-| RF-010 | T-003, T-004, T-016, T-017, T-026 | `test_simulator_registry_service.py`, `test_simulators_router.py`, `test_simulators_e2e.py` | Pendiente |
-| RF-011 | T-013, T-014 | `test_simulator_service.py` (ausencia de escritura `is_simulator=False`) | Pendiente |
-| RF-012 | T-013, T-014, T-015, T-016, T-017, T-026 | `test_simulator_service.py`, `test_simulators_router.py`, `test_simulators_e2e.py` | Pendiente |
-| RF-013 | T-003, T-004, T-026 | `test_simulator_registry_service.py`, `test_simulators_e2e.py` | Pendiente |
-| RF-014 | T-011, T-012, T-015, T-016, T-017, T-024, T-025, T-026 | `test_simulator_service.py`, `test_simulators_router.py`, `test_mqtt_publisher_adapter.py`, `test_simulators_e2e.py` | Pendiente |
-| RF-015 | T-011, T-012, T-015, T-016, T-017, T-026 | `test_simulator_service.py`, `test_simulators_router.py`, `test_simulators_e2e.py` | Pendiente |
-| RNF-001 | T-007, T-008, T-009, T-010, T-011, T-012, T-020, T-021, T-022, T-023, T-024, T-025, T-026 | `test_simulator_service.py`, `test_bacnet_simulator_adapter.py`, `test_modbus_simulator_adapter.py`, `test_mqtt_publisher_adapter.py`, `test_simulators_e2e.py` | Pendiente |
-| doc: dispositivos-protocolos-puntos.md | T-027 | — | Pendiente |
+| RF-001 | T-001, T-002, T-007, T-008, T-015, T-016, T-017, T-020, T-021, T-026 | `test_bacnet_address.py`, `test_simulator_service.py`, `test_simulators_router.py`, `test_bacnet_simulator_adapter.py`, `test_simulators_e2e.py` | Pass |
+| RF-002 | T-009, T-010, T-015, T-016, T-017, T-022, T-023, T-026 | `test_simulator_service.py`, `test_simulators_router.py`, `test_modbus_simulator_adapter.py`, `test_simulators_e2e.py` | Pass |
+| RF-003 | T-011, T-012, T-015, T-016, T-017, T-024, T-025, T-026 | `test_simulator_service.py`, `test_simulators_router.py`, `test_mqtt_publisher_adapter.py`, `test_simulators_e2e.py` | Pass |
+| RF-004 | T-015, T-016, T-017, T-026 | `test_simulators_router.py`, `test_simulators_e2e.py` | Pass |
+| RF-005 | T-015, T-016, T-017, T-026 | `test_simulators_router.py`, `test_simulators_e2e.py` | Pass |
+| RF-006 | T-006, T-007, T-009, T-011, T-015, T-016, T-017, T-018, T-019, T-026 | `test_simulator_service.py`, `test_simulators_router.py`, `test_device_repository_adapter.py`, `test_simulators_e2e.py` | Pass |
+| RF-007 | T-001, T-002, T-006, T-007, T-009, T-011, T-018, T-019, T-026 | `test_bacnet_address.py`, `test_simulator_service.py`, `test_device_repository_adapter.py`, `test_simulators_e2e.py` | Pass |
+| RF-008 | T-006, T-018, T-019, T-026 | `test_device_repository_adapter.py`, `test_simulators_e2e.py` | Pass |
+| RF-009 | T-013, T-014, T-016, T-017, T-026 | `test_simulator_service.py`, `test_simulators_router.py`, `test_simulators_e2e.py` | Pass |
+| RF-010 | T-003, T-004, T-016, T-017, T-026 | `test_simulator_registry_service.py`, `test_simulators_router.py`, `test_simulators_e2e.py` | Pass |
+| RF-011 | T-013, T-014 | `test_simulator_service.py` (ausencia de escritura `is_simulator=False`) | Pass |
+| RF-012 | T-013, T-014, T-015, T-016, T-017, T-026 | `test_simulator_service.py`, `test_simulators_router.py`, `test_simulators_e2e.py` | Pass |
+| RF-013 | T-003, T-004, T-026 | `test_simulator_registry_service.py`, `test_simulators_e2e.py` | Pass |
+| RF-014 | T-011, T-012, T-015, T-016, T-017, T-024, T-025, T-026 | `test_simulator_service.py`, `test_simulators_router.py`, `test_mqtt_publisher_adapter.py`, `test_simulators_e2e.py` | Pass |
+| RF-015 | T-011, T-012, T-015, T-016, T-017, T-026 | `test_simulator_service.py`, `test_simulators_router.py`, `test_simulators_e2e.py` | Pass |
+| RNF-001 | T-007, T-008, T-009, T-010, T-011, T-012, T-020, T-021, T-022, T-023, T-024, T-025, T-026 | `test_simulator_service.py`, `test_bacnet_simulator_adapter.py`, `test_modbus_simulator_adapter.py`, `test_mqtt_publisher_adapter.py`, `test_simulators_e2e.py` | Pass |
+| doc: dispositivos-protocolos-puntos.md | T-027 | — | Pass |
 
 > Esta tabla **es** la trazabilidad de la feature (no hay `traceability-matrix.md`).
 > Fila sin test, en `Fail` o `Pendiente` → el gate no abre.

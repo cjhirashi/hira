@@ -22,3 +22,19 @@ Los 3 endpoints comparten `dependencies=[Depends(require_role("admin",
 "operador"))]` a nivel de `APIRouter` (RF-003) — Visor recibe 403
 `insufficient-role`. `GET /devices/{id}/candidates` responde 404
 `device-not-found` (RFC 9457) si `id` no existe (RF-009).
+
+`simulators.py::POST /simulators/{bacnet,modbus,mqtt}|GET /simulators|
+DELETE /simulators/{device_id}` (`SRV-006-simuladores`, T-017,
+RF-001/RF-002/RF-003/RF-004/RF-005/RF-006/RF-007/RF-009/RF-010/RF-012/
+RF-014/RF-015) — **router nuevo, separado de `devices.py`** (`plan.md §2`
+Registro de decisiones: RBAC mixto — `POST`/`DELETE` solo Admin
+(`require_role("admin")`, RF-004), `GET` Admin+Operador
+(`require_role("admin","operador")`, RF-005) — por eso **sin** `dependencies=`
+a nivel de `APIRouter`, cada ruta aplica su propio `Depends(require_role(...))`.
+Inyecta los 3 puertos de simulador + `DeviceRepositoryPort` vía
+`Depends(adapters.factory.*)` y `SimulatorRegistryService` vía
+`Depends(services.simulator_registry_service.get_simulator_registry)` —
+nunca instancia ningún adaptador concreto (`SRV-ADR-017`). Delega la lógica
+a `services/simulator_service.py`. `ProblemDetailError` (400/403/404/409)
+propaga sin captura explícita — el `exception_handler` de `main.py` la
+traduce. `DELETE` responde `204` sin cuerpo (`Response(status_code=204)`).

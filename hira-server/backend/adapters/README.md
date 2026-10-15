@@ -65,3 +65,26 @@ ningún test lo importaba directamente) — ninguna firma cambia,
 `get_notification_port()` (`MosquittoAdapter`): mismo broker físico, puertos
 de dominio distintos con ciclos de vida de conexión incompatibles
 (`SRV-005-mqtt-scanning/plan.md §1`, Registro de decisiones).
+
+`get_bacnet_simulator_port()`/`get_modbus_simulator_port()`/
+`get_mqtt_publisher_port()` (`SRV-006-simuladores`, T-017/T-021/T-023/T-025)
+son la 9ª, 10ª y 11ª función de `factory.py` — **total 11 funciones** —, mismo
+patrón de placeholder → reemplazo:
+- `get_bacnet_simulator_port()` — nació (T-017) con
+  `_PlaceholderBacnetSimulator`; T-021 reemplazó el cuerpo con
+  `adapters/bacnet/bacnet_simulator_adapter.py::BacnetSimulatorAdapter`
+  (`ip=settings.bacnet_ip`, `port_range_start=settings.bacnet_simulator_port_range_start`
+  — rango de puertos propio para no colisionar con el cliente de escaneo).
+- `get_modbus_simulator_port()` — nació (T-017) con
+  `_PlaceholderModbusSimulator`; T-023 reemplazó el cuerpo con
+  `adapters/modbus/modbus_simulator_adapter.py::ModbusSimulatorAdapter`
+  (sin estado de `Settings`: `host`/`port` llegan por parámetro en cada
+  `start()`).
+- `get_mqtt_publisher_port()` — nació (T-017) con `_PlaceholderMqttPublisher`;
+  T-025 reemplazó el cuerpo con `adapters/mqtt/mqtt_publisher_adapter.py::
+  MqttPublisherAdapter` (mismas credenciales `mqtt_user`/`mqtt_password` que
+  `get_notification_port()` y `get_mqtt_scan_transport_port()`, función
+  **independiente** de ambas — ciclo de vida de conexión distinto: uno por
+  simulador, hasta `DELETE`). Los 3 placeholders retirados (dead code tras el
+  reemplazo), la **firma no cambió**, `routers/simulators.py` no se tocó en
+  esos batches.

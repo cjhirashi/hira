@@ -199,3 +199,80 @@ async def test_list_candidates_for_device_empty_when_none(repository):
     candidates = await repository.list_candidates_for_device(device.id)
 
     assert candidates == []
+
+
+# ── SRV-006-simuladores (T-018) ─────────────────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_get_device_by_address_returns_existing_device(repository):
+    """RF-006, RF-007 — lectura puntual por `(protocol, address)`."""
+    device = await repository.upsert_device(
+        name="Simulador BACnet 999123", protocol="bacnet", address="999123", is_simulator=True
+    )
+
+    fetched = await repository.get_device_by_address("bacnet", "999123")
+
+    assert fetched is not None
+    assert fetched.id == device.id
+    assert fetched.is_simulator is True
+
+
+@pytest.mark.asyncio
+async def test_get_device_by_address_returns_none_if_not_found(repository):
+    """RF-006 — `None` si la dirección no está registrada."""
+    result = await repository.get_device_by_address("modbus", "127.0.0.1:15020:1")
+
+    assert result is None
+
+
+@pytest.mark.asyncio
+async def test_get_device_by_address_distinguishes_by_protocol(repository):
+    """RF-006 — el mismo `address` en otro protocolo no colisiona."""
+    await repository.upsert_device(name="MQTT 1234", protocol="mqtt", address="1234")
+
+    assert await repository.get_device_by_address("bacnet", "1234") is None
+    fetched = await repository.get_device_by_address("mqtt", "1234")
+    assert fetched is not None
+    assert fetched.protocol == "mqtt"
+
+
+@pytest.mark.asyncio
+async def test_upsert_device_preserves_is_simulator_true_on_later_real_scan(repository):
+    """RF-008 — un escaneo real posterior (`is_simulator=False`) sobre la
+    misma `(protocol, address)` de un simulador NO revierte el flag."""
+    simulator = await repository.upsert_device(
+        name="Simulador Modbus",
+        protocol="modbus",
+        address="127.0.0.1:15020:1",
+        is_simulator=True,
+    )
+
+    rescanned = await repository.upsert_device(
+        name="Modbus 127.0.0.1:15020:1",
+        protocol="modbus",
+        address="127.0.0.1:15020:1",
+        is_simulator=False,
+    )
+
+    assert rescanned.id == simulator.id
+    assert rescanned.is_simulator is True
+    persisted = await repository.get_device(simulator.id)
+    assert persisted is not None
+    assert persisted.is_simulator is True
+
+
+@pytest.mark.asyncio
+async def test_upsert_device_can_mark_existing_real_row_as_simulator(repository):
+    """RF-008 — el `OR` booleano solo impide apagar el flag; encenderlo sobre
+    una fila existente sigue siendo posible (camino de reanudación RF-007)."""
+    real = await repository.upsert_device(
+        name="MQTT a/b", protocol="mqtt", address="a/b", is_simulator=False
+    )
+
+    flagged = await repository.upsert_device(
+        name="Simulador MQTT a/b", protocol="mqtt", address="a/b", is_simulator=True
+    )
+
+    assert flagged.id == real.id
+    assert flagged.is_simulator is True

@@ -17,13 +17,14 @@ tags: [proyecto, productos-software, hira-server, dispositivos, protocolos, punt
 Motor de Protocolos: comunicación con dispositivos BACnet, Modbus y MQTT — descubrimiento, lectura, escritura y publicación a Redis. Solo opera sobre puntos asociados (ver SRV-ADR-012, SRV-ADR-019); nunca sobre candidatos crudos de un escaneo.
 
 > **Estado de implementación.** Implementado a la fecha
-> (`SRV-003-bacnet-adapter`, `SRV-004-modbus-adapter`, `SRV-005-mqtt-scanning`):
-> escaneo BACnet/IP (Who-Is/I-Am), escaneo de rangos Modbus TCP y suscripción
-> wildcard MQTT (captura de topics activos durante una ventana de 3s), los
-> tres con persistencia de candidatos. Polling, escritura, `asyncio.Lock` por
-> dispositivo, BACnet MSTP, Modbus RTU y Simuladores siguen siendo diseño, no
-> código — ver `ROADMAP.md`/`.harness/specs/` para el estado real por
-> sub-feature.
+> (`SRV-003-bacnet-adapter`, `SRV-004-modbus-adapter`, `SRV-005-mqtt-scanning`,
+> `SRV-006-simuladores`): escaneo BACnet/IP (Who-Is/I-Am), escaneo de rangos
+> Modbus TCP, suscripción wildcard MQTT y simuladores de los 3 protocolos
+> (arrancar/detener, registro inmediato en `devices` con `is_simulator=true`,
+> estado de ejecución en memoria del proceso). Polling, escritura,
+> `asyncio.Lock` por dispositivo, BACnet MSTP y Modbus RTU siguen siendo
+> diseño, no código — ver `ROADMAP.md`/`.harness/specs/` para el estado real
+> por sub-feature.
 
 ## Escaneo y descubrimiento
 

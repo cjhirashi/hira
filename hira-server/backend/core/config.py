@@ -41,3 +41,8 @@ class Settings(BaseSettings):
     # multi-NIC). Fijarlas es un ajuste operativo excepcional.
     bacnet_ip: str | None = None
     bacnet_port: int | None = None
+
+    # `SRV-006-simuladores` (`plan.md §2`) — primer puerto UDP del rango
+    # efímero de los simuladores BACnet; distinto de `bacnet_port` (cliente de
+    # escaneo) para no colisionar con él.
+    bacnet_simulator_port_range_start: int = 47900

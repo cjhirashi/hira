@@ -36,3 +36,20 @@ librería `pymodbus` real (`SRV-004-modbus-adapter`, T-009/T-010, `plan.md §2`)
 
 `pymodbus==3.15.0` en `requirements.txt` (última versión disponible en PyPI
 al fijarla).
+
+- `modbus_simulator_adapter.py::ModbusSimulatorAdapter` — implementa
+  `ModbusSimulatorPort` (`SRV-006-simuladores`, T-023, `plan.md §2`/§5).
+  Cada `start(host, port, unit_id, registers)` levanta un `ModbusTcpServer`
+  real con un `SimDevice` (API `SimData`/`SimDevice` de `pymodbus==3.15.0`,
+  la misma ya verificada como infraestructura de test en `SRV-004`, aquí
+  como producto) cargado con los registros pedidos y lo sirve en una tarea
+  de fondo (`asyncio.create_task(server.serve_forever())`, RNF-001 — no
+  bloquea el *event loop*). Soporta los 4 tipos de registro: `coil`/
+  `discrete_input` (bool, `DataType.BITS`) y `holding_register`/
+  `input_register` (int, `DataType.UINT16`). Direcciones no configuradas
+  responden con `ILLEGAL_ADDRESS` (mismo comportamiento que un PLC real).
+  `stop(token)` llama a `server.shutdown()` y espera la tarea con
+  `asyncio.wait_for`. Retorna un token opaco `str` (UUID hex).
+  Verificado con `tests/integration/test_modbus_simulator_adapter.py` —
+  cliente `AsyncModbusTcpClient` real lee los valores cargados; `stop`
+  cierra el servidor.

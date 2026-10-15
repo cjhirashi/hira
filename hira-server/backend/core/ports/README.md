@@ -60,3 +60,45 @@ Puerto de `SRV-005-mqtt-scanning`:
   `adapters/mqtt/mosquitto_adapter.py` (`NotificationPort`, ciclo de vida de
   conexión distinto, ver `SRV-005-mqtt-scanning/plan.md §1` Registro de
   decisiones).
+
+Puertos de `SRV-006-simuladores` — 3 puertos **nuevos** (no son ampliaciones
+de los puertos de transporte existentes — ciclos de vida y roles incompatibles,
+`plan.md §2` Registro de decisiones: cliente efímero de solo-lectura vs.
+servidor/publicador persistente hasta `DELETE`):
+
+- `bacnet_simulator_port.py` — `BacnetSimulatorPort` (2 métodos:
+  `start(device_instance, objects) -> str` arranca una instancia BACnet/IP
+  real que responde a Who-Is; `stop(token)` la detiene liberando el socket
+  UDP) + `BacnetSimulatedObjectSpec` (dataclass — `object_type`, `object_instance`,
+  `present_value: str`). El token opaco retornado por `start()` es la única
+  referencia a la instancia en ejecución que cruza a `services/` (el tipo
+  concreto de `BAC0.lite()` no cruza nunca — `SRV-ADR-017`). Sin test
+  propio. Implementación real: `adapters/bacnet/bacnet_simulator_adapter.py::
+  BacnetSimulatorAdapter` (T-021).
+
+- `modbus_simulator_port.py` — `ModbusSimulatorPort` (2 métodos:
+  `start(host, port, unit_id, registers) -> str` arranca un servidor Modbus
+  TCP real; `stop(token)` lo detiene) + `ModbusSimulatedRegisterSpec`
+  (dataclass — reutiliza `ModbusRegisterType` de `modbus_transport_port.py`,
+  `SRV-004`, sin duplicarlo). Sin test propio. Implementación real:
+  `adapters/modbus/modbus_simulator_adapter.py::ModbusSimulatorAdapter` (T-023).
+
+- `mqtt_publisher_port.py` — `MqttPublisherPort` (2 métodos:
+  `start(topic, payload, interval_seconds) -> str` arranca un publicador
+  periódico; `stop(token)` lo detiene) + `MqttInvalidPublishError` (excepción
+  de dominio, RF-014 — mismo criterio que `MqttInvalidTopicPatternError`,
+  `SRV-005`: envuelve el `ValueError` síncrono de `paho-mqtt`, sin exponer
+  la excepción cruda). Sin test propio. Implementación real:
+  `adapters/mqtt/mqtt_publisher_adapter.py::MqttPublisherAdapter` (T-025).
+
+`device_repository_port.py` **ampliado** en `SRV-006-simuladores` (T-006):
+- Método nuevo: `get_device_by_address(protocol, address) -> DeviceRecord | None`
+  — lectura puntual por el índice único `(protocol, address)` ya existente
+  (`SRV-003`); usado como "find-or-reject" antes de cualquier `upsert_device`
+  para rechazar con 409 sin escribir nada (RF-006/RF-007).
+- `upsert_device` — contrato sin cambio de firma; docstring ampliado con la
+  garantía RF-008: "una vez que una fila tiene `is_simulator=true`, ninguna
+  llamada posterior con `is_simulator=false` la revierte".
+  Implementación en `adapters/db/device_repository_adapter.py::
+  PostgreSQLDeviceRepository` (T-019): `ON CONFLICT DO UPDATE` ahora fija
+  `is_simulator = devices.is_simulator OR excluded.is_simulator`.
