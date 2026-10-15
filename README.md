@@ -21,13 +21,24 @@ especificación y las decisiones de **producto** viven en [`docs/`](docs/) — v
 `docs/README.md`. Cada feature nueva traza a un `RF-`/`RNF-` estable que aparece a la
 vez en la spec y en el código/tests; la deriva spec↔código se detecta en el gate.
 
+### 🚀 Para Agentes (Cursor + Equipo Base)
+
+**Lee primero (en orden):**
+1. **[`PLAN-IMPLEMENTACION.md`](PLAN-IMPLEMENTACION.md)** — Matriz de features, pasos concretos, timeline (↔ entrada principal para Cursor)
+2. **[`AGENTS.md`](AGENTS.md)** — Mapa de roles y delegación
+3. **[`CLAUDE.md`](CLAUDE.md)** — Reglas duras + protocolo
+
+### 📚 Referencia Técnica
+
 | Empieza por | |
 |---|---|
+| [`PLAN-IMPLEMENTACION.md`](PLAN-IMPLEMENTACION.md) | **← PRINCIPAL: matriz de features, pasos 1–5, timeline** |
 | [`.harness/method.md`](.harness/method.md) | El método completo (obligatorio antes de tocar código) |
 | [`.harness/constitution.md`](.harness/constitution.md) | Principios innegociables + perfil de arquitectura por producto |
+| [`.harness/memory/state.md`](.harness/memory/state.md) | **Correcciones de Carlos + obstáculos (LEER PRIMERO después de PLAN)** |
 | [`docs/planning/ROADMAP.md`](docs/planning/ROADMAP.md) | Roadmap del ecosistema (3 tracks) |
 | [`.harness/specs/`](.harness/specs/) | Features en curso (`spec.md`/`plan.md`/`tasks.md`) |
-| [`AGENTS.md`](AGENTS.md) / `CLAUDE.md` | Mapa para agentes (stub manual en la raíz; generados de `.harness/claude/` en cada producto) |
+| [`AGENTS.md`](AGENTS.md) / [`CLAUDE.md`](CLAUDE.md) | Mapa para agentes + reglas duras |
 
 ### Gates
 
