@@ -75,7 +75,7 @@ Binding de Claude Code / Cursor, **obligatorio para continuar**. Manual de cada 
 
 ### Especialistas (17)
 - **`experto-ux-ui`** (`ADR-003`, activo) — diseña y revisa la UX/UI de los 3 productos. Toda feature de interfaz pasa por él antes de `verified`.
-- **16 especialistas de módulo** — ver `.claude/agents/README.md` (nota: referencian rutas pre-ADR-001; refrescar antes de usar).
+- **16 especialistas de módulo** — ver `.claude/agents/README.md` (rutas refrescadas por `ADR-004`, 2026-09-13).
 
 ## 🔴 Regla Crítica — Código Ordenado y Profesional
 
