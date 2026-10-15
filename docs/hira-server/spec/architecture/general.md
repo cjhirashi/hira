@@ -12,6 +12,8 @@ github: "https://github.com/cjhirashi/hira-server"
 tags: [proyecto, productos-software, hira-server, arquitectura]
 ---
 
+**Diagrama interactivo:** [`diagrams/arquitectura-hira-server.html`](../../diagrams/arquitectura-hira-server.html)
+
 ## Descripción del Sistema
 
 **Hira** es un ecosistema de dos productos: **Hira Server/Studio** (un solo producto, un solo instalador — ver SRV-ADR-015) y **Hira Hub** (plataforma cloud).

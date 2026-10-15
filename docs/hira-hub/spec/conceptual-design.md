@@ -14,6 +14,8 @@ ecosistema: Hira
 relacionado_con: 7.1 - ÍNDICE - Hira
 ---
 
+**Diagrama interactivo:** [`diagrams/arquitectura-hira-hub.html`](../diagrams/arquitectura-hira-hub.html)
+
 ## Descripción del Sistema
 
 Hira Hub es un servicio web backend desplegado en un VPS. Expone una API REST consumida por Hira Server y Hira Studio. No tiene frontend para integradores ni clientes — solo un Panel Admin interno para cjhirashi.

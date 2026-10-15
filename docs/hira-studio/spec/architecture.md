@@ -7,6 +7,8 @@ status: activo
 decisiones: [E-ADR-001, STU-ADR-001, STU-ADR-002, STU-ADR-003, STU-ADR-004, STU-ADR-005]
 ---
 
+**Diagrama interactivo:** [`diagrams/arquitectura-hira-studio.html`](../diagrams/arquitectura-hira-studio.html)
+
 ## Contenedores
 
 ```mermaid
