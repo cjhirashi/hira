@@ -122,6 +122,17 @@ actualizado: 2026-10-15
   - **Pendiente de diseñar:** endpoints concretos de Hub (listar/otorgar/revocar/
     transferir), UI de gestión de vinculaciones, formato exacto del paquete de
     instalación.
+  - **Corrección (2026-10-15, usuario):** `STU-ADR-006` decía que `frpc` "corre
+    dentro del mismo docker compose... sin ver la LAN física del cliente" —
+    impreciso. El backend sí necesita alcance real a la LAN de campo
+    (BACnet/Modbus/MQTT, su función, ya `verified` en SRV-003/004/005); BACnet en
+    particular necesita broadcast UDP real (`host`/`macvlan`), cosa que el bridge
+    por defecto de `docker-compose.yml` (sin red explícita hoy) no garantiza —
+    gap ya reconocido en un comentario de `bac0_adapter.py`. `STU-ADR-006` §2
+    corregido: backend con 2 redes separadas (una con alcance a la LAN de
+    campo, otra interna aislada compartida solo con `frpc`); `frpc` nunca en la
+    primera. **Pendiente real:** fijar esta segmentación en el `docker-compose.yml`
+    de producción — hoy no existe (usa el bridge por defecto).
 - `HUB-H1` (gestión de licencias) — backlog futuro.
 - `STU-001` (Walking Skeleton Studio) — requiere decisiones previas de diseño
   (ver prioridad arriba).

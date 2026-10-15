@@ -5371,7 +5371,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         </div>
         <ul>
           <li>La red del cliente nunca recibe conexiones entrantes de internet: Server y frpc solo abren salida.</li>
-          <li>frpc reenvía exactamente un puerto (API del Server, loopback); corre en el mismo docker compose, sin ver la LAN física del cliente.</li>
+          <li>El backend SÍ necesita alcance real a la LAN de campo (BACnet/Modbus/MQTT) — es su función. frpc va en una red Docker separada y aislada de esa, compartida solo con el puerto de la API — nunca en network_mode:host ni en la misma red que ve los dispositivos.</li>
           <li>El Relay (frps) es infraestructura propia de cjhirashi — no Cloudflare (decisión explícita).</li>
         </ul>
       </div>

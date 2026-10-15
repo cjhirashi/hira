@@ -36,13 +36,33 @@ Studio nunca se conecta directo al Server; le llega a través de `frps`, que ree
 - Se descarta explícitamente depender de Cloudflare Tunnel para esta pieza (decisión del
   propietario): v1 es self-hosted, infraestructura propia.
 
-### 2. Alcance mínimo expuesto
+### 2. Alcance mínimo expuesto — segmentación de red explícita
 
-- `frpc` reenvía **exactamente un puerto**: la API de `hira-server` en loopback
-  (p. ej. `127.0.0.1:8000`). Nunca la LAN del cliente, nunca otros servicios.
-- `frpc` corre como contenedor **dentro del mismo `docker compose`** del Hira Server, en
-  su red interna de Docker — sin visibilidad de red hacia dispositivos físicos del
-  cliente (switches, cámaras, otros equipos).
+El backend de `hira-server` necesita alcance real a la red de campo del cliente para
+cumplir su función (BACnet/Modbus/MQTT, `SRV-003/004/005`, ya `verified`) — eso **no**
+es una vulneración, es el producto haciendo su trabajo. BACnet en particular necesita
+broadcast UDP real (Who-Is), que un bridge de Docker normal no garantiza; en producción
+exige `network_mode: host` o una red `macvlan` pegada a la VLAN del cliente. Modbus y
+MQTT son TCP unicast — funcionan con un bridge normal mientras el host de Docker esté en
+esa red.
+
+**Esa necesidad es independiente del túnel y nunca debe compartir su alcance.** El
+backend corre con **dos interfaces de red separadas**:
+
+1. Una con alcance real a la LAN/VLAN del cliente (host o macvlan) — exclusiva para
+   BACnet/Modbus/MQTT.
+2. Una segunda, en una red Docker **interna y aislada**, compartida únicamente con
+   `frpc`, que expone solo el puerto de la API (p. ej. `127.0.0.1:8000`).
+
+`frpc` vive **exclusivamente** en la red (2) — nunca en la (1), nunca en `network_mode:
+host`. Así el túnel hacia Studio solo ve el puerto de la API, sin heredar visibilidad de
+la red de campo del cliente. Esta separación es una regla de despliegue explícita (no
+una convención implícita): el `docker-compose.yml` de producción debe declarar ambas
+redes por nombre y fijar qué contenedor va en cuál — no basta con "frpc está en el mismo
+compose".
+
+- `frpc` reenvía **exactamente un puerto** (la API). Nunca la LAN del cliente, nunca
+  otros servicios.
 - La config de `frpc` **no es editable por el integrador**. Se genera fija en el momento
   de aprovisionar la instalación (punto 3) — nunca es un paso manual.
 
@@ -93,8 +113,12 @@ sesión falle el gate del punto 4; el acceso de red también se cierra.
 
 - **Hub** gana el flujo de generación de paquete de instalación (license + token de
   túnel + config fija) y la validación de `HUB-ADR-06` en cada apertura de sesión.
-- **Server**: nuevo sidecar `frpc` en su `docker compose` — es infraestructura de
-  despliegue, no toca código ya `verified` ni ninguna spec de producto.
+- **Server**: nuevo sidecar `frpc` en su `docker compose`, en una red Docker propia y
+  aislada del backend — es infraestructura de despliegue, no toca código ya `verified`
+  ni ninguna spec de producto. El `docker-compose.yml` de producción debe declarar
+  explícitamente la red de campo (host/macvlan, exclusiva del backend) separada de la
+  red interna compartida con `frpc` — pendiente de fijar en el compose real (hoy usa el
+  bridge por defecto, sin esta segmentación todavía).
 - **`frps`**: nueva pieza de infraestructura propia a operar (VPS con IP pública,
   hardened: sin otros servicios, firewall, monitoreo — es ahora un punto central cuyo
   compromiso afectaría a todos los Servers conectados).
