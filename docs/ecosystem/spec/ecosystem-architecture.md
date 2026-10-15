@@ -70,6 +70,10 @@ flowchart TB
     note["Server y Studio incluyen su propio modelo IA interno\n(Ollama embebido, SRV-ADR-021) como fallback"]
 ```
 
+**Diagrama interactivo de conectividad** (post `STU-ADR-006`/`HUB-ADR-06`):
+[`diagrams/arquitectura-conectividad-server-hub-studio.html`](../diagrams/arquitectura-conectividad-server-hub-studio.html)
+— túnel inverso self-hosted, licenciamiento y gate de propiedad de proyecto.
+
 ## Fronteras
 
 | Frontera | Regla |

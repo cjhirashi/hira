@@ -13,6 +13,9 @@ node_modules/
 dist/
 .vite/
 
+# ── Archify (carpetas de trabajo de generación de diagramas) ───
+.archify/
+
 # ── Entorno / secretos ──────────────────────────────────
 .env
 .env.*
