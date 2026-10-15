@@ -2,10 +2,10 @@
 id: PLAN-SRV-006
 tipo: plan
 feature: SRV-006-simuladores
-estado: approved
+estado: implemented
 aprobaciones:
   fase_2: { por: "Carlos", fecha: 2026-09-14 }
-actualizado: 2026-09-14
+actualizado: 2026-10-15
 ---
 
 # PLAN-SRV-006 · Simuladores de dispositivos (BACnet, Modbus, MQTT)

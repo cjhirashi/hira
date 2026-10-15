@@ -25,6 +25,47 @@ Session-End por sesión, con el formato fijo de `method.md §10`. Las bitácoras
 
 ---
 
+## [2026-10-15] SRV-006-simuladores — implemented
+
+- **Fase alcanzada:** implement (Fases 1-4 completas, T-001..T-028; Gate 4/`verified`
+  queda pendiente del veredicto de Carlos)
+- **Rebotes del verificador:** 1 (tabla de Cobertura: las 16 filas quedaron en
+  `Pendiente` pese a estar completamente verificables — mismo bug recurrente ya
+  visto en `SRV-001`/`SRV-003`/`SRV-004`/`SRV-005`; corregidas a `Pass` citando
+  el precedente, tras confirmar 320/320 tests reales en verde)
+- **Directiva de Pausa:** no
+- **Drift / re-anchor:** sí (`SRV-006-simuladores`) — `spec.md`/`plan.md` tenían
+  `estado: approved` y `aprobaciones.fase_2: pendiente` pese a que `plan.md` ya
+  registraba Fase 2 aprobada por Carlos (2026-09-14) y había 2 commits de
+  implementación previos (`d0c268c`, `db292d7`); el frontmatter nunca avanzó en
+  paralelo al trabajo real. Corregido junto con el cierre de Fases 3-4.
+- **Anclas movidas:** `SRV-006-simuladores` → `5b29160` (`anchor_mode`:
+  `advisory` → `strict`)
+- **Gate:** verde (31 ok · 1 warn — ancla ya fijada; `spectral` recién instalado
+  y activo, 0 errores)
+- **Docs actualizadas:** `docs/hira-server/spec/modules/dispositivos-protocolos-
+  puntos.md` (T-027); `adapters/{README,bacnet/README,modbus/README,mqtt/README}.md`,
+  `core/ports/README.md`, `routers/README.md`, `schemas/README.md`,
+  `services/README.md` (T-028); `AGENTS.md` (nota obsoleta sobre los 16
+  especialistas de módulo — `ADR-004` ya los había refrescado el 2026-09-13,
+  la nota no se había actualizado); `README.md`/`CLAUDE.md` (integración de
+  `PLAN-IMPLEMENTACION.md` al flujo de onboarding, ya en curso antes de esta
+  sesión); versionados `.cursorules`, `INICIO.txt`, `PLAN-IMPLEMENTACION.md`
+  (nunca se habían commiteado).
+- **Decisiones de diseño / límites de integración:** cuarta y última feature del
+  grupo de protocolos (BACnet → Modbus → MQTT → **Simuladores**). Adaptadores
+  reales sin mocks (`BAC0`, `pymodbus.ModbusTcpServer`, `paho-mqtt`) contra la
+  infra del compose ya corriendo en el servidor. Hallazgo operativo (no de
+  producto): `hira-server-postgres-1` publica el puerto **55432** en este
+  servidor (colisión de 5432 con otro proyecto) — los tests de integración
+  asumen 5432 por defecto; requieren `TEST_DATABASE_URL` explícito. Documentado
+  en `memory/state.md`, no se parchea el default del test (correcto en un
+  entorno limpio).
+- **Próximo paso:** Gate 4 — Carlos revisa `SRV-006-simuladores` contra los
+  criterios de aceptación de `spec.md` y decide `verified`.
+
+---
+
 ## [2026-09-14] SRV-005-mqtt-scanning — verified
 
 - **Fase alcanzada:** verified (Gate 4, confirmado por Carlos), 13/13 tareas, T-001..T-013

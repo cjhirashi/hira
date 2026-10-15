@@ -1,7 +1,7 @@
 ---
 tipo: memoria
 subtipo: state
-actualizado: 2026-09-14
+actualizado: 2026-10-15
 ---
 
 # Estado del arnés — ecosistema Hira
@@ -86,42 +86,42 @@ actualizado: 2026-09-14
 - Ninguno abierto — `SRV-001-walking-skeleton` y `SRV-002-auth-rbac` `verified`;
   `HUB-001-walking-skeleton` `implemented` (pendiente confirmación `verified`).
 
-## Próximo paso concreto
+## Estado de features (2026-10-15)
 
-- Antes de tocar nada: `bash .harness/gate/check.sh`.
-- **`SRV-001-walking-skeleton`** y **`SRV-002-auth-rbac`**: `estado: verified`
-  (Carlos, Gate 4). Detalle en sus entradas Session-End de `memory/history.md`.
-- **`HUB-001-walking-skeleton`**: `estado: verified` (Carlos, Gate 4). 25/25
-  tareas, ancla en `4d180449ae41c30e402bf88eb7c36cded5592eea`. 1 rebote real
-  del revisor (credenciales de Redis no usadas, corregido de raíz). Ambos
-  servicios (`hira-server`, `hira-hub`) corren ya su suite real en el mismo
-  `gate/check.sh`. Detalle en su entrada Session-End de `memory/history.md`.
-- **`SRV-Sprint-3` (ROADMAP) partido en 4 features del arnés** (decisión
-  2026-09-14): BACnet, Modbus, MQTT-scanning, Simuladores — dominio demasiado
-  heterogéneo para un solo ciclo. Asociación explícita de puntos (`points`,
-  `access_mode`, prioridad, polling, `asyncio.Lock` de `VUL-SRV-005`) diferida
-  a una feature aparte, posterior a las 4 (coherente con la propia separación
-  Sprint 3/4 de `ROADMAP.md` — ver detalle en `SRV-003-bacnet-adapter/spec.md
-  §6`). `ROADMAP.md` cita `VUL-SRV-001` como ancla de este sprint — ya
-  resuelto en `SRV-001`, referencia obsoleta, no bloquea.
-- **`SRV-003-bacnet-adapter`** (BACnet) y **`SRV-004-modbus-adapter`** (Modbus)
-  — ambas `estado: verified` (Carlos, Gate 4), sobre el mismo modelo `devices`/
-  `device_points_candidates` (`SRV-003` lo creó, `SRV-004` lo reutiliza sin
-  migración nueva). Detalle en sus entradas Session-End de `memory/history.md`.
-- **`SRV-005-mqtt-scanning`** (MQTT, tercera del grupo de protocolos) —
-  `estado: verified` (Carlos, Gate 4), ancla en
-  `d93243a33dfbd26db59c59451d99c76f5a13d9f4`. 13/13 tareas, ciclo completo
-  Fase 1→4. Decisión de dominio: sin identidad fija de "dispositivo" — un
-  `device` MQTT = el patrón de suscripción completo; `crc32` del topic real
-  en `object_instance`, topic completo en `object_name`. Verificado contra
-  el Mosquitto real ya autenticado de `SRV-001` (sin broker de prueba
-  aparte). 234/234 tests, gate verde. Detalle completo: entrada Session-End
-  `[2026-09-14]` en `memory/history.md`.
-- **Próximo paso:** `Simuladores` — 4ª y última feature del grupo de
-  protocolos (cierra `SRV-Sprint-3`), decidida por el usuario 2026-09-14.
-  Permitiría probar BACnet/Modbus/MQTT sin hardware (las 3 ya se verificaron
-  sin él, con infraestructura de prueba ad-hoc). Aplicar `method.md §2` y
-  Fase 1 con `autor-de-spec`. Pendientes futuras (no ahora): `HUB-H1`
-  (gestión de licencias); "asociación explícita de puntos" — diferida
-  explícitamente por las 3 features de protocolos, ver
-  `SRV-003-bacnet-adapter/spec.md §6`.
+### ✅ Verificadas (Gate 4, Carlos)
+- **`SRV-001-walking-skeleton`**: `estado: verified`, 30/30 tareas, ancla b4248e7
+- **`SRV-002-auth-rbac`**: `estado: verified`
+- **`SRV-003-bacnet-adapter`**: `estado: verified`
+- **`SRV-004-modbus-adapter`**: `estado: verified`
+- **`SRV-005-mqtt-scanning`**: `estado: verified`, 13/13 tareas, ancla d93243a
+- **`HUB-001-walking-skeleton`**: `estado: verified`, 25/25 tareas, ancla 4d18044
+
+### 🔶 Implementadas, pendientes de Gate 4
+- **`SRV-006-simuladores`**: `estado: implemented`, 28/28 tareas (T-001..T-028), ancla
+  `5b29160` (320/320 tests: 252 unit + 68 integración). Tabla de cobertura de
+  `tasks.md` corregida de `Pendiente` a `Pass` (mismo bug recurrente del gate ya
+  visto en SRV-001/003/004/005 — el gate no la autollena, el revisor la corrige
+  citando precedente). `anchor_mode` pasó a `strict`.
+
+### ⏳ Próximos Pasos
+- **`SRV-006-simuladores` → Gate 4 (Verificación):** aplicar `method.md §4` con
+  `revisor`; única pieza pendiente es el veredicto de Carlos contra los criterios
+  de aceptación (spec.md/plan.md ya están sincronizados, tests pasan, ancla fijada).
+- **Posterior a SRV-006 `verified`:**
+  - `SRV-007` (asociación explícita de puntos) — bloqueada hasta SRV-006 verified
+  - `HUB-H1` (gestión de licencias) — backlog futuro
+  - `STU-001` (Walking Skeleton Studio) — requiere decisiones previas
+
+## Nota operativa (2026-10-15, AIRA)
+
+- **Infra de tests de integración:** `hira-server-postgres-1` publica el puerto
+  **55432** (no 5432 — colisiona con otro proyecto del servidor que ya lo usa).
+  Los tests de integración asumen por defecto `localhost:5432`; correr con
+  `TEST_DATABASE_URL=postgresql+asyncpg://hira:changeme@localhost:55432/hiradb`.
+  `Settings` (`core/config.py`, `env_file=None` deliberado) requiere las variables
+  de `.env` exportadas al shell (`set -a && source ../.env && set +a`); `.env` trae
+  `BACNET_PORT`/`BACNET_IP` vacíos, que `pydantic-settings` no coacciona a `None`
+  — hace falta `unset BACNET_PORT BACNET_IP` para que `Settings()` no falle.
+- **`spectral` instalado** (`npm install -g @stoplight/spectral-cli`, global en el
+  servidor) + `.spectral.yaml` (`extends: spectral:oas`) en la raíz — activa el
+  bloque 5 del gate. Mismos contratos tenían solo warnings de estilo (sin bloquear).

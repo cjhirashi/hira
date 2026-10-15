@@ -2,17 +2,17 @@
 id: SPEC-SRV-006
 tipo: spec
 feature: SRV-006-simuladores
-estado: approved
-anchor_commit: ‹pendiente›
-anchor_mode: advisory
+estado: implemented
+anchor_commit: 5b29160
+anchor_mode: strict
 covers:
   - hira-server/backend/**
   - hira-server/docs/openapi.yaml
   - docs/hira-server/spec/modules/dispositivos-protocolos-puntos.md
 aprobaciones:
   fase_1: { por: "Carlos", fecha: 2026-09-14 }
-  fase_2: pendiente
-actualizado: 2026-09-14
+  fase_2: { por: "Carlos", fecha: 2026-09-14 }
+actualizado: 2026-10-15
 ---
 
 # SPEC-SRV-006 · Simuladores de dispositivos (BACnet, Modbus, MQTT)
