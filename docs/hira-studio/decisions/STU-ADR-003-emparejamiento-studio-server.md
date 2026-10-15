@@ -8,6 +8,12 @@ resuelve: [SQ-2]
 tags: [adr, hira-studio, hira-server, seguridad, emparejamiento]
 ---
 
+> **Extendido por [STU-ADR-006](STU-ADR-006-conectividad-studio-server-tunel-inverso.md).**
+> Este documento sigue vigente para la mecánica de credencial de emparejamiento. La
+> conectividad de red (cómo Studio alcanza un Server sin IP pública, sin exponer la red
+> del cliente) y el gate de autorización por propiedad del proyecto (`HUB-ADR-06`) se
+> diseñaron por separado, en `STU-ADR-006`.
+
 ## Contexto
 
 Studio (cloud) necesita un canal autenticado hacia cada Hira Server remoto para abrir

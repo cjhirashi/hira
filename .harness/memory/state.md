@@ -106,6 +106,22 @@ actualizado: 2026-10-15
   corre en un `hira-server`; Studio se conecta al Server para cargar y probar esos
   proyectos (`CT-engineering-session`, ya documentado en `AGENTS.md`/`E-ADR-001`).
   El usuario lo marca como siguiente foco, antes o junto con `SRV-007`/`HUB-H1`.
+  **Avance 2026-10-15 — 2 ADRs nuevos, decididos con el usuario:**
+  - **`HUB-ADR-06`** (propiedad de proyecto + vinculación de integradores): cada
+    proyecto tiene un dueño (integrador o cliente final) que otorga/revoca acceso
+    a otros integradores; transferible al entregar. Vive en Hub, no en el RBAC
+    del Server (`SRV-002`, `verified`, no se toca).
+  - **`STU-ADR-006`** (conectividad Studio↔Server, extiende `STU-ADR-003`): túnel
+    inverso self-hosted (`frp`, no Cloudflare — decisión explícita), un solo
+    puerto expuesto desde el `docker compose` del Server, config no editable por
+    el integrador. Instalación emitida por Hub (no instalador genérico). Abrir
+    sesión de ingeniería exige además pasar el gate de `HUB-ADR-06`.
+  - Diseño offline de Studio (simuladores + sandbox, antes de conectar a un
+    Server real) **ya estaba cubierto** por `STU-ADR-004` — el usuario lo
+    confirmó, sin cambios necesarios ahí.
+  - **Pendiente de diseñar:** endpoints concretos de Hub (listar/otorgar/revocar/
+    transferir), UI de gestión de vinculaciones, formato exacto del paquete de
+    instalación.
 - `HUB-H1` (gestión de licencias) — backlog futuro.
 - `STU-001` (Walking Skeleton Studio) — requiere decisiones previas de diseño
   (ver prioridad arriba).
