@@ -1,0 +1,2276 @@
+{
+  ".claude/settings.json": {
+    "mtime": 1792431774.249276,
+    "seen": 1792741543.1785703,
+    "ast_hash": "188433bd03fcc0fbe090fbd0945192b6",
+    "semantic_hash": ""
+  },
+  ".harness/claude/build_claude.py": {
+    "mtime": 1789281370.364762,
+    "seen": 1792431761.2151632,
+    "ast_hash": "3680bf1c85c4de998c5f02766055a120",
+    "semantic_hash": ""
+  },
+  ".harness/gate/check.sh": {
+    "mtime": 1789292801.070796,
+    "seen": 1792431761.215166,
+    "ast_hash": "72fcb10b3aba4ebf8b0d03716705a8f2",
+    "semantic_hash": ""
+  },
+  ".harness/gate/project.sh": {
+    "mtime": 1789020421.6192572,
+    "seen": 1792431761.2151685,
+    "ast_hash": "f87d3e3d825f1863ce0bcb0f3d4b0871",
+    "semantic_hash": ""
+  },
+  "docs/legacy/anchors-system/tools/check_traceability.py": {
+    "mtime": 1789020421.6294,
+    "seen": 1792431761.2151704,
+    "ast_hash": "fc43ed511ea402c621d3126c6c13e810",
+    "semantic_hash": ""
+  },
+  "docs/legacy/anchors-system/tools/spec_checksum.py": {
+    "mtime": 1789020421.6297536,
+    "seen": 1792431761.215172,
+    "ast_hash": "3c5298ad7ff77508b3dc85b066b22adb",
+    "semantic_hash": ""
+  },
+  "docs/legacy/ci-scripts/contract_gate.py": {
+    "mtime": 1789020421.6297536,
+    "seen": 1792431761.2151742,
+    "ast_hash": "c0c2a4733a7ed252adfb63e5b13412cd",
+    "semantic_hash": ""
+  },
+  "docs/legacy/ci-scripts/openapi_lint.py": {
+    "mtime": 1789020421.6299293,
+    "seen": 1792431761.2151756,
+    "ast_hash": "4082d6ebfd29763e1b3bac310d1a0389",
+    "semantic_hash": ""
+  },
+  "docs/legacy/ci-scripts/run_all.sh": {
+    "mtime": 1789020421.6299293,
+    "seen": 1792431761.2151773,
+    "ast_hash": "ec8e2f398e73ae32a97949b84e3af7ff",
+    "semantic_hash": ""
+  },
+  "docs/legacy/ci-scripts/traceability_gate.py": {
+    "mtime": 1789020421.6299293,
+    "seen": 1792431761.2151787,
+    "ast_hash": "931fe26162b2f52d61bef058cbeeedc9",
+    "semantic_hash": ""
+  },
+  "hira-hub/backend/adapters/cache/redis_adapter.py": {
+    "mtime": 1789349493.8358812,
+    "seen": 1792431761.2151806,
+    "ast_hash": "bafd170fa33ac52722204d5921a2210a",
+    "semantic_hash": ""
+  },
+  "hira-hub/backend/adapters/db/postgres_adapter.py": {
+    "mtime": 1789348619.9862895,
+    "seen": 1792431761.2151825,
+    "ast_hash": "6d8c64fe9156d0b62668b09d066dd107",
+    "semantic_hash": ""
+  },
+  "hira-hub/backend/adapters/factory.py": {
+    "mtime": 1789349493.8378043,
+    "seen": 1792431761.2151842,
+    "ast_hash": "7c7fc0c8d1fd91ab98967af8c16244aa",
+    "semantic_hash": ""
+  },
+  "hira-hub/backend/core/config.py": {
+    "mtime": 1789347662.0929663,
+    "seen": 1792431761.2151859,
+    "ast_hash": "6d90ced146d2e9fd2e44ccc9ea1aeb9f",
+    "semantic_hash": ""
+  },
+  "hira-hub/backend/core/logger.py": {
+    "mtime": 1789347687.8441901,
+    "seen": 1792431761.2151875,
+    "ast_hash": "6f8a853931574840b64f95b2338038a7",
+    "semantic_hash": ""
+  },
+  "hira-hub/backend/core/middleware.py": {
+    "mtime": 1789347792.9511034,
+    "seen": 1792431761.215189,
+    "ast_hash": "a330bd252e4d0ce64dfd1c733784ac38",
+    "semantic_hash": ""
+  },
+  "hira-hub/backend/core/ports/cache_port.py": {
+    "mtime": 1789347717.6554492,
+    "seen": 1792431761.2151904,
+    "ast_hash": "48b8618928f7610cd854c8f17a69ef43",
+    "semantic_hash": ""
+  },
+  "hira-hub/backend/core/ports/database_port.py": {
+    "mtime": 1789347714.3214202,
+    "seen": 1792431761.2151923,
+    "ast_hash": "d549fa626fa115e96ca46545e843498c",
+    "semantic_hash": ""
+  },
+  "hira-hub/backend/main.py": {
+    "mtime": 1789349441.1244235,
+    "seen": 1792431761.2151937,
+    "ast_hash": "ef09ec4ac8745094650ae39389f5f7b3",
+    "semantic_hash": ""
+  },
+  "hira-hub/backend/routers/monitor.py": {
+    "mtime": 1789348426.66661,
+    "seen": 1792431761.2151954,
+    "ast_hash": "35c24f2d3d9c5e8d7044f381f995736f",
+    "semantic_hash": ""
+  },
+  "hira-hub/backend/schemas/health.py": {
+    "mtime": 1789348408.694454,
+    "seen": 1792431761.2151968,
+    "ast_hash": "f82d8084e7707a82e2d0c3d27277855a",
+    "semantic_hash": ""
+  },
+  "hira-hub/backend/services/health_service.py": {
+    "mtime": 1789347731.909573,
+    "seen": 1792431761.2151985,
+    "ast_hash": "a1d7a774f042dd2fc72c7909011f50ea",
+    "semantic_hash": ""
+  },
+  "hira-hub/backend/tests/integration/test_adapters.py": {
+    "mtime": 1789349493.8401515,
+    "seen": 1792431761.2152004,
+    "ast_hash": "0dd96a7a64f9a6d57160d39d5d537f97",
+    "semantic_hash": ""
+  },
+  "hira-hub/backend/tests/test_cache_adapter_wiring.py": {
+    "mtime": 1789349337.5375237,
+    "seen": 1792431761.2152023,
+    "ast_hash": "cc15ff0ee78d29e4c89c0c80442b95fc",
+    "semantic_hash": ""
+  },
+  "hira-hub/backend/tests/test_config.py": {
+    "mtime": 1789347638.6397626,
+    "seen": 1792431761.2152038,
+    "ast_hash": "ab069c97face91de4240fc1f3dfdc672",
+    "semantic_hash": ""
+  },
+  "hira-hub/backend/tests/test_correlation_id.py": {
+    "mtime": 1789347779.7719889,
+    "seen": 1792431761.2152054,
+    "ast_hash": "06c434a74157086d018eb27e17f8e572",
+    "semantic_hash": ""
+  },
+  "hira-hub/backend/tests/test_health_policy.py": {
+    "mtime": 1789347613.5165443,
+    "seen": 1792431761.215207,
+    "ast_hash": "a88a85dce7bafd485c03513992471301",
+    "semantic_hash": ""
+  },
+  "hira-hub/backend/tests/test_health_router.py": {
+    "mtime": 1789348396.390347,
+    "seen": 1792431761.2152088,
+    "ast_hash": "222edbbda1b95d30fb9e2ad304864dc4",
+    "semantic_hash": ""
+  },
+  "hira-hub/backend/tests/test_health_service.py": {
+    "mtime": 1789347704.4413342,
+    "seen": 1792431761.2152102,
+    "ast_hash": "85090d7d7584ca2256d9ff0001699bf6",
+    "semantic_hash": ""
+  },
+  "hira-hub/backend/tests/test_logger.py": {
+    "mtime": 1789347673.0680616,
+    "seen": 1792431761.2152119,
+    "ast_hash": "998c9dd2431fd51244d1d5e6c94edd96",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/adapters/bacnet/bac0_adapter.py": {
+    "mtime": 1789360408.337511,
+    "seen": 1792431761.2152135,
+    "ast_hash": "438484d7ef7cc3d770370aee080b477a",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/adapters/bacnet/bacnet_simulator_adapter.py": {
+    "mtime": 1791591246.8938353,
+    "seen": 1792431761.2152152,
+    "ast_hash": "0cac45e3fb0b191ccb7b22e01fbf7909",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/adapters/cache/redis_adapter.py": {
+    "mtime": 1789326212.6416917,
+    "seen": 1792431761.2152166,
+    "ast_hash": "9ef0a17bad00233c6a89c1708cb013b2",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/adapters/db/device_repository_adapter.py": {
+    "mtime": 1791589508.8972073,
+    "seen": 1792431761.215218,
+    "ast_hash": "d0ce45d1295b7ea3758c2e415844c7aa",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/adapters/db/postgresql_adapter.py": {
+    "mtime": 1789286980.9576762,
+    "seen": 1792431761.21522,
+    "ast_hash": "8dc13c10aabacbadd8470a9f99e1dd28",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/adapters/db/user_repository_adapter.py": {
+    "mtime": 1789321028.1438298,
+    "seen": 1792431761.2152214,
+    "ast_hash": "d1bd427a2057fd3af818f72dab823e18",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/adapters/factory.py": {
+    "mtime": 1791592593.4639738,
+    "seen": 1792431761.215223,
+    "ast_hash": "68149e632407e59ae29861a5e2e6222b",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/adapters/modbus/modbus_simulator_adapter.py": {
+    "mtime": 1791592401.5603344,
+    "seen": 1792431761.2152245,
+    "ast_hash": "4e9776991b80eb41e2efbe655d7beeed",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/adapters/modbus/pymodbus_adapter.py": {
+    "mtime": 1789377771.298597,
+    "seen": 1792431761.2152262,
+    "ast_hash": "21c6d468d0ccb8b3cb07b7da9eb07baa",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/adapters/mqtt/mosquitto_adapter.py": {
+    "mtime": 1789286974.082617,
+    "seen": 1792431761.2152276,
+    "ast_hash": "5b3f8f0bede9330259506e56ae3496e7",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/adapters/mqtt/mqtt_publisher_adapter.py": {
+    "mtime": 1791592487.0729852,
+    "seen": 1792431761.215234,
+    "ast_hash": "c15cd1c1dbeeb72263a76efd6608f81c",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/adapters/mqtt/mqtt_scan_adapter.py": {
+    "mtime": 1789403191.7466793,
+    "seen": 1792431761.215236,
+    "ast_hash": "a7fcb3ab0738031540c8d267254adbfc",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/alembic/env.py": {
+    "mtime": 1789359813.2403626,
+    "seen": 1792431761.2152376,
+    "ast_hash": "7f8d1c590e2a55c67c06ca60c73d5b45",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/alembic/versions/0001_create_users_table.py": {
+    "mtime": 1789320922.692925,
+    "seen": 1792431761.2152407,
+    "ast_hash": "8555a60c953f84cac3d397e7b2b1582f",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/alembic/versions/0002_create_devices_tables.py": {
+    "mtime": 1789359823.8284543,
+    "seen": 1792431761.2152424,
+    "ast_hash": "7a8cc8da1554fd98061d72e9e6b8f6fe",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/core/bacnet_address.py": {
+    "mtime": 1789426559.190016,
+    "seen": 1792431761.215244,
+    "ast_hash": "aab3253a6901e6b910bcd2a41956e05b",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/core/config.py": {
+    "mtime": 1791590018.2720113,
+    "seen": 1792431761.2152455,
+    "ast_hash": "0ca0f13a6cb74b9aaba3d8bf14a8e399",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/core/errors.py": {
+    "mtime": 1789296036.2766268,
+    "seen": 1792431761.2152472,
+    "ast_hash": "51f35d1409f0e597257ba3eaf57911d8",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/core/logger.py": {
+    "mtime": 1789284510.8855424,
+    "seen": 1792431761.2152486,
+    "ast_hash": "8f5b07d6ea9cf94dcc3b4aff1a197f90",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/core/middleware.py": {
+    "mtime": 1789326460.3858466,
+    "seen": 1792431761.2152503,
+    "ast_hash": "a227d8439b6f57b20596a263e230f8b0",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/core/modbus_address.py": {
+    "mtime": 1789376615.3686028,
+    "seen": 1792431761.2152517,
+    "ast_hash": "c10a735c1ea7b7185a46ea9263a99e2b",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/core/mqtt_topic_key.py": {
+    "mtime": 1789380560.9316688,
+    "seen": 1792431761.2152536,
+    "ast_hash": "a69e478fc0683d4516d7dd2787f89b69",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/core/ports/bacnet_simulator_port.py": {
+    "mtime": 1789426607.1634417,
+    "seen": 1792431761.215255,
+    "ast_hash": "a0a48d67d6e0c3731d27222bb4fc497c",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/core/ports/bacnet_transport_port.py": {
+    "mtime": 1789352891.0743809,
+    "seen": 1792431761.2152567,
+    "ast_hash": "8104a505c818a8b5f839946871fe3fac",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/core/ports/cache_port.py": {
+    "mtime": 1789326188.3924809,
+    "seen": 1792431761.2152581,
+    "ast_hash": "6a525933a1059a2128ae5c81dcaae8f4",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/core/ports/database_port.py": {
+    "mtime": 1789284344.581123,
+    "seen": 1792431761.2152598,
+    "ast_hash": "bcf3f58bb1fdc4178b410855e651ee37",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/core/ports/device_repository_port.py": {
+    "mtime": 1789426637.4527104,
+    "seen": 1792431761.2152615,
+    "ast_hash": "6318279d1e7de2a7ac5956b933db0802",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/core/ports/modbus_simulator_port.py": {
+    "mtime": 1789426613.975502,
+    "seen": 1792431761.215263,
+    "ast_hash": "1623e784db9708454b525591966bfdfa",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/core/ports/modbus_transport_port.py": {
+    "mtime": 1789376631.3007405,
+    "seen": 1792431761.2152648,
+    "ast_hash": "3c7f63232354249622199b82746c7189",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/core/ports/mqtt_publisher_port.py": {
+    "mtime": 1789426620.6205611,
+    "seen": 1792431761.2152662,
+    "ast_hash": "dd78a2cf5621f476799705bc139e95f9",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/core/ports/mqtt_scan_transport_port.py": {
+    "mtime": 1789380574.554786,
+    "seen": 1792431761.2152681,
+    "ast_hash": "f6d264b6d8e38ad09f09cab1f6e8a734",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/core/ports/notification_port.py": {
+    "mtime": 1789284353.0641956,
+    "seen": 1792431761.2152696,
+    "ast_hash": "ba4b42bf647c734b6e1c4c51f36ed2d8",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/core/ports/user_repository_port.py": {
+    "mtime": 1789296456.0522358,
+    "seen": 1792431761.2152715,
+    "ast_hash": "f733f83f3f20c66cb1628fa7a767bbf9",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/core/security/dependencies.py": {
+    "mtime": 1789319756.0859141,
+    "seen": 1792431761.215273,
+    "ast_hash": "0a23dd3489f5f0a7141908b9f666c8b0",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/core/security/jwt.py": {
+    "mtime": 1789295985.2791884,
+    "seen": 1792431761.2152746,
+    "ast_hash": "7babbb729b263a5d24acd0b5cdeeb947",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/core/security/passwords.py": {
+    "mtime": 1789295948.7838745,
+    "seen": 1792431761.215276,
+    "ast_hash": "47bf9e4edd6b7c6e218482b15cf07c03",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/core/security/rbac_policy.py": {
+    "mtime": 1789296008.530388,
+    "seen": 1792431761.215278,
+    "ast_hash": "cd98c571c1a7265375d34e06e0d01977",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/main.py": {
+    "mtime": 1789427810.369028,
+    "seen": 1792431761.2152793,
+    "ast_hash": "09e3b7e7906f9d39eea01b6d615ef1d4",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/models/base.py": {
+    "mtime": 1789354232.4300165,
+    "seen": 1792431761.215281,
+    "ast_hash": "67326e8ac72e87514c58d3936da42025",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/models/device_model.py": {
+    "mtime": 1789354281.753444,
+    "seen": 1792431761.2152827,
+    "ast_hash": "a4dfab09ca0e8435358b751edee58943",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/models/user_model.py": {
+    "mtime": 1789354241.6780965,
+    "seen": 1792431761.215284,
+    "ast_hash": "4fe3c187dcf10a8617b1ff8af0539a69",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/routers/auth.py": {
+    "mtime": 1789319602.3065941,
+    "seen": 1792431761.2152858,
+    "ast_hash": "a0c8d94b216f89586db6392999d2a815",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/routers/devices.py": {
+    "mtime": 1789380798.1787126,
+    "seen": 1792431761.2152874,
+    "ast_hash": "5119b104495255d009830c9abf06641f",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/routers/monitor.py": {
+    "mtime": 1789285142.9709373,
+    "seen": 1792431761.215289,
+    "ast_hash": "f9d3b1e6001a70ab0424ffc905338782",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/routers/simulators.py": {
+    "mtime": 1789427768.1046572,
+    "seen": 1792431761.2152905,
+    "ast_hash": "f3db87a998137e5cd0eeedd25ce00203",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/schemas/auth.py": {
+    "mtime": 1789319539.0240512,
+    "seen": 1792431761.2152998,
+    "ast_hash": "8e77a7f48697c376ed7a47fc973b956b",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/schemas/devices.py": {
+    "mtime": 1789380757.3403609,
+    "seen": 1792431761.2153025,
+    "ast_hash": "dbe71dc5d2cbc2a04efae23b8d8ab648",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/schemas/errors.py": {
+    "mtime": 1789296040.1166599,
+    "seen": 1792431761.2153041,
+    "ast_hash": "e41ac741d42f78f153144bc0b12f27f0",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/schemas/health.py": {
+    "mtime": 1789285135.9748774,
+    "seen": 1792431761.215306,
+    "ast_hash": "b0087827c09be623057552e0ca102eab",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/schemas/simulators.py": {
+    "mtime": 1789427742.8704355,
+    "seen": 1792431761.2153075,
+    "ast_hash": "2c0e5f49a5080bafcbfc3fc75ae6e139",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/scripts/__init__.py": {
+    "mtime": 1789321216.9914498,
+    "seen": 1792431761.2153094,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/scripts/seed_admin_user.py": {
+    "mtime": 1789321231.7505765,
+    "seen": 1792431761.2153108,
+    "ast_hash": "8c3a9061c3bf5a53cf6e4f3b583cf4e8",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/services/auth_service.py": {
+    "mtime": 1789296727.3635695,
+    "seen": 1792431761.2153127,
+    "ast_hash": "92648e131ee9995c5129318e72a53dd0",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/services/device_scan_service.py": {
+    "mtime": 1789380644.2633865,
+    "seen": 1792431761.2153141,
+    "ast_hash": "f380c50c7a956de59415dc444733ca74",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/services/health_service.py": {
+    "mtime": 1789284365.9043052,
+    "seen": 1792431761.215316,
+    "ast_hash": "c6828a954c18b0fa17023d0087e1dbc6",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/services/rbac_service.py": {
+    "mtime": 1789326335.4047596,
+    "seen": 1792431761.2153175,
+    "ast_hash": "f069967796b729af7a26870be329eeb6",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/services/simulator_registry_service.py": {
+    "mtime": 1789426594.696331,
+    "seen": 1792431761.2153208,
+    "ast_hash": "8dcefa7ebcc098702c3af2c00c9d43ed",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/services/simulator_service.py": {
+    "mtime": 1789426737.7456,
+    "seen": 1792431761.2153227,
+    "ast_hash": "a28fdbe397ee03bd4ba0181d76afefbe",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/tests/conftest.py": {
+    "mtime": 1789326591.9539914,
+    "seen": 1792431761.2153244,
+    "ast_hash": "ce25d62840466e949cfe8d57a399956b",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/tests/integration/test_adapters.py": {
+    "mtime": 1789287000.5568445,
+    "seen": 1792431761.2153263,
+    "ast_hash": "583fdd55dbeb1f5ff0efe55c36793a27",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/tests/integration/test_auth_security.py": {
+    "mtime": 1789321529.8091414,
+    "seen": 1792431761.2153277,
+    "ast_hash": "e5a7390edd22f7ebb90f6b6f3aaae45f",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/tests/integration/test_bac0_adapter.py": {
+    "mtime": 1789360375.2442248,
+    "seen": 1792431761.2153296,
+    "ast_hash": "e7c4d98b6e97114126eac12cb3c17675",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/tests/integration/test_bacnet_simulator_adapter.py": {
+    "mtime": 1791589995.7367547,
+    "seen": 1792431761.215331,
+    "ast_hash": "18412be9c0743fd8a74c4bc3b4ede002",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/tests/integration/test_device_repository_adapter.py": {
+    "mtime": 1791589486.4621177,
+    "seen": 1792431761.2153327,
+    "ast_hash": "5678fe7526c42866d20699b596c6f6e1",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/tests/integration/test_devices_scan_e2e.py": {
+    "mtime": 1789403333.9699032,
+    "seen": 1792431761.2153344,
+    "ast_hash": "790d409f40eb8b802a353fc7ac3c23ea",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/tests/integration/test_modbus_simulator_adapter.py": {
+    "mtime": 1791592280.9781833,
+    "seen": 1792431761.215336,
+    "ast_hash": "1a593bbd3f999d28c9a7060a46ced745",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/tests/integration/test_mqtt_publisher_adapter.py": {
+    "mtime": 1791592438.7518098,
+    "seen": 1792431761.2153378,
+    "ast_hash": "7d6f670bb9f004592d637e15c15fafb7",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/tests/integration/test_mqtt_scan_adapter.py": {
+    "mtime": 1789403178.933569,
+    "seen": 1792431761.2153392,
+    "ast_hash": "d2d24392485bd3537652a23373976e9c",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/tests/integration/test_mqtt_security.py": {
+    "mtime": 1789287009.792924,
+    "seen": 1792431761.215341,
+    "ast_hash": "b018059fd71f9ae8786a4d02090082df",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/tests/integration/test_pymodbus_adapter.py": {
+    "mtime": 1789377746.4033818,
+    "seen": 1792431761.2153428,
+    "ast_hash": "aa339655ce3a9cb2a089578a366f52b0",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/tests/integration/test_rbac_latency.py": {
+    "mtime": 1789326805.9378579,
+    "seen": 1792431761.2153444,
+    "ast_hash": "2b7d992bf0fbce08d3ee0e4b963bbacc",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/tests/integration/test_simulators_e2e.py": {
+    "mtime": 1791594466.5897372,
+    "seen": 1792431761.215346,
+    "ast_hash": "e0ff42796119b49d504c5a3ac86e1ca5",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/tests/integration/test_user_repository_adapter.py": {
+    "mtime": 1789321000.8635957,
+    "seen": 1792431761.2153478,
+    "ast_hash": "f3ca9f4fbfee1b6328b752b6d196a675",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/tests/test_auth_router.py": {
+    "mtime": 1789326660.7305913,
+    "seen": 1792431761.2153494,
+    "ast_hash": "ac41f85885cea6af27c8e9ab3c09bc7f",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/tests/test_auth_service.py": {
+    "mtime": 1789296784.1100578,
+    "seen": 1792431761.215351,
+    "ast_hash": "cf2e564c78e6922f5327fcc059dbd88d",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/tests/test_authentication_middleware.py": {
+    "mtime": 1789319647.829985,
+    "seen": 1792431761.2153528,
+    "ast_hash": "e1ae4add05c43766fc7c802af27fff45",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/tests/test_bacnet_address.py": {
+    "mtime": 1789426541.4638588,
+    "seen": 1792431761.2153544,
+    "ast_hash": "ed4e8faa0eb0bed53d4c0d73be810797",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/tests/test_cache_port_contract.py": {
+    "mtime": 1789326166.9772944,
+    "seen": 1792431761.2153559,
+    "ast_hash": "221f0922fd091957bc82710c2502653a",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/tests/test_config.py": {
+    "mtime": 1789282873.2905786,
+    "seen": 1792431761.2153575,
+    "ast_hash": "205189c239bfc64761ae4c3ac3269017",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/tests/test_correlation_id.py": {
+    "mtime": 1789284389.1045032,
+    "seen": 1792431761.2153592,
+    "ast_hash": "1761410ed9b2e781a8a6bd7294882aff",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/tests/test_device_scan_service.py": {
+    "mtime": 1789380615.9211423,
+    "seen": 1792431761.2153609,
+    "ast_hash": "89f11c2c9770f8632f84868788025d64",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/tests/test_devices_router.py": {
+    "mtime": 1789380742.9322367,
+    "seen": 1792431761.2153623,
+    "ast_hash": "b8e0da4f17cce6c93d98e6f5b59f3492",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/tests/test_errors.py": {
+    "mtime": 1789296025.1835313,
+    "seen": 1792431761.215364,
+    "ast_hash": "4a31ea64d0f7dde9c36d1c3432ac8a04",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/tests/test_health_policy.py": {
+    "mtime": 1789282849.4553754,
+    "seen": 1792431761.2153656,
+    "ast_hash": "3702e12a1663dfb6530f553abdcd5809",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/tests/test_health_router.py": {
+    "mtime": 1789326639.617407,
+    "seen": 1792431761.215367,
+    "ast_hash": "e4cd979436973713aeda11c6c970c0db",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/tests/test_health_service.py": {
+    "mtime": 1789284331.8490145,
+    "seen": 1792431761.2153687,
+    "ast_hash": "08c7755d2a9e03e638c1407f41fccb1f",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/tests/test_jwt_tokens.py": {
+    "mtime": 1789295969.538053,
+    "seen": 1792431761.2153704,
+    "ast_hash": "4a324e074b54183729b664abd6c0f25d",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/tests/test_logger.py": {
+    "mtime": 1789282896.002772,
+    "seen": 1792431761.215372,
+    "ast_hash": "19827a48478d2e94049de233737149f5",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/tests/test_main_lifespan.py": {
+    "mtime": 1789326393.5682654,
+    "seen": 1792431761.2153735,
+    "ast_hash": "2823d1c005b5335c372572d290eed8f3",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/tests/test_modbus_address.py": {
+    "mtime": 1789376604.2565067,
+    "seen": 1792431761.2153752,
+    "ast_hash": "a79db66778029f2f2726aa48be55043e",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/tests/test_mqtt_topic_key.py": {
+    "mtime": 1789380549.9765744,
+    "seen": 1792431761.2153769,
+    "ast_hash": "81c1de7a0840ba74e167eeb771cf0349",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/tests/test_password_hashing.py": {
+    "mtime": 1789295938.837789,
+    "seen": 1792431761.2153785,
+    "ast_hash": "1e85c192448898ca7573d6f82c1c7988",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/tests/test_rbac_dependencies.py": {
+    "mtime": 1789319739.074768,
+    "seen": 1792431761.2153802,
+    "ast_hash": "731312e0b057e501ccad177252404aac",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/tests/test_rbac_policy.py": {
+    "mtime": 1789295996.4562843,
+    "seen": 1792431761.2153819,
+    "ast_hash": "231baa1f3a26d3219a066e4b50b738d0",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/tests/test_rbac_service.py": {
+    "mtime": 1789326364.5400128,
+    "seen": 1792431761.2153833,
+    "ast_hash": "bdbce6483aee36a85079952b97a0144c",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/tests/test_simulator_registry_service.py": {
+    "mtime": 1789426575.4651606,
+    "seen": 1792431761.2153852,
+    "ast_hash": "7881f0e86caf7c2f759d88e1a173a34b",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/tests/test_simulator_service.py": {
+    "mtime": 1789426892.7739723,
+    "seen": 1792431761.2153866,
+    "ast_hash": "6c2d48040ebed790e90f599b4ec3ee04",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/tests/test_simulators_router.py": {
+    "mtime": 1791588484.1322305,
+    "seen": 1792431761.215388,
+    "ast_hash": "d0d06c7dfc2c92160b422a1cfdf29612",
+    "semantic_hash": ""
+  },
+  "hira-server/mosquitto/generate_password_file.sh": {
+    "mtime": 1789286208.17104,
+    "seen": 1792431761.21539,
+    "ast_hash": "8c64d34f8b0688fb918a850937a3c5ff",
+    "semantic_hash": ""
+  },
+  ".claude/agents/README.md": {
+    "mtime": 1789281544.5542479,
+    "seen": 1792431761.2153914,
+    "ast_hash": "c3254f7128c71556de96fbeb183fc2c6",
+    "semantic_hash": ""
+  },
+  ".claude/agents/arquitecto.md": {
+    "mtime": 1792524772.0352414,
+    "seen": 1792741543.178906,
+    "ast_hash": "067996fa8fcd8f661d26fee47ea7a52e",
+    "semantic_hash": ""
+  },
+  ".claude/agents/autor-de-spec.md": {
+    "mtime": 1792524772.0324235,
+    "seen": 1792741543.1789086,
+    "ast_hash": "4bc6a3f11af1749c612ec90353c339cc",
+    "semantic_hash": ""
+  },
+  ".claude/agents/experto-ux-ui.md": {
+    "mtime": 1789020421.6177304,
+    "seen": 1792431761.2153964,
+    "ast_hash": "bf4b4ffdcbf336832698bd8f5a08f66f",
+    "semantic_hash": ""
+  },
+  ".claude/agents/explorador.md": {
+    "mtime": 1789020421.6177304,
+    "seen": 1792431761.2153978,
+    "ast_hash": "8f10e5854d674aa8aaf9e1caf4ca9297",
+    "semantic_hash": ""
+  },
+  ".claude/agents/hira-alarmas.md": {
+    "mtime": 1789281182.6536713,
+    "seen": 1792431761.2153995,
+    "ast_hash": "4504e76b2f316974f5d73b0e6d77a232",
+    "semantic_hash": ""
+  },
+  ".claude/agents/hira-auth.md": {
+    "mtime": 1789295839.375934,
+    "seen": 1792431761.215401,
+    "ast_hash": "4725290b3d0908a398013ab329e11567",
+    "semantic_hash": ""
+  },
+  ".claude/agents/hira-backup.md": {
+    "mtime": 1789281182.6540608,
+    "seen": 1792431761.2154026,
+    "ast_hash": "d8a2cb91ac7196d869ac94220df5a8ec",
+    "semantic_hash": ""
+  },
+  ".claude/agents/hira-contratos.md": {
+    "mtime": 1789281219.9184787,
+    "seen": 1792431761.215404,
+    "ast_hash": "f8f5349ebab8516b8a7a47892390ac99",
+    "semantic_hash": ""
+  },
+  ".claude/agents/hira-datos.md": {
+    "mtime": 1789281182.654316,
+    "seen": 1792431761.215406,
+    "ast_hash": "cc19e998bc7edc68a06be8a2909cae27",
+    "semantic_hash": ""
+  },
+  ".claude/agents/hira-frontend.md": {
+    "mtime": 1789281226.3525336,
+    "seen": 1792431761.2154076,
+    "ast_hash": "1aa06c95a30d6b5316bbc9a72d766ad1",
+    "semantic_hash": ""
+  },
+  ".claude/agents/hira-ia.md": {
+    "mtime": 1789281182.6545577,
+    "seen": 1792431761.215409,
+    "ast_hash": "722d87f25fbaade53c3a3c4a94d0d2da",
+    "semantic_hash": ""
+  },
+  ".claude/agents/hira-infra.md": {
+    "mtime": 1789281182.6546812,
+    "seen": 1792431761.215411,
+    "ast_hash": "24bc35b2d1c5ea03f4e8e5946f008033",
+    "semantic_hash": ""
+  },
+  ".claude/agents/hira-licencia.md": {
+    "mtime": 1789281182.6547952,
+    "seen": 1792431761.2154124,
+    "ast_hash": "7c943680a3a53287240dc8d8e9d50c30",
+    "semantic_hash": ""
+  },
+  ".claude/agents/hira-logica.md": {
+    "mtime": 1789281182.6549046,
+    "seen": 1792431761.215414,
+    "ast_hash": "f1e8ab91cc86ec9e61c8440faab7a2fa",
+    "semantic_hash": ""
+  },
+  ".claude/agents/hira-protocolos.md": {
+    "mtime": 1789352697.2426982,
+    "seen": 1792431761.2154157,
+    "ast_hash": "e88709bc69f3ff399b4d4b37c209d1e3",
+    "semantic_hash": ""
+  },
+  ".claude/agents/hira-qa.md": {
+    "mtime": 1789281232.0065818,
+    "seen": 1792431761.2154174,
+    "ast_hash": "385a936f31888e14ba19a82f98c4f238",
+    "semantic_hash": ""
+  },
+  ".claude/agents/hira-tiempo-real.md": {
+    "mtime": 1789281182.6552653,
+    "seen": 1792431761.215419,
+    "ast_hash": "d0bd375d09c19f8b37e24d23442839e5",
+    "semantic_hash": ""
+  },
+  ".claude/agents/hub-infra.md": {
+    "mtime": 1789281236.607621,
+    "seen": 1792431761.215421,
+    "ast_hash": "8fc45f4d0494aa56f65d63d8c9bb85a1",
+    "semantic_hash": ""
+  },
+  ".claude/agents/hub-licencias.md": {
+    "mtime": 1789281182.6554952,
+    "seen": 1792431761.2154224,
+    "ast_hash": "964affcdb67f6ea487149fb3ca7702ab",
+    "semantic_hash": ""
+  },
+  ".claude/agents/hub-reports.md": {
+    "mtime": 1789281182.6556146,
+    "seen": 1792431761.215424,
+    "ast_hash": "e7a33f805aea6560a6dd24fcd59b4bc5",
+    "semantic_hash": ""
+  },
+  ".claude/agents/implementador.md": {
+    "mtime": 1789020421.6177304,
+    "seen": 1792431761.2154255,
+    "ast_hash": "e8c1db5a934242b654e6cd6b0a6591cc",
+    "semantic_hash": ""
+  },
+  ".claude/agents/orquestador.md": {
+    "mtime": 1789020421.6177304,
+    "seen": 1792431761.2154274,
+    "ast_hash": "35fe1120a469cc51040b42776b2bc3ab",
+    "semantic_hash": ""
+  },
+  ".claude/agents/revisor.md": {
+    "mtime": 1789020421.6177304,
+    "seen": 1792431761.2154288,
+    "ast_hash": "e626c559eb56220950775ebd184aead9",
+    "semantic_hash": ""
+  },
+  ".harness/claude/ORCHESTRATION.md": {
+    "mtime": 1789281340.097504,
+    "seen": 1792431761.2154307,
+    "ast_hash": "8f9fd07a6458e526a162e4b37211d08e",
+    "semantic_hash": ""
+  },
+  ".harness/claude/ecosystem.md": {
+    "mtime": 1789282618.705408,
+    "seen": 1792431761.2154322,
+    "ast_hash": "cbbdd72867d654adc3af1a59b650d9fe",
+    "semantic_hash": ""
+  },
+  ".harness/claude/hira-hub.md": {
+    "mtime": 1789281302.860186,
+    "seen": 1792431761.215434,
+    "ast_hash": "19cd2a5de83d4ba7ecd038343151d88e",
+    "semantic_hash": ""
+  },
+  ".harness/claude/hira-server.md": {
+    "mtime": 1789282623.754451,
+    "seen": 1792431761.2154357,
+    "ast_hash": "f923c14c86458bd668a57c0e0c19cdd0",
+    "semantic_hash": ""
+  },
+  ".harness/claude/hira-studio.md": {
+    "mtime": 1789281320.8153393,
+    "seen": 1792431761.2154374,
+    "ast_hash": "e9a7cb75f1d39a46ce9c404be40bba17",
+    "semantic_hash": ""
+  },
+  ".harness/constitution.md": {
+    "mtime": 1789020421.618545,
+    "seen": 1792431761.215439,
+    "ast_hash": "7a722256ec1a8dc6b9c735d156ab37a5",
+    "semantic_hash": ""
+  },
+  ".harness/decisions/ADR-000-template.md": {
+    "mtime": 1789020421.618545,
+    "seen": 1792431761.2154408,
+    "ast_hash": "2ec7cf861c8004b142f38962867960f0",
+    "semantic_hash": ""
+  },
+  ".harness/decisions/ADR-001-adopcion-arnes-sdd-anchored.md": {
+    "mtime": 1789020421.618794,
+    "seen": 1792431761.2154422,
+    "ast_hash": "702cfdfb915defb6e1dcf50e7b8f9da8",
+    "semantic_hash": ""
+  },
+  ".harness/decisions/ADR-002-forzar-fase-1-y-gate-automatico.md": {
+    "mtime": 1789020421.618794,
+    "seen": 1792431761.2154438,
+    "ast_hash": "f7ccfb56dd43b1055f1b249721992035",
+    "semantic_hash": ""
+  },
+  ".harness/decisions/ADR-003-especialista-ux-ui.md": {
+    "mtime": 1789020421.618794,
+    "seen": 1792431761.2154455,
+    "ast_hash": "36d5187d24253ea239f39efc1d05c8af",
+    "semantic_hash": ""
+  },
+  ".harness/decisions/ADR-004-refresco-de-rutas-y-retiro-de-module-md.md": {
+    "mtime": 1789281534.2331598,
+    "seen": 1792431761.2154472,
+    "ast_hash": "97f03407eed392f43240873eb33c5067",
+    "semantic_hash": ""
+  },
+  ".harness/gate/services.txt": {
+    "mtime": 1789350034.5215766,
+    "seen": 1792431761.2154489,
+    "ast_hash": "95f11ea23d61ad85d7c2362a5c9871da",
+    "semantic_hash": ""
+  },
+  ".harness/memory/history.md": {
+    "mtime": 1792084352.8814843,
+    "seen": 1792431761.2154505,
+    "ast_hash": "37ba355b230ac8574c47d3060295187c",
+    "semantic_hash": ""
+  },
+  ".harness/memory/state.md": {
+    "mtime": 1792093387.3582733,
+    "seen": 1792431761.2154522,
+    "ast_hash": "2df6051ef2e5133aca9831ce683290a2",
+    "semantic_hash": ""
+  },
+  ".harness/method.md": {
+    "mtime": 1792745116.6573577,
+    "seen": 1792745134.757441,
+    "ast_hash": "23f8922805318ad7383f4847758cd8f3",
+    "semantic_hash": ""
+  },
+  ".harness/specs/HUB-001-walking-skeleton/plan.md": {
+    "mtime": 1789350692.1832876,
+    "seen": 1792431761.215459,
+    "ast_hash": "30404be4d18174ed42ef24047f9fab4c",
+    "semantic_hash": ""
+  },
+  ".harness/specs/HUB-001-walking-skeleton/spec.md": {
+    "mtime": 1789350688.1102521,
+    "seen": 1792431761.2154608,
+    "ast_hash": "cf5c4a7a85a8e70ada7aa673bfac5fc6",
+    "semantic_hash": ""
+  },
+  ".harness/specs/HUB-001-walking-skeleton/tasks.md": {
+    "mtime": 1789350697.0503297,
+    "seen": 1792431761.2154627,
+    "ast_hash": "5a003cf5722ae48f47059788bec435e5",
+    "semantic_hash": ""
+  },
+  ".harness/specs/README.md": {
+    "mtime": 1789020421.619524,
+    "seen": 1792431761.2154663,
+    "ast_hash": "acdd09531659933697cca97d227f5b78",
+    "semantic_hash": ""
+  },
+  ".harness/specs/SRV-001-walking-skeleton/plan.md": {
+    "mtime": 1789293506.1838806,
+    "seen": 1792431761.215468,
+    "ast_hash": "1491893e4a9013bc5a47e50a8452b737",
+    "semantic_hash": ""
+  },
+  ".harness/specs/SRV-001-walking-skeleton/spec.md": {
+    "mtime": 1789293501.9258437,
+    "seen": 1792431761.2154696,
+    "ast_hash": "f8292171303edda4bfef5223868c5a21",
+    "semantic_hash": ""
+  },
+  ".harness/specs/SRV-001-walking-skeleton/tasks.md": {
+    "mtime": 1789293509.3989081,
+    "seen": 1792431761.2154713,
+    "ast_hash": "005499310155fd635e27df7f5e58a706",
+    "semantic_hash": ""
+  },
+  ".harness/specs/SRV-002-auth-rbac/plan.md": {
+    "mtime": 1789340219.467196,
+    "seen": 1792431761.2154732,
+    "ast_hash": "8be1a77b4b51d3e74e13486d117be95e",
+    "semantic_hash": ""
+  },
+  ".harness/specs/SRV-002-auth-rbac/spec.md": {
+    "mtime": 1789340215.7991638,
+    "seen": 1792431761.2154746,
+    "ast_hash": "e172f96216f4774cbe4004ea30ef4cb6",
+    "semantic_hash": ""
+  },
+  ".harness/specs/SRV-002-auth-rbac/tasks.md": {
+    "mtime": 1789340224.3192382,
+    "seen": 1792431761.2154765,
+    "ast_hash": "b0c0e46617b3764065db58eca625e254",
+    "semantic_hash": ""
+  },
+  ".harness/specs/SRV-003-bacnet-adapter/plan.md": {
+    "mtime": 1789372741.6100175,
+    "seen": 1792431761.215478,
+    "ast_hash": "4d26dddca60723f9d1f5db9a78e7cc4e",
+    "semantic_hash": ""
+  },
+  ".harness/specs/SRV-003-bacnet-adapter/spec.md": {
+    "mtime": 1789372741.6096992,
+    "seen": 1792431761.2154796,
+    "ast_hash": "6046e851542e415ee1cead7a63b94048",
+    "semantic_hash": ""
+  },
+  ".harness/specs/SRV-003-bacnet-adapter/tasks.md": {
+    "mtime": 1789372741.610445,
+    "seen": 1792431761.215484,
+    "ast_hash": "62696d13681ada2d6c874c95b4f787eb",
+    "semantic_hash": ""
+  },
+  ".harness/specs/SRV-004-modbus-adapter/plan.md": {
+    "mtime": 1789378894.0510612,
+    "seen": 1792431761.2154853,
+    "ast_hash": "0c5f15ddcfc7bd431a0eeffdb61a3a09",
+    "semantic_hash": ""
+  },
+  ".harness/specs/SRV-004-modbus-adapter/spec.md": {
+    "mtime": 1789378894.050715,
+    "seen": 1792431761.2154872,
+    "ast_hash": "437ebf1aa175809b754e2bf78697f07f",
+    "semantic_hash": ""
+  },
+  ".harness/specs/SRV-004-modbus-adapter/tasks.md": {
+    "mtime": 1789378894.0514503,
+    "seen": 1792431761.215489,
+    "ast_hash": "2f6cb08a95fc1b521ec2d5189e5bea21",
+    "semantic_hash": ""
+  },
+  ".harness/specs/SRV-005-mqtt-scanning/plan.md": {
+    "mtime": 1789404602.0028083,
+    "seen": 1792431761.2154908,
+    "ast_hash": "c9eb54c7892c79f22745dbe5f226d64c",
+    "semantic_hash": ""
+  },
+  ".harness/specs/SRV-005-mqtt-scanning/spec.md": {
+    "mtime": 1789404599.396786,
+    "seen": 1792431761.2154927,
+    "ast_hash": "576ca8d3bd46bb60eb5e8f6db2ed6551",
+    "semantic_hash": ""
+  },
+  ".harness/specs/SRV-005-mqtt-scanning/tasks.md": {
+    "mtime": 1789404604.6588311,
+    "seen": 1792431761.2154944,
+    "ast_hash": "db636d6fc1ad0e37ba56f11418ae489a",
+    "semantic_hash": ""
+  },
+  ".harness/specs/SRV-006-simuladores/plan.md": {
+    "mtime": 1792084317.69019,
+    "seen": 1792431761.2154958,
+    "ast_hash": "b94f64a3103614097875250e0d4ed2f5",
+    "semantic_hash": ""
+  },
+  ".harness/specs/SRV-006-simuladores/spec.md": {
+    "mtime": 1792084312.5741475,
+    "seen": 1792431761.2154975,
+    "ast_hash": "b3e3a2eef2330dab900869c29f41f4cd",
+    "semantic_hash": ""
+  },
+  ".harness/specs/SRV-006-simuladores/tasks.md": {
+    "mtime": 1792084324.0672433,
+    "seen": 1792431761.215499,
+    "ast_hash": "a6b4a9206cb3ce7848c4d47aff9eeedb",
+    "semantic_hash": ""
+  },
+  ".harness/specs/_template/plan.md": {
+    "mtime": 1789020421.6199145,
+    "seen": 1792431761.2155006,
+    "ast_hash": "40e8ee484107f7d9069c80875ab2aacd",
+    "semantic_hash": ""
+  },
+  ".harness/specs/_template/spec.md": {
+    "mtime": 1789020421.6200204,
+    "seen": 1792431761.215502,
+    "ast_hash": "a0f1523377f325432792c6c6f9f8cc64",
+    "semantic_hash": ""
+  },
+  ".harness/specs/_template/tasks.md": {
+    "mtime": 1789020421.6200204,
+    "seen": 1792431761.215504,
+    "ast_hash": "81df0b2e84a0a367516076195363f85a",
+    "semantic_hash": ""
+  },
+  ".spectral.yaml": {
+    "mtime": 1792080960.069154,
+    "seen": 1792431761.2155054,
+    "ast_hash": "b83aa1d7dcdd4462ca625cda75d78609",
+    "semantic_hash": ""
+  },
+  "AGENTS.md": {
+    "mtime": 1792081055.2519488,
+    "seen": 1792431761.2155073,
+    "ast_hash": "9ea3b636aa471683c8caa373403d6421",
+    "semantic_hash": ""
+  },
+  "CLAUDE.md": {
+    "mtime": 1792431774.3466368,
+    "seen": 1792741543.1790614,
+    "ast_hash": "84864380227d8edf41e5f9f43dd69a34",
+    "semantic_hash": ""
+  },
+  "INICIO.txt": {
+    "mtime": 1791585425.576687,
+    "seen": 1792431761.2155106,
+    "ast_hash": "e3147a2d07a2c607cfc2e07075831104",
+    "semantic_hash": ""
+  },
+  "README.md": {
+    "mtime": 1792083406.0285764,
+    "seen": 1792431761.215512,
+    "ast_hash": "ced9a240a2708a2905eecad90cb4635e",
+    "semantic_hash": ""
+  },
+  "docs/GLOSSARY.md": {
+    "mtime": 1789020421.6200204,
+    "seen": 1792431761.2155137,
+    "ast_hash": "bf9966b3630f87a5b98aab348e9730e7",
+    "semantic_hash": ""
+  },
+  "docs/README.md": {
+    "mtime": 1789020421.6204817,
+    "seen": 1792431761.2155154,
+    "ast_hash": "902740f5aeb0835382a0e15d481f4f0f",
+    "semantic_hash": ""
+  },
+  "docs/contracts/README.md": {
+    "mtime": 1789281477.3966749,
+    "seen": 1792431761.215517,
+    "ast_hash": "42feb2b1669db1f1df1b2c26bfa03dcb",
+    "semantic_hash": ""
+  },
+  "docs/contracts/crash-report.openapi.yaml": {
+    "mtime": 1789020421.62066,
+    "seen": 1792431761.2155187,
+    "ast_hash": "0a5715da78e1f7c277432734947babc2",
+    "semantic_hash": ""
+  },
+  "docs/contracts/engineering-session.openapi.yaml": {
+    "mtime": 1789020421.62066,
+    "seen": 1792431761.2155206,
+    "ast_hash": "e6a7691c0124c90dc0fde2c59cb6934a",
+    "semantic_hash": ""
+  },
+  "docs/contracts/license.openapi.yaml": {
+    "mtime": 1789020421.62066,
+    "seen": 1792431761.2155223,
+    "ast_hash": "1ae47061316e938f92d7316d8b4b9169",
+    "semantic_hash": ""
+  },
+  "docs/contracts/marketplace.openapi.yaml": {
+    "mtime": 1789020421.62066,
+    "seen": 1792431761.215524,
+    "ast_hash": "6be1b47939bfe5470643d0deba6015a9",
+    "semantic_hash": ""
+  },
+  "docs/contracts/updates.openapi.yaml": {
+    "mtime": 1789020421.62066,
+    "seen": 1792431761.2155254,
+    "ast_hash": "836346032599dbb81acafe3403795303",
+    "semantic_hash": ""
+  },
+  "docs/decisions/ecosystem/E-ADR-001-studio-producto-cloud-independiente.md": {
+    "mtime": 1789020421.6210616,
+    "seen": 1792431761.215527,
+    "ast_hash": "fb09e728d3931967994dce180425ba65",
+    "semantic_hash": ""
+  },
+  "docs/decisions/ecosystem/E-ADR-002-arquitectura-hexagonal-para-los-3-productos.md": {
+    "mtime": 1789020421.6211812,
+    "seen": 1792431761.2155287,
+    "ast_hash": "93e17a13ef674263c563337bca88e9ec",
+    "semantic_hash": ""
+  },
+  "docs/decisions/ecosystem/E-ADR-003-convencion-rfc9457-type.md": {
+    "mtime": 1789295621.9060643,
+    "seen": 1792431761.2155302,
+    "ast_hash": "927df02b352e3bca10c247cf4e14d66f",
+    "semantic_hash": ""
+  },
+  "docs/ecosystem/diagrams/arquitectura-conectividad-server-hub-studio.html": {
+    "mtime": 1792094310.4330747,
+    "seen": 1792431761.2155318,
+    "ast_hash": "11401588183057df4e3d9c03ed8ffa1d",
+    "semantic_hash": ""
+  },
+  "docs/ecosystem/diagrams/arquitectura-ecosistema-completa.html": {
+    "mtime": 1792092023.275062,
+    "seen": 1792431761.2155335,
+    "ast_hash": "5eeecf67ba1463c34e231e21bb26987b",
+    "semantic_hash": ""
+  },
+  "docs/ecosystem/spec/business-model.md": {
+    "mtime": 1789020421.6213117,
+    "seen": 1792431761.2155352,
+    "ast_hash": "659bb88d7bf633933e7d786bdf1f5ebf",
+    "semantic_hash": ""
+  },
+  "docs/ecosystem/spec/ecosystem-architecture.md": {
+    "mtime": 1792091607.3487194,
+    "seen": 1792431761.215539,
+    "ast_hash": "daa1071c7df57a9b20b4a32bf5706654",
+    "semantic_hash": ""
+  },
+  "docs/ecosystem/spec/stakeholders.md": {
+    "mtime": 1789020421.6214125,
+    "seen": 1792431761.2155406,
+    "ast_hash": "7342c43e2c6a6834e895da30dac20752",
+    "semantic_hash": ""
+  },
+  "docs/ecosystem/spec/vision.md": {
+    "mtime": 1789020421.6214125,
+    "seen": 1792431761.2155423,
+    "ast_hash": "c4007db0177e2843c17ecb85043e03e7",
+    "semantic_hash": ""
+  },
+  "docs/hira-hub/decisions/HUB-ADR-01-mismo-stack-que-server.md": {
+    "mtime": 1789020421.6217158,
+    "seen": 1792431761.215544,
+    "ast_hash": "8ea26760cd9121a008f603c5c6f444c9",
+    "semantic_hash": ""
+  },
+  "docs/hira-hub/decisions/HUB-ADR-02-license-keys-opacas-hash.md": {
+    "mtime": 1789020421.6218033,
+    "seen": 1792431761.2155457,
+    "ast_hash": "db599019debb9ace8a59898e89409981",
+    "semantic_hash": ""
+  },
+  "docs/hira-hub/decisions/HUB-ADR-03-grace-period-72h.md": {
+    "mtime": 1789020421.6218033,
+    "seen": 1792431761.2155473,
+    "ast_hash": "66caca65a7b228c644aac25260226b26",
+    "semantic_hash": ""
+  },
+  "docs/hira-hub/decisions/HUB-ADR-04-crash-reports-opt-in-sanitizados.md": {
+    "mtime": 1789020421.6218033,
+    "seen": 1792431761.215549,
+    "ast_hash": "5a9835a0f416144151745093bc2ee78d",
+    "semantic_hash": ""
+  },
+  "docs/hira-hub/decisions/HUB-ADR-05-arquitectura-directa.md": {
+    "mtime": 1789020421.6218033,
+    "seen": 1792431761.2155507,
+    "ast_hash": "ebc44bb4b6aefb93c1bb5d595181ec8b",
+    "semantic_hash": ""
+  },
+  "docs/hira-hub/decisions/HUB-ADR-06-propiedad-y-vinculacion-de-proyectos.md": {
+    "mtime": 1792089592.252545,
+    "seen": 1792431761.2155523,
+    "ast_hash": "f00d56e43fc033bdb8b075eb9843ed90",
+    "semantic_hash": ""
+  },
+  "docs/hira-hub/diagrams/arquitectura-hira-hub.html": {
+    "mtime": 1792092184.62117,
+    "seen": 1792431761.2155538,
+    "ast_hash": "4a745b643b47f315552305625654083f",
+    "semantic_hash": ""
+  },
+  "docs/hira-hub/spec/conceptual-design.md": {
+    "mtime": 1792092229.9521165,
+    "seen": 1792431761.2155554,
+    "ast_hash": "ce6e12847179e5776c8c661b62126874",
+    "semantic_hash": ""
+  },
+  "docs/hira-hub/spec/context.md": {
+    "mtime": 1789020421.6222193,
+    "seen": 1792431761.215557,
+    "ast_hash": "dfddda99afdcc02db0e38e639319a4cc",
+    "semantic_hash": ""
+  },
+  "docs/hira-hub/spec/deployment.md": {
+    "mtime": 1789020421.6222193,
+    "seen": 1792431761.2155588,
+    "ast_hash": "b6385cdbe8d3093c492602938c95aeb9",
+    "semantic_hash": ""
+  },
+  "docs/hira-hub/spec/detailed-design.md": {
+    "mtime": 1789350163.0836933,
+    "seen": 1792431761.2155602,
+    "ast_hash": "eb28df1cb98c0c57b30b31c01cd4151d",
+    "semantic_hash": ""
+  },
+  "docs/hira-hub/spec/dev-guide.md": {
+    "mtime": 1789350181.12285,
+    "seen": 1792431761.2155619,
+    "ast_hash": "7ba46f3ca035e750acf523ad0227aedb",
+    "semantic_hash": ""
+  },
+  "docs/hira-hub/spec/improvements.md": {
+    "mtime": 1789020421.6222193,
+    "seen": 1792431761.2155635,
+    "ast_hash": "ba1a7b32cd1e5b5dca7cf532275f9cc6",
+    "semantic_hash": ""
+  },
+  "docs/hira-hub/spec/incidents.md": {
+    "mtime": 1789020421.6222193,
+    "seen": 1792431761.215565,
+    "ast_hash": "cd970ec0e08ef0a9d621fd95c79c1516",
+    "semantic_hash": ""
+  },
+  "docs/hira-hub/spec/operation.md": {
+    "mtime": 1789020421.6222193,
+    "seen": 1792431761.2155666,
+    "ast_hash": "9c84179bc0bb6a260e083f6d244938ac",
+    "semantic_hash": ""
+  },
+  "docs/hira-hub/spec/portfolio.md": {
+    "mtime": 1789020421.6222193,
+    "seen": 1792431761.215568,
+    "ast_hash": "67ab7f0a9bae1611fb38aa1684e85936",
+    "semantic_hash": ""
+  },
+  "docs/hira-hub/spec/stakeholders.md": {
+    "mtime": 1789020421.6222193,
+    "seen": 1792431761.21557,
+    "ast_hash": "5f2fce5991d91442bbf31b2040dd7221",
+    "semantic_hash": ""
+  },
+  "docs/hira-hub/spec/ui-ux.md": {
+    "mtime": 1789020421.6223571,
+    "seen": 1792431761.2155714,
+    "ast_hash": "fcb8f742e2d662a01856e30a094c0131",
+    "semantic_hash": ""
+  },
+  "docs/hira-hub/spec/validation.md": {
+    "mtime": 1789350191.4359393,
+    "seen": 1792431761.215573,
+    "ast_hash": "bb2b0811d9f6a3e6fa325da69cb1f5c9",
+    "semantic_hash": ""
+  },
+  "docs/hira-hub/spec/validation/vulnerabilities.md": {
+    "mtime": 1789020421.6223571,
+    "seen": 1792431761.2155745,
+    "ast_hash": "b6593d90b4ca2c0e891ca08c62141a1d",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/decisions/SRV-ADR-001-despliegue-on-premise.md": {
+    "mtime": 1789020421.6234741,
+    "seen": 1792431761.2155764,
+    "ast_hash": "2392506e9d4b1495c4c7081cd1395f4e",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/decisions/SRV-ADR-002-python-backend-unico.md": {
+    "mtime": 1789020421.623565,
+    "seen": 1792431761.2155778,
+    "ast_hash": "307e281420017b01717eb4bc73b2d712",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/decisions/SRV-ADR-003-redis-bus-tiempo-real.md": {
+    "mtime": 1789020421.623565,
+    "seen": 1792431761.2155795,
+    "ast_hash": "91cc90332d02a307f9e869046d39934e",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/decisions/SRV-ADR-004-timescaledb-series-de-tiempo.md": {
+    "mtime": 1789020421.623565,
+    "seen": 1792431761.215581,
+    "ast_hash": "4702f4c7c64e19694bdbd4dfc9664e8f",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/decisions/SRV-ADR-005-rbac-dinamico.md": {
+    "mtime": 1789020421.623565,
+    "seen": 1792431761.2155824,
+    "ast_hash": "b5e0807c1578a4477b241ce90395ee1f",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/decisions/SRV-ADR-006-modulo-ia-desacoplado-opcional.md": {
+    "mtime": 1789020421.623565,
+    "seen": 1792431761.2155843,
+    "ast_hash": "53be57aeb6f1d8e4962b77e640dc3305",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/decisions/SRV-ADR-007-motor-logica-python-monaco.md": {
+    "mtime": 1789020421.623565,
+    "seen": 1792431761.2155857,
+    "ast_hash": "bfc30e1a882623a1081719d9f0cf4f7b",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/decisions/SRV-ADR-008-react-flow-mimics.md": {
+    "mtime": 1789020421.623565,
+    "seen": 1792431761.2155874,
+    "ast_hash": "77894cbb4f7cfa71d11dea387163a36f",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/decisions/SRV-ADR-009-dos-capas-ejecucion-python.md": {
+    "mtime": 1789020421.623565,
+    "seen": 1792431761.2155888,
+    "ast_hash": "29502541af56cc32776ac56192f2cf84",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/decisions/SRV-ADR-010-auto-documentacion.md": {
+    "mtime": 1789020421.623565,
+    "seen": 1792431761.2155907,
+    "ast_hash": "4d6611d3418f7373ff3287966dd8627c",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/decisions/SRV-ADR-011-documentacion-base-rag.md": {
+    "mtime": 1789020421.623565,
+    "seen": 1792431761.2155921,
+    "ast_hash": "a0852e51289c56c681e0e028a8b70863",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/decisions/SRV-ADR-012-escaneo-asociacion-explicita-puntos.md": {
+    "mtime": 1789020421.623565,
+    "seen": 1792431761.2155938,
+    "ast_hash": "25d4fdddc85a776e1a875987f1ce0bb3",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/decisions/SRV-ADR-013-dos-agentes-ia-por-stakeholder.md": {
+    "mtime": 1789020421.623565,
+    "seen": 1792431761.2155955,
+    "ast_hash": "4f0721b90fcfa1b6abf4736b47df649c",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/decisions/SRV-ADR-014-simuladores-primera-clase.md": {
+    "mtime": 1789020421.623565,
+    "seen": 1792431761.2155974,
+    "ast_hash": "fe218af81d5ed09f527b21d106dcb8f1",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/decisions/SRV-ADR-015-un-solo-producto-server-studio.md": {
+    "mtime": 1789020421.623565,
+    "seen": 1792431761.2155988,
+    "ast_hash": "d1b06a215c3989f37486ef5620135b70",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/decisions/SRV-ADR-016-sesion-ingenieria-remota.md": {
+    "mtime": 1789020421.623565,
+    "seen": 1792431761.2156005,
+    "ast_hash": "c135abd90b298354b1c9c8d9d4b9cdad",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/decisions/SRV-ADR-017-arquitectura-hexagonal.md": {
+    "mtime": 1789020421.623565,
+    "seen": 1792431761.2156022,
+    "ast_hash": "6e59f3f16c94a08b62beb902d0cf93bd",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/decisions/SRV-ADR-018-licenciamiento-puntos-en-linea.md": {
+    "mtime": 1789020421.623565,
+    "seen": 1792431761.2156038,
+    "ast_hash": "7aae7295e03cfc72d486c95bd5962992",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/decisions/SRV-ADR-019-puntos-variables-unificadas.md": {
+    "mtime": 1789020421.623565,
+    "seen": 1792431761.2156053,
+    "ast_hash": "1c3b474a866a360dd4d08ae693b9c4c5",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/decisions/SRV-ADR-020-multiproyecto-licencia-integrador.md": {
+    "mtime": 1789020421.623565,
+    "seen": 1792431761.2156067,
+    "ast_hash": "ebebe7d52e242686e080e689c9cec0ae",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/decisions/SRV-ADR-021-modelo-ia-interno-ollama.md": {
+    "mtime": 1789020421.623565,
+    "seen": 1792431761.2156084,
+    "ast_hash": "2adae7697a06ff26e80853f358e1fcf0",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/decisions/SRV-ADR-UI-01-material-design-3.md": {
+    "mtime": 1789020421.623565,
+    "seen": 1792431761.2156098,
+    "ast_hash": "1c9953269c40590b9039e34f97b871e4",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/decisions/SRV-ADR-UI-02-sidebar-oculta-modulos.md": {
+    "mtime": 1789020421.623565,
+    "seen": 1792431761.2156117,
+    "ast_hash": "ab209d31bf8b783e8c9a0deb5a614cb8",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/decisions/SRV-ADR-UI-03-tiempo-real-sin-polling.md": {
+    "mtime": 1789020421.6243572,
+    "seen": 1792431761.2156131,
+    "ast_hash": "91ba7985960eb413e801e4c702d1c9e2",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/decisions/SRV-ADR-UI-04-monaco-editor.md": {
+    "mtime": 1789020421.6243572,
+    "seen": 1792431761.215615,
+    "ast_hash": "dcd81dc637813289d9fab3c9472fecb5",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/diagrams/arquitectura-hira-server.html": {
+    "mtime": 1792092107.8577652,
+    "seen": 1792431761.2156165,
+    "ast_hash": "467079e6e31c53538ca6c4ab6176ee0c",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/spec/architecture/calidad-y-riesgos.md": {
+    "mtime": 1789020421.6252837,
+    "seen": 1792431761.2156181,
+    "ast_hash": "bf4ccc725be3a0faa6077775b794a7a5",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/spec/architecture/casos-de-uso-criticos.md": {
+    "mtime": 1789020421.6254013,
+    "seen": 1792431761.2156196,
+    "ast_hash": "ebf34c3b313502b20ced7fd4de8aa49b",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/spec/architecture/flujos-de-datos.md": {
+    "mtime": 1789020421.6254013,
+    "seen": 1792431761.2156215,
+    "ast_hash": "d0d4861da7b7924d7b5a960b61d314e1",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/spec/architecture/general.md": {
+    "mtime": 1792092208.203928,
+    "seen": 1792431761.215623,
+    "ast_hash": "34da7f78cf63a7a6a8d383a447e7aa78",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/spec/context.md": {
+    "mtime": 1789020421.6254013,
+    "seen": 1792431761.2156243,
+    "ast_hash": "16c1b6b3ccc1c7912b42c7215be1e384",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/spec/implementation-guide/estructura-de-repositorio.md": {
+    "mtime": 1789292289.9523857,
+    "seen": 1792431761.2156262,
+    "ast_hash": "3e56570835f23908979ab2de1794a103",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/spec/implementation-guide/guia-backend.md": {
+    "mtime": 1789292317.3916225,
+    "seen": 1792431761.2156277,
+    "ast_hash": "a8f1306634e6627f1f678ae16dbc947d",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/spec/implementation-guide/guia-frontend.md": {
+    "mtime": 1789020421.6259227,
+    "seen": 1792431761.2156293,
+    "ast_hash": "715fd8c5cf11d7a8cefc08f987a8e11e",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/spec/improvements.md": {
+    "mtime": 1789020421.6259227,
+    "seen": 1792431761.215631,
+    "ast_hash": "e1f2d413cb8ad58702d153d9f74870c0",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/spec/incidents/clasificacion-y-respuesta.md": {
+    "mtime": 1789020421.6259227,
+    "seen": 1792431761.2156327,
+    "ast_hash": "936b375b11b3069412df29b4fe3f199d",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/spec/incidents/postmortems-y-aprendizaje.md": {
+    "mtime": 1789020421.626333,
+    "seen": 1792431761.2156343,
+    "ast_hash": "a025938dc204f2da0755a6e0137d9e2e",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/spec/modules/agente-ia.md": {
+    "mtime": 1789020421.626333,
+    "seen": 1792431761.215636,
+    "ast_hash": "8e1447faed309625146afeaac6691c36",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/spec/modules/alarmas-historicos.md": {
+    "mtime": 1789020421.6265175,
+    "seen": 1792431761.2156377,
+    "ast_hash": "c091d38e0daafb3bd762c8a4789827c8",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/spec/modules/apis.md": {
+    "mtime": 1789020421.6265175,
+    "seen": 1792431761.2156394,
+    "ast_hash": "c30347c4ab9cfb9904d941019d200713",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/spec/modules/auth-rbac-seguridad.md": {
+    "mtime": 1789328997.7370753,
+    "seen": 1792431761.215641,
+    "ast_hash": "a9403aa771eec18fd2269346c109d8ee",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/spec/modules/backup-y-portabilidad.md": {
+    "mtime": 1789020421.6265175,
+    "seen": 1792431761.2156427,
+    "ast_hash": "5cca284ab9081a21055e35abb9ee3dc8",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/spec/modules/dispositivos-protocolos-puntos.md": {
+    "mtime": 1791602157.5796225,
+    "seen": 1792431761.2156444,
+    "ast_hash": "62d5acc4ac3658d41bdf5030cb3b56be",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/spec/modules/modelo-de-datos.md": {
+    "mtime": 1789020421.6265175,
+    "seen": 1792431761.215646,
+    "ast_hash": "d568501ab4120cad37e51ef55504116d",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/spec/modules/monitoreo-y-notificaciones.md": {
+    "mtime": 1789020421.6265175,
+    "seen": 1792431761.2156475,
+    "ast_hash": "feea058aba0d3dc535385e8afef8880f",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/spec/modules/motor-logica-y-pruebas.md": {
+    "mtime": 1789020421.6265175,
+    "seen": 1792431761.2156491,
+    "ast_hash": "103593468a0dc52ebe17d805995c9cdf",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/spec/modules/stack-y-componentes.md": {
+    "mtime": 1789020421.6265175,
+    "seen": 1792431761.2156506,
+    "ast_hash": "95caed50fdc476d3f703c20d5349e7fb",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/spec/operation/instalacion-y-despliegue.md": {
+    "mtime": 1789020421.6265175,
+    "seen": 1792431761.2156525,
+    "ast_hash": "e295a7f800e57a3f861d2be72befbea0",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/spec/operation/operacion-cliente-y-soporte.md": {
+    "mtime": 1789020421.627394,
+    "seen": 1792431761.215654,
+    "ast_hash": "530d2eeb36081e943ea257cc61c6e1c2",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/spec/operation/slos-mantenimiento-runbooks.md": {
+    "mtime": 1789020421.627394,
+    "seen": 1792431761.2156553,
+    "ast_hash": "f2103e75cc8907f67d66bec8d350e5e7",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/spec/portfolio.md": {
+    "mtime": 1789020421.627394,
+    "seen": 1792431761.215657,
+    "ast_hash": "1f9ee6430f0081b349047c8d0e3552c7",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/spec/ui-ux/especificacion-de-vistas.md": {
+    "mtime": 1789020421.627394,
+    "seen": 1792431761.2156584,
+    "ast_hash": "b8af1923abfdeead92aee7c1ca59f8cb",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/spec/ui-ux/flujos-criticos-de-usuario.md": {
+    "mtime": 1789020421.6277552,
+    "seen": 1792431761.21566,
+    "ast_hash": "30e890f46e4d3913d656e01bba303ba8",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/spec/ui-ux/navegacion-y-responsividad.md": {
+    "mtime": 1789020421.6277552,
+    "seen": 1792431761.2156618,
+    "ast_hash": "b5058dc37e8f32a9a026ae2641c3bdcf",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/spec/ui-ux/sistema-de-diseno.md": {
+    "mtime": 1789020421.6277552,
+    "seen": 1792431761.2156634,
+    "ast_hash": "f46dffa8e3379cd1c44b956a521e41da",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/spec/validation/acceptance-criteria.md": {
+    "mtime": 1789020421.6277552,
+    "seen": 1792431761.2156649,
+    "ast_hash": "b6b25004734d316c3c3cdc950adf8324",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/spec/validation/test-plan.md": {
+    "mtime": 1789020421.62816,
+    "seen": 1792431761.2156665,
+    "ast_hash": "d635e4a5487dc89b6fd5f760e684af35",
+    "semantic_hash": ""
+  },
+  "docs/hira-server/spec/validation/vulnerabilities.md": {
+    "mtime": 1789329053.1335652,
+    "seen": 1792431761.215668,
+    "ast_hash": "ee12b60821322f14cc98bde12a0602c7",
+    "semantic_hash": ""
+  },
+  "docs/hira-studio/decisions/STU-ADR-001-cloud-multitenant-spa-bff.md": {
+    "mtime": 1789020421.628421,
+    "seen": 1792431761.2156694,
+    "ast_hash": "422023fe0bb94977ca7ccfaf0f893d9a",
+    "semantic_hash": ""
+  },
+  "docs/hira-studio/decisions/STU-ADR-002-identidad-y-licencia.md": {
+    "mtime": 1789020421.6285183,
+    "seen": 1792431761.2156713,
+    "ast_hash": "f6bff57c59740a5108be0b540996b1d0",
+    "semantic_hash": ""
+  },
+  "docs/hira-studio/decisions/STU-ADR-003-emparejamiento-studio-server.md": {
+    "mtime": 1792089626.2808347,
+    "seen": 1792431761.2156727,
+    "ast_hash": "7f98d59e402f26af60f9666ded698459",
+    "semantic_hash": ""
+  },
+  "docs/hira-studio/decisions/STU-ADR-004-diseno-offline-publicacion-al-server.md": {
+    "mtime": 1789020421.6285183,
+    "seen": 1792431761.215677,
+    "ast_hash": "78b79fc0f07221218ff3d50fe6019620",
+    "semantic_hash": ""
+  },
+  "docs/hira-studio/decisions/STU-ADR-005-agente-integrador-en-studio.md": {
+    "mtime": 1789020421.6285183,
+    "seen": 1792431761.2156787,
+    "ast_hash": "d38482888737ec5f7b56348094a24015",
+    "semantic_hash": ""
+  },
+  "docs/hira-studio/decisions/STU-ADR-006-conectividad-studio-server-tunel-inverso.md": {
+    "mtime": 1792093347.5786972,
+    "seen": 1792431761.2156806,
+    "ast_hash": "92b34ada4aececd3b7b45ab05e32e2d9",
+    "semantic_hash": ""
+  },
+  "docs/hira-studio/diagrams/arquitectura-hira-studio.html": {
+    "mtime": 1792092143.3465111,
+    "seen": 1792431761.2156823,
+    "ast_hash": "689f5bf32e80ec8ea17276f0310fd49d",
+    "semantic_hash": ""
+  },
+  "docs/hira-studio/spec/OPEN-QUESTIONS.md": {
+    "mtime": 1789278210.0848317,
+    "seen": 1792431761.215684,
+    "ast_hash": "2656dd168002c0064e9605e7e6f83c99",
+    "semantic_hash": ""
+  },
+  "docs/hira-studio/spec/architecture.md": {
+    "mtime": 1792092214.8419855,
+    "seen": 1792431761.2156856,
+    "ast_hash": "b262578cd4c9697f04915c040661e826",
+    "semantic_hash": ""
+  },
+  "docs/hira-studio/spec/context.md": {
+    "mtime": 1789020421.6289062,
+    "seen": 1792431761.2156873,
+    "ast_hash": "c999b6123a37ee6c07bf8170cc5e9c3a",
+    "semantic_hash": ""
+  },
+  "docs/hira-studio/spec/inherited-from-server.md": {
+    "mtime": 1789020421.6289062,
+    "seen": 1792431761.215689,
+    "ast_hash": "7ff5eb9c26ca3b4cae8175c890c2ba34",
+    "semantic_hash": ""
+  },
+  "docs/legacy/README.md": {
+    "mtime": 1789020421.6289062,
+    "seen": 1792431761.2156906,
+    "ast_hash": "834c91c9212823fb2837e45ffcb555ff",
+    "semantic_hash": ""
+  },
+  "docs/legacy/SPEC-MIGRATION.md": {
+    "mtime": 1789020421.6292284,
+    "seen": 1792431761.2156923,
+    "ast_hash": "8ced2ec2c51ea45a43ce085a4b56f63e",
+    "semantic_hash": ""
+  },
+  "docs/legacy/anchors-system/SCHEMA.md": {
+    "mtime": 1789020421.6292284,
+    "seen": 1792431761.2156937,
+    "ast_hash": "f6dd2d486deb00f777a7d630fd5508d3",
+    "semantic_hash": ""
+  },
+  "docs/legacy/anchors-system/registry.yaml": {
+    "mtime": 1789020421.6294,
+    "seen": 1792431761.2156956,
+    "ast_hash": "f92b18daa71c35dc545bccbee5b80c92",
+    "semantic_hash": ""
+  },
+  "docs/legacy/anchors-system/spec-checksums.txt": {
+    "mtime": 1789020421.6294,
+    "seen": 1792431761.215697,
+    "ast_hash": "39d8371a959d97e3c17c65a68d85eca4",
+    "semantic_hash": ""
+  },
+  "docs/legacy/deviations/LOG.md": {
+    "mtime": 1789020421.6299293,
+    "seen": 1792431761.215699,
+    "ast_hash": "7b375ebcf5d19f5dda0ad3c1efbe7153",
+    "semantic_hash": ""
+  },
+  "docs/legacy/harness-PROCESS.md": {
+    "mtime": 1789020421.6299293,
+    "seen": 1792431761.2157004,
+    "ast_hash": "66c0c9ce7cffb2a0ab5efbf9fae8cc63",
+    "semantic_hash": ""
+  },
+  "docs/legacy/harness-README.md": {
+    "mtime": 1789020421.6299293,
+    "seen": 1792431761.2157023,
+    "ast_hash": "975074c6c82b817a087fea75a7dbce19",
+    "semantic_hash": ""
+  },
+  "docs/legacy/templates/adr.md": {
+    "mtime": 1789020421.6299293,
+    "seen": 1792431761.2157037,
+    "ast_hash": "8d2352d9b04dd1aea1f6a583c6281514",
+    "semantic_hash": ""
+  },
+  "docs/legacy/templates/deviation.md": {
+    "mtime": 1789020421.6304796,
+    "seen": 1792431761.2157056,
+    "ast_hash": "f4b055c114757b1175dd0728b0495a2a",
+    "semantic_hash": ""
+  },
+  "docs/legacy/templates/module-readme.md": {
+    "mtime": 1789020421.6304796,
+    "seen": 1792431761.215707,
+    "ast_hash": "989b469265337f081e4f9b2212107edf",
+    "semantic_hash": ""
+  },
+  "docs/legacy/templates/requirement.md": {
+    "mtime": 1789020421.6304796,
+    "seen": 1792431761.2157087,
+    "ast_hash": "5e5e7680b25364a35b796d81e8c8c361",
+    "semantic_hash": ""
+  },
+  "docs/legacy/templates/session-report.md": {
+    "mtime": 1789020421.6304796,
+    "seen": 1792431761.2157104,
+    "ast_hash": "783a19eb9e451bd0ff219f9920a0bf59",
+    "semantic_hash": ""
+  },
+  "docs/legacy/templates/sprint.md": {
+    "mtime": 1789020421.6304796,
+    "seen": 1792431761.215712,
+    "ast_hash": "7fb3fb5bd4e02042bdfa6445c0dc60da",
+    "semantic_hash": ""
+  },
+  "docs/planning/ROADMAP.md": {
+    "mtime": 1789278207.631811,
+    "seen": 1792431761.2157137,
+    "ast_hash": "3b78a3b76947207bebaf86052ac99657",
+    "semantic_hash": ""
+  },
+  "docs/planning/SPRINT.md": {
+    "mtime": 1789292326.497701,
+    "seen": 1792431761.2157154,
+    "ast_hash": "cb91a8e05009dbc8641a0299c0592850",
+    "semantic_hash": ""
+  },
+  "docs/planning/hira-hub-bitacora.md": {
+    "mtime": 1789020421.6308622,
+    "seen": 1792431761.2157168,
+    "ast_hash": "1cd18d21be701f3a0cfff04cd39803cc",
+    "semantic_hash": ""
+  },
+  "docs/planning/hira-hub-sprint-plan.md": {
+    "mtime": 1789020421.6308622,
+    "seen": 1792431761.2157185,
+    "ast_hash": "d0c250bd99ccdb806c6a8f5342b41e7e",
+    "semantic_hash": ""
+  },
+  "docs/planning/hira-server-bitacora.md": {
+    "mtime": 1789020421.6308622,
+    "seen": 1792431761.21572,
+    "ast_hash": "832d13e3a5141a68f8d55ac94436bc3d",
+    "semantic_hash": ""
+  },
+  "docs/planning/sprint-history.md": {
+    "mtime": 1789020421.6308622,
+    "seen": 1792431761.2157218,
+    "ast_hash": "4240b19320b411b83a597219654d82c7",
+    "semantic_hash": ""
+  },
+  "hira-hub/AGENTS.md": {
+    "mtime": 1789282628.1040363,
+    "seen": 1792431761.2157233,
+    "ast_hash": "908f2838dc766595eb6e6f8e93648ede",
+    "semantic_hash": ""
+  },
+  "hira-hub/CLAUDE.md": {
+    "mtime": 1789282628.1042519,
+    "seen": 1792431761.2157247,
+    "ast_hash": "908f2838dc766595eb6e6f8e93648ede",
+    "semantic_hash": ""
+  },
+  "hira-hub/README.md": {
+    "mtime": 1789281396.746987,
+    "seen": 1792431761.2157264,
+    "ast_hash": "2f075eee96675076bd0336d46f8515a2",
+    "semantic_hash": ""
+  },
+  "hira-hub/backend/README.md": {
+    "mtime": 1789347528.6678069,
+    "seen": 1792431761.2157278,
+    "ast_hash": "4c9792346a9f26387f54f9c8aa4fb863",
+    "semantic_hash": ""
+  },
+  "hira-hub/backend/adapters/README.md": {
+    "mtime": 1789349441.1234233,
+    "seen": 1792431761.2157297,
+    "ast_hash": "14b01fe675efd74de9c17cc32a5710f4",
+    "semantic_hash": ""
+  },
+  "hira-hub/backend/adapters/cache/README.md": {
+    "mtime": 1789349441.1234233,
+    "seen": 1792431761.2157311,
+    "ast_hash": "d7dae6b3550aae31a16050111f5751e4",
+    "semantic_hash": ""
+  },
+  "hira-hub/backend/adapters/db/README.md": {
+    "mtime": 1789349441.1234233,
+    "seen": 1792431761.215733,
+    "ast_hash": "3b64c9ab71648011e7ff4de971958b60",
+    "semantic_hash": ""
+  },
+  "hira-hub/backend/core/README.md": {
+    "mtime": 1789347532.8868437,
+    "seen": 1792431761.2157345,
+    "ast_hash": "5b53577bd258612fcf92a8071cf88f47",
+    "semantic_hash": ""
+  },
+  "hira-hub/backend/core/ports/README.md": {
+    "mtime": 1789349441.1234233,
+    "seen": 1792431761.2157362,
+    "ast_hash": "2a96e215299cc62bc81b1ac91f80d641",
+    "semantic_hash": ""
+  },
+  "hira-hub/backend/models/README.md": {
+    "mtime": 1789347545.9719572,
+    "seen": 1792431761.2157376,
+    "ast_hash": "75e158cf3aaa90ad8ba0fb479f8efcb8",
+    "semantic_hash": ""
+  },
+  "hira-hub/backend/requirements.txt": {
+    "mtime": 1789349441.1244235,
+    "seen": 1792431761.2157395,
+    "ast_hash": "5a50b4808a16b9b7e97135dfcc5a2366",
+    "semantic_hash": ""
+  },
+  "hira-hub/backend/routers/README.md": {
+    "mtime": 1789349441.1244235,
+    "seen": 1792431761.215741,
+    "ast_hash": "727a5794d1c6b50030a801eb8b344ff9",
+    "semantic_hash": ""
+  },
+  "hira-hub/backend/schemas/README.md": {
+    "mtime": 1789349441.1244235,
+    "seen": 1792431761.2157423,
+    "ast_hash": "8adb21ed67b1d565e59f8f43554e3c6d",
+    "semantic_hash": ""
+  },
+  "hira-hub/backend/services/README.md": {
+    "mtime": 1789347551.2700033,
+    "seen": 1792431761.2157443,
+    "ast_hash": "52a279b6275610796d82702ebe4713cb",
+    "semantic_hash": ""
+  },
+  "hira-hub/backend/tests/README.md": {
+    "mtime": 1789349441.1244235,
+    "seen": 1792431761.2157457,
+    "ast_hash": "4d75300ba48d7f59764f5b9add74d4d8",
+    "semantic_hash": ""
+  },
+  "hira-hub/backend/tests/integration/README.md": {
+    "mtime": 1789349441.1244235,
+    "seen": 1792431761.2157476,
+    "ast_hash": "498ed3b2867f569dba94e0803eba4064",
+    "semantic_hash": ""
+  },
+  "hira-hub/docker-compose.dev.yml": {
+    "mtime": 1789348522.3304412,
+    "seen": 1792431761.215749,
+    "ast_hash": "5dcecdc3fa33c42d6f0689897941ea42",
+    "semantic_hash": ""
+  },
+  "hira-hub/docker-compose.yml": {
+    "mtime": 1789348517.1993966,
+    "seen": 1792431761.2157507,
+    "ast_hash": "cde8111eb060c1df990a35932061e1a3",
+    "semantic_hash": ""
+  },
+  "hira-hub/docs/README.md": {
+    "mtime": 1789349441.1244235,
+    "seen": 1792431761.2157555,
+    "ast_hash": "6b913c8b44f92587d6de995252258ffa",
+    "semantic_hash": ""
+  },
+  "hira-hub/docs/openapi.yaml": {
+    "mtime": 1789348378.1761887,
+    "seen": 1792431761.2157574,
+    "ast_hash": "c246b201f16f7b2cff6443ea20994a4e",
+    "semantic_hash": ""
+  },
+  "hira-hub/nginx/README.md": {
+    "mtime": 1789349441.1244235,
+    "seen": 1792431761.2157588,
+    "ast_hash": "047bca3b1335c51088312beb9479ddc7",
+    "semantic_hash": ""
+  },
+  "hira-server/AGENTS.md": {
+    "mtime": 1789282628.10335,
+    "seen": 1792431761.215761,
+    "ast_hash": "6d97950e7f68e32403b7d7730355ec5f",
+    "semantic_hash": ""
+  },
+  "hira-server/CLAUDE.md": {
+    "mtime": 1789282628.1036422,
+    "seen": 1792431761.2157626,
+    "ast_hash": "6d97950e7f68e32403b7d7730355ec5f",
+    "semantic_hash": ""
+  },
+  "hira-server/README.md": {
+    "mtime": 1789328994.5460472,
+    "seen": 1792431761.2157643,
+    "ast_hash": "6347af193c0f2fe25dcdf04223c2c6bf",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/README.md": {
+    "mtime": 1789319844.613674,
+    "seen": 1792431761.215766,
+    "ast_hash": "eeb9c487b7e5ec7d9cb29605c44004bd",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/adapters/README.md": {
+    "mtime": 1791602194.72208,
+    "seen": 1792431761.2157676,
+    "ast_hash": "f394851948c0ecda61da6f0022a698f8",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/adapters/bacnet/README.md": {
+    "mtime": 1791602167.3285575,
+    "seen": 1792431761.215769,
+    "ast_hash": "e7fd5017bc7eb9acc74f8b2063e7dec6",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/adapters/cache/README.md": {
+    "mtime": 1789296547.595023,
+    "seen": 1792431761.2157707,
+    "ast_hash": "414f961645db3a019cf9526a54d0baf9",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/adapters/db/README.md": {
+    "mtime": 1789360694.632988,
+    "seen": 1792431761.2157722,
+    "ast_hash": "bb7b41696efc9ab7ab13da8db8126ae9",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/adapters/modbus/README.md": {
+    "mtime": 1791602174.2648048,
+    "seen": 1792431761.215774,
+    "ast_hash": "166a6cdb0be7fd185d7bc50f020d56e6",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/adapters/mqtt/README.md": {
+    "mtime": 1791602183.22169,
+    "seen": 1792431761.2157755,
+    "ast_hash": "7a136a601f30e877a496cb190e3fd8d4",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/alembic/README.md": {
+    "mtime": 1789320937.0940487,
+    "seen": 1792431761.215777,
+    "ast_hash": "fa4aa4e66ad3864e6eea40ad89ae6596",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/core/README.md": {
+    "mtime": 1789403539.546672,
+    "seen": 1792431761.2157786,
+    "ast_hash": "9f9861583feb35da44bbcd63c2d66f98",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/core/ports/README.md": {
+    "mtime": 1791602210.737883,
+    "seen": 1792431761.2157803,
+    "ast_hash": "15d3de5de0350425e19c6fe37a34f6a8",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/core/security/README.md": {
+    "mtime": 1789319803.4533207,
+    "seen": 1792431761.215782,
+    "ast_hash": "2a461700d156c9cbe10cc010783edc4f",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/models/README.md": {
+    "mtime": 1789354290.5975206,
+    "seen": 1792431761.2157836,
+    "ast_hash": "6b8e9fc0b73388db1f274a7d6d189f2b",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/requirements.txt": {
+    "mtime": 1789377778.817662,
+    "seen": 1792431761.2157853,
+    "ast_hash": "ddb90dee69cd229aba32fb57b389c483",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/routers/README.md": {
+    "mtime": 1791602240.2291644,
+    "seen": 1792431761.2157867,
+    "ast_hash": "37d7cea67b2db265053da07e722e22c9",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/schemas/README.md": {
+    "mtime": 1791602247.7632272,
+    "seen": 1792431761.2157886,
+    "ast_hash": "4223f9585dbe8e5149d917aac445d543",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/scripts/README.md": {
+    "mtime": 1789321255.8037827,
+    "seen": 1792431761.21579,
+    "ast_hash": "56fa4e03d12c6df00af08e0a494358a2",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/services/README.md": {
+    "mtime": 1791602230.3480823,
+    "seen": 1792431761.2157917,
+    "ast_hash": "ade9e8a16f341ee67e96c774997c2208",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/tests/README.md": {
+    "mtime": 1789319833.2575765,
+    "seen": 1792431761.2157934,
+    "ast_hash": "7ba4487eda4e8bb30eaaff428853a20a",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/tests/integration/README.md": {
+    "mtime": 1789321187.7001987,
+    "seen": 1792431761.215795,
+    "ast_hash": "7aef749c863d2a6508e014f0176f924e",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/websocket/README.md": {
+    "mtime": 1789282828.0251927,
+    "seen": 1792431761.2157967,
+    "ast_hash": "970423139af90d4983ed929dfd32a0aa",
+    "semantic_hash": ""
+  },
+  "hira-server/backend/workers/README.md": {
+    "mtime": 1789282826.9461834,
+    "seen": 1792431761.2157984,
+    "ast_hash": "e8a0969ce0a3ba02501d7651a96dd367",
+    "semantic_hash": ""
+  },
+  "hira-server/docker-compose.dev.yml": {
+    "mtime": 1789286011.6453602,
+    "seen": 1792431761.2158,
+    "ast_hash": "2ae6003b795751e3937ef9bb3ab191b2",
+    "semantic_hash": ""
+  },
+  "hira-server/docker-compose.yml": {
+    "mtime": 1789286005.4503074,
+    "seen": 1792431761.215802,
+    "ast_hash": "5940077cb74f9569b13748ae9dbff528",
+    "semantic_hash": ""
+  },
+  "hira-server/docs/README.md": {
+    "mtime": 1789285190.15834,
+    "seen": 1792431761.2158034,
+    "ast_hash": "36a722b9230db28a686ad3bd7ecd9076",
+    "semantic_hash": ""
+  },
+  "hira-server/docs/openapi.yaml": {
+    "mtime": 1789427632.89147,
+    "seen": 1792431761.2158053,
+    "ast_hash": "5a76631b4ce1f44dc4c2e00ef0a2460e",
+    "semantic_hash": ""
+  },
+  "hira-server/frontend/README.md": {
+    "mtime": 1789282834.4732475,
+    "seen": 1792431761.2158067,
+    "ast_hash": "ca4de58fbf7655ce03f9da5b2bd81066",
+    "semantic_hash": ""
+  },
+  "hira-server/mosquitto/README.md": {
+    "mtime": 1789286036.294571,
+    "seen": 1792431761.2158082,
+    "ast_hash": "7b7a699a9391ea7f648cf7ab7d0b2138",
+    "semantic_hash": ""
+  },
+  "hira-server/nginx/README.md": {
+    "mtime": 1789286057.8737555,
+    "seen": 1792431761.2158098,
+    "ast_hash": "77655ed089ab0a00061b1cbac992ce21",
+    "semantic_hash": ""
+  },
+  "hira-studio/AGENTS.md": {
+    "mtime": 1789282628.1046188,
+    "seen": 1792431761.2158115,
+    "ast_hash": "3f4d94e3c2aef3e131274e46327acb64",
+    "semantic_hash": ""
+  },
+  "hira-studio/CLAUDE.md": {
+    "mtime": 1789282628.104783,
+    "seen": 1792431761.2158132,
+    "ast_hash": "3f4d94e3c2aef3e131274e46327acb64",
+    "semantic_hash": ""
+  },
+  "hira-studio/README.md": {
+    "mtime": 1789281403.2370424,
+    "seen": 1792431761.2158146,
+    "ast_hash": "b8366f2ae7aa5289cee61b06fa5a872b",
+    "semantic_hash": ""
+  }
+}
